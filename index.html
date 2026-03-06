@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+
+<!-- PWA Manifest (inline - no extra files needed) -->
+<link rel="manifest" id="pwa-manifest">
+<script>
+// =============================================
+// PWA SETUP - Inline Manifest + Service Worker
+// =============================================
+(function() {
+  // 1. Inject manifest as data URI
+  const manifest = {
+    name: "💰 نظام الحسابات المالية",
+    short_name: "حساباتي",
+    description: "نظام إدارة الحسابات المالية",
+    start_url: "./",
+    display: "standalone",
+    background_color: "#667eea",
+    theme_color: "#667eea",
+    orientation: "portrait-primary",
+    lang: "ar",
+    dir: "rtl",
+    icons: [
+      {
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='40' fill='%23667eea'/%3E%3Ctext x='96' y='130' font-size='110' text-anchor='middle'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E",
+        sizes: "192x192",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      },
+      {
+        src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23667eea'/%3E%3Ctext x='256' y='360' font-size='300' text-anchor='middle'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }
+    ]
+  };
+  const blob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  document.getElementById('pwa-manifest').href = URL.createObjectURL(blob);
+
+  // 2. Register inline Service Worker for offline caching
+  if ('serviceWorker' in navigator) {
+    const swCode = `
+const CACHE = 'fin-v1';
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([self.location.href.replace('/sw.js','/'), self.location.href.replace('/sw.js','')]))
+    .catch(()=>{})
+  );
+  self.skipWaiting();
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(resp => {
+        if (resp && resp.status === 200) {
+          const clone = resp.clone();
+          caches.open(CACHE).then(c => c.put(e.request, clone));
+        }
+        return resp;
+      }).catch(() => cached || new Response('Offline', {status:503}));
+    })
+  );
+});
+`;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl, {scope: './'})
+      .then(reg => console.log('✅ SW registered:', reg.scope))
+      .catch(err => console.log('SW note:', err.message));
+  }
+
+  // 3. Show install prompt on Android Chrome
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+  });
+
+  function showInstallBanner() {
+    if (document.getElementById('installBanner')) return;
+    const banner = document.createElement('div');
+    banner.id = 'installBanner';
+    banner.style.cssText = `
+      position:fixed;bottom:0;left:0;right:0;
+      background:linear-gradient(135deg,#667eea,#764ba2);
+      color:white;padding:14px 20px;
+      display:flex;justify-content:space-between;align-items:center;
+      z-index:99999;box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+      font-family:'Segoe UI',sans-serif;gap:12px;flex-wrap:wrap;
+    `;
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:26px">💰</span>
+        <div>
+          <div style="font-weight:bold;font-size:15px">ثبّت التطبيق على جهازك</div>
+          <div style="font-size:12px;opacity:0.85">يشتغل بدون إنترنت بعد التثبيت</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button id="installBtn" style="background:white;color:#667eea;border:none;border-radius:10px;padding:10px 18px;font-weight:bold;cursor:pointer;font-size:14px">📲 تثبيت</button>
+        <button id="dismissBtn" style="background:rgba(255,255,255,0.2);color:white;border:none;border-radius:10px;padding:10px 14px;cursor:pointer;font-size:14px">✕</button>
+      </div>
+    `;
+    document.body.appendChild(banner);
+    document.getElementById('installBtn').onclick = async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const {outcome} = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') banner.remove();
+        deferredPrompt = null;
+      }
+    };
+    document.getElementById('dismissBtn').onclick = () => {
+      banner.remove();
+      sessionStorage.setItem('installDismissed','1');
+    };
+  }
+
+  // 4. iOS Safari - show manual instructions
+  window.addEventListener('load', () => {
+    const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isInStandalone = window.navigator.standalone;
+    const dismissed = sessionStorage.getItem('iosDismissed');
+    if (isIOS && !isInStandalone && !dismissed) {
+      setTimeout(() => {
+        if (document.getElementById('iosBanner')) return;
+        const b = document.createElement('div');
+        b.id = 'iosBanner';
+        b.style.cssText = `
+          position:fixed;bottom:0;left:0;right:0;
+          background:linear-gradient(135deg,#667eea,#764ba2);
+          color:white;padding:16px 20px;
+          z-index:99999;box-shadow:0 -4px 20px rgba(0,0,0,0.3);
+          font-family:'Segoe UI',sans-serif;text-align:center;
+        `;
+        b.innerHTML = `
+          <div style="font-weight:bold;font-size:16px;margin-bottom:6px">📲 ثبّت التطبيق على iPhone</div>
+          <div style="font-size:13px;opacity:0.9;margin-bottom:12px">
+            اضغط زر المشاركة <strong>□↑</strong> ثم اختر<br>
+            <strong>"إضافة إلى الشاشة الرئيسية"</strong>
+          </div>
+          <button onclick="this.parentElement.remove();sessionStorage.setItem('iosDismissed','1')"
+            style="background:rgba(255,255,255,0.25);color:white;border:none;border-radius:10px;padding:8px 20px;cursor:pointer;font-size:14px">
+            فهمت ✓
+          </button>
+        `;
+        document.body.appendChild(b);
+      }, 2500);
+    }
+  });
+})();
+</script>
+
+
+<!-- Offline PWA Meta -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="حساباتي">
+<meta name="theme-color" content="#667eea">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>💰 نظام إدارة الحسابات المالية</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+.container{max-width:1200px;margin:0 auto}
+.hidden{display:none!important}
+
+/* BANK CARDS */
+.bank-card{border:1px solid #e2e8f0;border-radius:14px;margin-bottom:12px;overflow:hidden;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.bank-view{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;gap:12px}
+.bank-view-info{flex:1}
+.bank-view-name{font-size:16px;font-weight:bold;color:#1e293b;margin-bottom:3px}
+.bank-view-bal{font-size:24px;font-weight:bold;color:#10b981}
+.bank-view-notes{font-size:12px;color:#64748b;margin-top:4px}
+.bank-view-btns{display:flex;gap:8px;flex-shrink:0}
+.bank-btn-edit{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:bold;color:#475569;transition:background 0.15s}
+.bank-btn-edit:hover{background:#e2e8f0}
+.bank-btn-del{background:#fef2f2;border:1.5px solid #fecaca;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:15px;color:#ef4444;transition:background 0.15s}
+.bank-btn-del:hover{background:#fee2e2}
+.bank-edit-form{padding:16px 18px;background:#f8fafc;border-top:1px solid #e2e8f0}
+.bank-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
+@media(max-width:480px){.bank-edit-row{grid-template-columns:1fr}}
+.bank-edit-label{font-size:12px;color:#64748b;font-weight:bold;display:block;margin-bottom:5px}
+.bank-edit-inp{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;transition:border-color 0.2s}
+.bank-edit-inp:focus{outline:none;border-color:#667eea}
+.bank-edit-notes{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;height:70px;resize:vertical;margin-bottom:10px}
+.bank-edit-notes:focus{outline:none;border-color:#667eea}
+.bank-edit-actions{display:flex;gap:8px}
+.bank-save-btn{flex:1;padding:10px;background:#10b981;color:white;border:none;border-radius:9px;cursor:pointer;font-weight:bold;font-size:14px}
+.bank-cancel-btn{padding:10px 16px;background:#e2e8f0;color:#4a5568;border:none;border-radius:9px;cursor:pointer;font-size:14px}
+
+/* Body locked: hide everything except siteLock */
+body.locked>*:not(#siteLock){visibility:hidden;pointer-events:none}
+body.locked #siteLock{visibility:visible;pointer-events:all}
+
+/* LOGIN */
+.login-screen{background:white;border-radius:20px;padding:50px;max-width:500px;margin:80px auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
+.login-screen h1{color:#2d3748;font-size:30px;margin-bottom:25px}
+.user-select-btn{width:100%;padding:18px;margin:8px 0;font-size:18px;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:transform 0.2s;color:white}
+.user-select-btn.hamza{background:#3b82f6}.user-select-btn.jana{background:#ec4899}
+.user-select-btn.mohammad{background:#8b5cf6}.user-select-btn.admin{background:#ef4444}
+.user-select-btn:hover{transform:scale(1.02)}
+.password-input{width:100%;padding:16px;font-size:17px;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:12px;text-align:center;font-family:inherit}
+.login-btn{width:100%;padding:16px;font-size:17px;background:#3b82f6;color:white;border:none;border-radius:12px;cursor:pointer;font-weight:bold}
+.login-btn:hover{background:#2563eb}
+.back-btn{width:100%;padding:12px;font-size:15px;background:#e2e8f0;color:#4a5568;border:none;border-radius:12px;cursor:pointer;margin-top:8px}
+.error-msg{color:#ef4444;font-size:15px;margin-top:12px;display:none}
+
+/* HEADER */
+.header{background:white;border-radius:16px;padding:18px 25px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1);flex-wrap:wrap;gap:10px}
+.header h1{color:#2d3748;font-size:22px}
+.user-info{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{padding:9px 18px;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:bold;transition:transform 0.1s,opacity 0.2s}
+.btn:hover{transform:scale(1.03);opacity:0.9}
+.export-btn{background:#3b82f6;color:white}.settings-btn{background:#f59e0b;color:white}
+.logout-btn{background:#ef4444;color:white}
+.user-badge{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:bold;color:white}
+.user-badge.hamza{background:#3b82f6}.user-badge.jana{background:#ec4899}
+.user-badge.mohammad{background:#8b5cf6}.user-badge.admin{background:#ef4444}
+
+/* RATE CARD */
+.dollar-rate-card{background:white;border-radius:16px;padding:18px 25px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.dollar-rate-card h2{color:#2d3748;margin-bottom:14px;font-size:17px}
+.rates-container{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;align-items:center}
+.rate-item{background:#f0fdf4;border:2px solid #10b981;border-radius:12px;padding:12px 25px;text-align:center;min-width:130px}
+.rate-item.sell{background:#fef2f2;border-color:#ef4444}
+.rate-label{font-size:13px;color:#64748b;margin-bottom:4px}
+.rate-value{font-size:26px;font-weight:bold;color:#10b981}
+.rate-item.sell .rate-value{color:#ef4444}
+.rate-edit-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.rate-edit-input{width:90px;padding:8px 10px;font-size:15px;border:2px solid #e2e8f0;border-radius:8px;text-align:center;font-family:inherit}
+.rate-save-btn{padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold}
+.rate-save-btn:hover{background:#059669}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+.stats-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:700px){.stats-grid,.stats-grid-4{grid-template-columns:1fr 1fr}}
+@media(max-width:400px){.stats-grid,.stats-grid-4{grid-template-columns:1fr}}
+.stat-card{background:white;border-radius:16px;padding:22px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.1);position:relative}
+.stat-icon{font-size:32px;margin-bottom:6px}
+.stat-label{font-size:13px;color:#64748b;margin-bottom:6px}
+.stat-value{font-size:28px;font-weight:bold;color:#2d3748}
+.stat-value.blue{color:#3b82f6}.stat-value.green{color:#10b981}
+.stat-value.red{color:#ef4444}.stat-value.amber{color:#f59e0b}
+.stat-value.purple{color:#8b5cf6}
+.inline-edit-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
+.edit-mini-btn{background:#e2e8f0;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:#4a5568}
+.edit-mini-btn:hover{background:#cbd5e0}
+.top-right-btn{position:absolute;top:8px;left:8px;background:#e2e8f0;border:none;border-radius:8px;padding:4px 9px;cursor:pointer;font-size:11px;color:#4a5568}
+.top-right-btn:hover{background:#cbd5e0}
+
+/* FORM */
+.add-btn{width:100%;padding:18px;font-size:18px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:16px;cursor:pointer;margin-bottom:18px;font-weight:bold;transition:transform 0.1s}
+.add-btn:hover{transform:scale(1.01)}
+.form-card{background:white;border-radius:16px;padding:28px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.form-card h2{color:#2d3748;margin-bottom:18px}
+.form-group{margin-bottom:18px}
+.form-group label{display:block;font-size:14px;color:#4a5568;margin-bottom:6px;font-weight:bold}
+.form-group input[type=number],.form-group input[type=text],.form-group input[type=password],
+.form-group select,.form-group textarea{width:100%;padding:13px 15px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;transition:border-color 0.2s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#667eea}
+.form-group textarea{height:90px;resize:vertical}
+.type-buttons{display:flex;gap:10px}
+.type-btn{flex:1;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;background:white;font-weight:bold;transition:all 0.2s}
+.type-btn.add-active{background:#dcfce7;border-color:#10b981;color:#10b981}
+.type-btn.subtract-active{background:#fee2e2;border-color:#ef4444;color:#ef4444}
+.type-btn.shekel-active{background:#fef9c3;border-color:#f59e0b;color:#b45309}
+.button-group{display:flex;gap:10px}
+.submit-btn{flex:1;padding:15px;font-size:16px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;color:white}
+.submit-btn.add{background:#10b981}.submit-btn.subtract{background:#ef4444}.submit-btn.shekel{background:#f59e0b}
+.cancel-btn{padding:15px 22px;font-size:16px;background:#e2e8f0;color:#4a5568;border:none;border-radius:10px;cursor:pointer;font-weight:bold}
+.image-preview{max-width:100%;max-height:180px;border-radius:10px;display:block;margin-top:10px}
+
+/* HISTORY */
+.history-card{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.1);margin-bottom:18px}
+.history-card h2{color:#2d3748;margin-bottom:18px}
+.transaction-item{padding:14px;border-radius:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid #e2e8f0}
+.transaction-item.add{background:#f0fdf4;border-color:#bbf7d0}
+.transaction-item.subtract{background:#fef2f2;border-color:#fecaca}
+.transaction-item.shekel{background:#fefce8;border-color:#fde68a}
+.transaction-info{flex:1}
+.transaction-amount{font-size:18px;font-weight:bold;margin-bottom:3px}
+.transaction-amount.add{color:#10b981}.transaction-amount.subtract{color:#ef4444}.transaction-amount.shekel{color:#b45309}
+.transaction-details{font-size:12px;color:#64748b}
+.transaction-notes{font-size:12px;color:#92400e;margin-top:3px}
+.transaction-icon{font-size:22px}
+.transaction-image{width:55px;height:55px;object-fit:cover;border-radius:8px;cursor:pointer}
+.empty-state{text-align:center;color:#94a3b8;padding:35px;font-size:15px}
+
+/* ADMIN */
+.admin-section{background:white;border-radius:16px;padding:28px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+.admin-section h2{color:#2d3748;margin-bottom:18px}
+.bank-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px}
+.bank-item input,.bank-item textarea{width:100%;padding:9px;margin-bottom:7px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit}
+.bank-item textarea{height:70px;resize:vertical}
+.notification-item{padding:11px;border-radius:10px;background:#f8fafc;margin-bottom:8px;border-right:4px solid #3b82f6;font-size:13px}
+.notification-item.new{background:#eff6ff;border-right-color:#2563eb}
+.notification-item.shekel-notif{border-right-color:#f59e0b;background:#fefce8}
+.daily-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:700px){.daily-summary{grid-template-columns:1fr 1fr}}
+.summary-card{background:#f8fafc;border-radius:12px;padding:18px;text-align:center}
+.summary-card h3{font-size:13px;color:#64748b;margin-bottom:6px}
+.summary-card .value{font-size:20px;font-weight:bold;color:#2d3748}
+.monthly-table{width:100%;border-collapse:collapse;margin-top:10px}
+.monthly-table th,.monthly-table td{padding:10px 12px;text-align:center;border:1px solid #e2e8f0;font-size:13px}
+.monthly-table th{background:#f1f5f9;color:#475569;font-weight:bold}
+.monthly-table tr:nth-child(even) td{background:#f8fafc}
+.monthly-table td.add-val{color:#10b981;font-weight:bold}
+.monthly-table td.sub-val{color:#ef4444;font-weight:bold}
+.monthly-table td.shekel-val{color:#b45309;font-weight:bold}
+.month-filter-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.month-filter-row select,.month-filter-row input{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;background:white}
+
+/* MODAL */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
+.modal.active{display:flex}
+.modal-content{background:white;border-radius:20px;padding:38px;max-width:500px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:90vh;overflow-y:auto}
+select{background:white}
+
+/* SAVE INDICATOR */
+.save-indicator{position:fixed;bottom:18px;right:18px;background:#10b981;color:white;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:bold;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:opacity 0.5s;opacity:0;pointer-events:none;z-index:9999}
+.save-indicator.show{opacity:1}
+</style>
+</head>
+<body class="locked">
+
+<!-- SITE LOCK - Shows before anything else -->
+<div id="siteLock">
+    <div class="lock-box">
+        <span class="lock-icon">🔒</span>
+        <h2>منطقة خاصة</h2>
+        <p>هذا التطبيق خاص بمجموعة محددة<br>أدخل كلمة سر الدخول للمتابعة</p>
+        <input type="password" id="siteLockInput" placeholder="كلمة السر"
+               onkeydown="if(event.key==='Enter') checkSiteLock()"
+               oninput="document.getElementById('siteLockError').style.display='none'">
+        <button id="siteLockBtn" onclick="checkSiteLock()">دخول ←</button>
+        <div id="siteLockError">❌ كلمة السر غير صحيحة، حاول مرة أخرى</div>
+        <div id="siteLockAttempts"></div>
+    </div>
+</div>
+
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen">
+  <h1>💰 نظام إدارة الحسابات</h1>
+  <div id="userSelection">
+    <h2 style="color:#64748b;font-size:18px;margin-bottom:18px">اختر المستخدم</h2>
+    <button class="user-select-btn hamza" onclick="selectUser('hamza')">👤 حمزة</button>
+    <button class="user-select-btn jana" onclick="selectUser('jana')">👤 جنى</button>
+    <button class="user-select-btn mohammad" onclick="selectUser('mohammad')">👤 محمد</button>
+    <button class="user-select-btn admin" onclick="selectUser('admin')">🔐 الأدمن</button>
+  </div>
+  <div id="passwordScreen" class="hidden">
+    <h2 id="passwordTitle" style="margin-bottom:16px">أدخل كلمة المرور</h2>
+    <input type="password" id="passwordInput" class="password-input" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">دخول 🔐</button>
+    <button class="back-btn" onclick="backToUserSelection()">رجوع</button>
+    <div id="errorMsg" class="error-msg">كلمة المرور غير صحيحة!</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp" class="container hidden">
+  <div class="header">
+    <h1>💰 حساباتي المالية</h1>
+    <div class="user-info">
+      <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
+      <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
+      <div class="user-badge" id="userBadge"></div>
+      <button class="btn logout-btn" onclick="logout()">خروج 🚪</button>
+    </div>
+  </div>
+
+  <!-- Dollar Rates - display only for users -->
+  <div class="dollar-rate-card">
+    <h2>💵 أسعار الصرف</h2>
+    <div class="rates-container">
+      <div class="rate-item">
+        <div class="rate-label">سعر الشراء $</div>
+        <div class="rate-value" id="buyRate">3.62</div>
+      </div>
+      <div class="rate-item sell">
+        <div class="rate-label">سعر البيع $</div>
+        <div class="rate-value" id="sellRate">3.68</div>
+      </div>
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
+        <div class="rate-label">سعر صرف الشيكل</div>
+        <div class="rate-value" style="color:#b45309" id="shekelRateDisplay">3.65</div>
+      </div>
+    </div>
+    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:8px">للعرض فقط — آخر تحديث: <span id="rateUpdateTime">--</span></p>
+  </div>
+
+  <!-- Stats: Dollar -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">💼</div>
+      <div class="stat-label">الرصيد الأساسي ($)</div>
+      <div class="inline-edit-row">
+        <div class="stat-value blue" id="initialBalance">0.00</div>
+        <button class="edit-mini-btn" onclick="editInitialBalance()">✏️ تعديل</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💵</div>
+      <div class="stat-label">الرصيد الحالي ($)</div>
+      <div class="stat-value green" id="currentBalance">0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📊</div>
+      <div class="stat-label">عدد المعاملات</div>
+      <div class="stat-value amber" id="transactionCount">0</div>
+    </div>
+  </div>
+
+  <!-- Stats: Shekel -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon">🪙</div>
+      <div class="stat-label">الرصيد الأساسي (₪)</div>
+      <div class="inline-edit-row">
+        <div class="stat-value purple" id="initialShekelBalance">0.00</div>
+        <button class="edit-mini-btn" onclick="editInitialShekelBalance()">✏️ تعديل</button>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🪙</div>
+      <div class="stat-label">الرصيد الحالي (₪)</div>
+      <div class="stat-value green" id="currentShekelBalance">0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-label">معاملات الشيكل</div>
+      <div class="stat-value amber" id="shekelTxCount">0</div>
+    </div>
+  </div>
+
+  <button class="add-btn" id="showFormBtn" onclick="showForm()">➕ إضافة معاملة جديدة</button>
+
+  <div class="form-card hidden" id="transactionForm">
+    <h2>معاملة جديدة</h2>
+    <div class="form-group">
+      <label>نوع العملية</label>
+      <div class="type-buttons">
+        <button type="button" class="type-btn add-active" id="addBtn" onclick="selectType('add')">➕ إضافة $</button>
+        <button type="button" class="type-btn" id="subtractBtn" onclick="selectType('subtract')">➖ خصم $</button>
+        <button type="button" class="type-btn" id="shekelBtn" onclick="selectType('shekel')">🪙 صرف ₪</button>
+      </div>
+    </div>
+    <div class="form-group" id="dollarAmountGroup">
+      <label>المبلغ (بالدولار) *</label>
+      <input type="number" id="amount" step="0.01" placeholder="أدخل المبلغ بالدولار" oninput="updateAmountDisplay()">
+      <small id="amountInShekel" style="color:#64748b;display:block;margin-top:4px"></small>
+    </div>
+    <div class="form-group hidden" id="shekelAmountGroup">
+      <label>المبلغ (بالشيكل) *</label>
+      <input type="number" id="shekelAmount" step="0.01" placeholder="أدخل المبلغ بالشيكل">
+    </div>
+    <div class="form-group">
+      <label>نوع الحساب</label>
+      <select id="accountType">
+        <option value="بايبال">بايبال</option>
+        <option value="كاست">كاست</option>
+        <option value="بايننس">بايننس</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>صورة المعاملة (اختياري)</label>
+      <input type="file" id="transactionImage" accept="image/*" onchange="previewImage(event)">
+      <img id="imagePreview" class="image-preview hidden">
+    </div>
+    <div class="form-group">
+      <label>ملاحظات (اختياري)</label>
+      <textarea id="notes" placeholder="أضف ملاحظات..."></textarea>
+    </div>
+    <div class="button-group">
+      <button type="button" class="submit-btn add" id="submitBtn" onclick="addTransaction()">✓ حفظ المعاملة</button>
+      <button type="button" class="cancel-btn" onclick="hideForm()">✕ إلغاء</button>
+    </div>
+  </div>
+
+  <div class="history-card">
+    <h2>📜 آخر 10 معاملات</h2>
+    <div id="transactionList"><div class="empty-state">لا توجد معاملات بعد</div></div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" class="container hidden">
+  <div class="header">
+    <h1>🔐 لوحة تحكم الأدمن</h1>
+    <div class="user-info">
+      <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
+      <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
+      <div class="user-badge admin">🔐 الأدمن</div>
+      <button class="btn logout-btn" onclick="logout()">خروج 🚪</button>
+    </div>
+  </div>
+
+  <div class="dollar-rate-card">
+    <h2>💵 أسعار الصرف</h2>
+    <div class="rates-container">
+      <div class="rate-item"><div class="rate-label">سعر الشراء $</div><div class="rate-value" id="adminBuyRate">3.62</div></div>
+      <div class="rate-item sell"><div class="rate-label">سعر البيع $</div><div class="rate-value" id="adminSellRate">3.68</div></div>
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
+        <div class="rate-label">سعر صرف الشيكل</div>
+        <div class="rate-value" style="color:#b45309" id="adminShekelRateDisplay">3.65</div>
+      </div>
+    </div>
+    <div class="rate-edit-group">
+      <label style="font-size:13px;color:#b45309;font-weight:bold">🪙 تعديل سعر الشيكل:</label>
+      <input type="number" id="editShekelRateInput" class="rate-edit-input" step="0.01" placeholder="3.65" style="border-color:#f59e0b">
+      <button class="rate-save-btn" style="background:#f59e0b" onclick="saveShekelRate()">✓ تحديث</button>
+    </div>
+    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:4px">سعر الدولار للعرض فقط ولا يؤثر على أي رصيد</p>
+    <p style="text-align:center;color:#64748b;font-size:11px;margin-top:3px">آخر تحديث: <span id="adminRateUpdateTime">--</span></p>
+  </div>
+
+  <!-- Admin Stats Row 1 -->
+  <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card">
+      <button class="top-right-btn" onclick="editThaerBalance()">✏️ تعديل</button>
+      <div class="stat-icon">👤</div>
+      <div class="stat-label">رصيد ثائر ($)</div>
+      <div class="stat-value blue" id="thaerBalance">0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏦</div>
+      <div class="stat-label">مجموع أرصدة البنوك</div>
+      <div class="stat-value green" id="totalBanksBalance">0.00</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💰</div>
+      <div class="stat-label">الرصيد الإجمالي الثانوي</div>
+      <div class="stat-value amber" id="secondaryTotalBalance">0.00</div>
+    </div>
+  </div>
+
+  <!-- Admin Stats Row 2 - Total initial balances (display only) -->
+  <div class="stats-grid-4">
+    <div class="stat-card">
+      <div class="stat-icon">💼</div>
+      <div class="stat-label">رصيد حمزة الأساسي</div>
+      <div class="stat-value blue" id="adminHamzaInitial">0.00</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💼</div>
+      <div class="stat-label">رصيد جنى الأساسي</div>
+      <div class="stat-value blue" id="adminJanaInitial">0.00</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">💼</div>
+      <div class="stat-label">رصيد محمد الأساسي</div>
+      <div class="stat-value blue" id="adminMohammadInitial">0.00</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏆</div>
+      <div class="stat-label">مجموع الأرصدة الأساسية</div>
+      <div class="stat-value purple" id="adminTotalInitial">0.00</div>
+      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+    </div>
+  </div>
+
+  <!-- Banks -->
+  <div class="admin-section">
+    <h2>🏦 إدارة البنوك</h2>
+    <button class="btn" style="background:#10b981;margin-bottom:14px" onclick="addBank()">➕ إضافة بنك جديد</button>
+    <div id="banksList"></div>
+  </div>
+
+  <!-- Notifications -->
+  <div class="admin-section">
+    <h2>🔔 الإشعارات</h2>
+    <div id="notificationsList"></div>
+  </div>
+
+  <!-- Daily Summary -->
+  <div class="admin-section">
+    <h2>📊 ملخص اليوم</h2>
+    <div class="daily-summary" id="dailySummary"></div>
+  </div>
+
+  <!-- Monthly Stats -->
+  <div class="admin-section">
+    <h2>📅 إحصائيات شهرية لكل مستخدم</h2>
+    <div class="month-filter-row">
+      <label style="font-size:14px;color:#64748b">الشهر:</label>
+      <input type="month" id="monthPicker" onchange="loadMonthlyStats()">
+      <select id="monthUserFilter" onchange="loadMonthlyStats()" style="min-width:120px">
+        <option value="all">الكل</option>
+        <option value="حمزة">حمزة</option>
+        <option value="جنى">جنى</option>
+        <option value="محمد">محمد</option>
+      </select>
+    </div>
+    <div id="monthlyStats"></div>
+  </div>
+
+  <!-- Reset Zone -->
+  <div class="admin-section" style="border:2px solid #fecaca">
+    <h2 style="color:#dc2626">⚠️ منطقة الإدارة الحساسة</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px">تحذير: هذه العمليات لا يمكن التراجع عنها</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <button class="btn" style="background:#f59e0b;color:white;font-size:15px;padding:12px 20px" onclick="resetBalances()">
+        🔄 ريسيت الأرصدة والمعاملات
+      </button>
+      <button class="btn" style="background:#ef4444;color:white;font-size:15px;padding:12px 20px" onclick="resetAll()">
+        💣 حذف كل البيانات
+      </button>
+    </div>
+  </div>
+
+  <!-- All Transactions -->
+  <div class="admin-section">
+    <h2>📜 جميع المعاملات</h2>
+    <select id="userFilter" style="margin-bottom:16px;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:14px" onchange="filterTransactions()">
+      <option value="all">الكل</option>
+      <option value="حمزة">حمزة</option>
+      <option value="جنى">جنى</option>
+      <option value="محمد">محمد</option>
+    </select>
+    <div id="adminTransactionList"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;margin-bottom:22px">⚙️ الإعدادات</h2>
+    <div class="form-group">
+      <label>كلمة المرور الحالية</label>
+      <input type="password" id="currentPassword" class="password-input">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور الجديدة</label>
+      <input type="password" id="newPassword" class="password-input">
+    </div>
+    <div class="form-group">
+      <label>تأكيد كلمة المرور</label>
+      <input type="password" id="confirmPassword" class="password-input">
+    </div>
+    <div class="button-group">
+      <button class="submit-btn add" onclick="changePassword()">✓ تغيير</button>
+      <button class="cancel-btn" onclick="closeModal('settingsModal')">✕ إلغاء</button>
+    </div>
+    <div id="settingsErrorMsg" class="error-msg" style="text-align:center"></div>
+  </div>
+</div>
+
+<div class="save-indicator" id="saveIndicator">✅ تم الحفظ تلقائياً</div>
+
+<script>
+
+
+// =============================================
+// SITE LOCK - Gate before login screen
+// =============================================
+(function() {
+    // ⚠️ غيّر هذه الكلمة لكلمة سرك الخاصة
+    const SITE_PASSWORD = 'hamza2025';
+
+    const SESSION_KEY = 'site_unlocked_v1';
+    let attempts = 0;
+    const MAX_ATTEMPTS = 5;
+
+    function unlock() {
+        sessionStorage.setItem(SESSION_KEY, '1');
+        const lock = document.getElementById('siteLock');
+        lock.style.transition = 'opacity 0.5s ease';
+        lock.style.opacity = '0';
+        lock.style.transform = 'scale(1.05)';
+        setTimeout(() => {
+            lock.remove();
+            document.body.classList.remove('locked');
+            document.getElementById('loginScreen').classList.remove('hidden');
+        }, 500);
+    }
+
+    // Already unlocked this session?
+    if (sessionStorage.getItem(SESSION_KEY) === '1') {
+        document.addEventListener('DOMContentLoaded', () => {
+            const lock = document.getElementById('siteLock');
+            if (lock) lock.remove();
+            document.body.classList.remove('locked');
+        });
+        return;
+    }
+
+    window.checkSiteLock = function() {
+        const input = document.getElementById('siteLockInput');
+        const errorEl = document.getElementById('siteLockError');
+        const attemptsEl = document.getElementById('siteLockAttempts');
+
+        if (input.value === SITE_PASSWORD) {
+            unlock();
+            return;
+        }
+
+        // Wrong password
+        attempts++;
+        input.value = '';
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 400);
+        errorEl.style.display = 'block';
+
+        if (attempts >= MAX_ATTEMPTS) {
+            // Lock for 30 seconds after 5 wrong attempts
+            const btn = document.getElementById('siteLockBtn');
+            input.disabled = true;
+            btn.disabled = true;
+            let secs = 30;
+            attemptsEl.textContent = `محاولات كثيرة — انتظر ${secs} ثانية`;
+            errorEl.style.display = 'none';
+            const timer = setInterval(() => {
+                secs--;
+                attemptsEl.textContent = `انتظر ${secs} ثانية...`;
+                if (secs <= 0) {
+                    clearInterval(timer);
+                    input.disabled = false;
+                    btn.disabled = false;
+                    attempts = 0;
+                    attemptsEl.textContent = '';
+                    input.focus();
+                }
+            }, 1000);
+        } else {
+            const remaining = MAX_ATTEMPTS - attempts;
+            attemptsEl.textContent = remaining > 0 ? `متبقي ${remaining} محاولات` : '';
+        }
+    };
+
+    // Auto-focus when page loads
+    window.addEventListener('load', () => {
+        const inp = document.getElementById('siteLockInput');
+        if (inp) setTimeout(() => inp.focus(), 300);
+    });
+})();
+
+// ================================================
+// MINI XLSX WRITER - Pure JS, No Internet Needed
+// ================================================
+const MiniXLSX = (function() {
+  function esc(v) {
+    return String(v==null?'':v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function colLetter(n) {
+    let s=''; n++;
+    while(n>0){n--;s=String.fromCharCode(65+(n%26))+s;n=Math.floor(n/26);}
+    return s;
+  }
+  function crc32(buf){
+    if(!crc32._t){crc32._t=[];for(let i=0;i<256;i++){let c=i;for(let j=0;j<8;j++)c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);crc32._t[i]=c;}}
+    let crc=0xFFFFFFFF;
+    for(let i=0;i<buf.length;i++)crc=crc32._t[(crc^buf[i])&0xFF]^(crc>>>8);
+    return(crc^0xFFFFFFFF)>>>0;
+  }
+  function u16(n){return[n&0xFF,(n>>8)&0xFF];}
+  function u32(n){return[n&0xFF,(n>>8)&0xFF,(n>>16)&0xFF,(n>>24)&0xFF];}
+  const enc=new TextEncoder();
+
+  function buildZip(files){
+    const localParts=[], centralDir=[];
+    let offset=0;
+    files.forEach(f=>{
+      const nb=enc.encode(f.name), db=typeof f.data==='string'?enc.encode(f.data):f.data;
+      const crc=crc32(db);
+      const lh=[0x50,0x4B,0x03,0x04,...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0),...nb];
+      const cd=[0x50,0x4B,0x01,0x02,...u16(20),...u16(20),...u16(0),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...nb];
+      localParts.push(...lh,...db);
+      centralDir.push(...cd);
+      offset+=lh.length+db.length;
+    });
+    const eocd=[0x50,0x4B,0x05,0x06,...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(centralDir.length),...u32(offset),...u16(0)];
+    return new Uint8Array([...localParts,...centralDir,...eocd]);
+  }
+
+  function write(sheets){
+    // sheets: [{name, rows:[[]]}]
+    const ssArr=[], ssMap={};
+    function si(v){const k=String(v);if(ssMap[k]==null){ssMap[k]=ssArr.length;ssArr.push(k);}return ssMap[k];}
+
+    const sheetXmls=sheets.map(s=>{
+      let sd='<sheetData>';
+      s.rows.forEach((row,ri)=>{
+        if(!row||!row.length)return;
+        sd+=`<row r="${ri+1}">`;
+        row.forEach((cell,ci)=>{
+          const addr=colLetter(ci)+(ri+1);
+          if(cell==null||cell===''){sd+=`<c r="${addr}"/>`;return;}
+          if(typeof cell==='number'){sd+=`<c r="${addr}"><v>${cell}</v></c>`;return;}
+          sd+=`<c r="${addr}" t="s"><v>${si(cell)}</v></c>`;
+        });
+        sd+=`</row>`;
+      });
+      sd+='</sheetData>';
+      return`<?xml version="1.0" encoding="UTF-8"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0" rightToLeft="1"/></sheetViews>${sd}</worksheet>`;
+    });
+
+    const ssXml=`<?xml version="1.0" encoding="UTF-8"?><sst xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" count="${ssArr.length}" uniqueCount="${ssArr.length}">${ssArr.map(v=>`<si><t xml:space="preserve">${esc(v)}</t></si>`).join('')}</sst>`;
+    const wbXml=`<?xml version="1.0" encoding="UTF-8"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map((s,i)=>`<sheet name="${esc(s.name)}" sheetId="${i+1}" r:id="rId${i+2}"/>`).join('')}</sheets></workbook>`;
+    const wbRels=`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/>${sheets.map((s,i)=>`<Relationship Id="rId${i+2}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}</Relationships>`;
+    const rrXml=`<?xml version="1.0" encoding="UTF-8"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`;
+    const ctXml=`<?xml version="1.0" encoding="UTF-8"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>`;
+    const files=[
+      {name:'[Content_Types].xml',data:ctXml},
+      {name:'_rels/.rels',data:rrXml},
+      {name:'xl/workbook.xml',data:wbXml},
+      {name:'xl/_rels/workbook.xml.rels',data:wbRels},
+      {name:'xl/sharedStrings.xml',data:ssXml},
+      ...sheetXmls.map((x,i)=>({name:`xl/worksheets/sheet${i+1}.xml`,data:x}))
+    ];
+    return buildZip(files);
+  }
+  return{write};
+})();
+
+// =============================================
+// DATA
+// =============================================
+const STORAGE_KEY = 'fin_sys_v2';
+
+function getDefaultData() {
+  return {
+    passwords: { حمزة:'1234', جنى:'5678', محمد:'9012', أدمن:'admin123' },
+    users: {
+      حمزة: { initialBalance:0, initialShekelBalance:0, transactions:[] },
+      جنى:  { initialBalance:0, initialShekelBalance:0, transactions:[] },
+      محمد: { initialBalance:0, initialShekelBalance:0, transactions:[] }
+    },
+    banks: [{ name:'بنك فلسطين', balance:0, notes:'' }],
+    thaerBalance: 0,
+    notifications: [],
+    dollarBuyRate: 3.62,
+    dollarSellRate: 3.68,
+    shekelRate: 3.65
+  };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return getDefaultData();
+    const d = JSON.parse(raw);
+    const def = getDefaultData();
+    d.passwords = d.passwords || def.passwords;
+    d.users = d.users || def.users;
+    d.banks = d.banks || def.banks;
+    d.thaerBalance = d.thaerBalance ?? 0;
+    d.notifications = d.notifications || [];
+    d.dollarBuyRate = d.dollarBuyRate ?? 3.62;
+    d.dollarSellRate = d.dollarSellRate ?? 3.68;
+    d.shekelRate = d.shekelRate ?? 3.65;
+    ['حمزة','جنى','محمد'].forEach(u => {
+      if (!d.users[u]) d.users[u] = def.users[u];
+      d.users[u].initialBalance = d.users[u].initialBalance ?? 0;
+      d.users[u].initialShekelBalance = d.users[u].initialShekelBalance ?? 0;
+      d.users[u].transactions = d.users[u].transactions || [];
+    });
+    return d;
+  } catch(e) { return getDefaultData(); }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+  const el = document.getElementById('saveIndicator');
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+let appData = loadData();
+let currentUser = null;
+let selectedType = 'add';
+
+// =============================================
+// INIT
+// =============================================
+window.onload = function() {
+  updateDollarRateDisplay();
+  // If already unlocked this session, show login
+  if (sessionStorage.getItem('site_unlocked_v1') === '1') {
+    document.getElementById('loginScreen').classList.remove('hidden');
+  }
+  // Otherwise siteLock handles it
+};
+
+function updateDollarRateDisplay() {
+  const buy = appData.dollarBuyRate || 3.62;
+  const sell = appData.dollarSellRate || 3.68;
+  const shekel = appData.shekelRate || 3.65;
+  const now = new Date().toLocaleString('ar-EG');
+  ['buyRate','adminBuyRate'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(buy).toFixed(2);});
+  ['sellRate','adminSellRate'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(sell).toFixed(2);});
+  ['shekelRateDisplay','adminShekelRateDisplay'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(shekel).toFixed(2);});
+  ['rateUpdateTime','adminRateUpdateTime'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=now;});
+  const si=document.getElementById('editShekelRateInput'); if(si) si.value=shekel;
+}
+
+function saveCustomRates(){}       // no-op: dollar rate is display only
+function saveCustomRatesAdmin(){}  // no-op
+
+function saveShekelRate() {
+  const r = parseFloat(document.getElementById('editShekelRateInput').value);
+  if (isNaN(r)||r<=0) { alert('❌ أدخل قيمة صحيحة'); return; }
+  appData.shekelRate = r;
+  saveData();
+  updateDollarRateDisplay();
+  alert('✅ تم تحديث سعر الشيكل إلى ' + r.toFixed(2) + ' ₪');
+}
+
+// =============================================
+// LOGIN
+// =============================================
+function selectUser(user) {
+  currentUser = user;
+  const names = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'الأدمن' };
+  document.getElementById('passwordTitle').textContent = `أدخل كلمة مرور ${names[user]}`;
+  document.getElementById('userSelection').classList.add('hidden');
+  document.getElementById('passwordScreen').classList.remove('hidden');
+  document.getElementById('passwordInput').value = '';
+  document.getElementById('errorMsg').style.display = 'none';
+  setTimeout(() => document.getElementById('passwordInput').focus(), 100);
+}
+
+function backToUserSelection() {
+  document.getElementById('userSelection').classList.remove('hidden');
+  document.getElementById('passwordScreen').classList.add('hidden');
+  currentUser = null;
+}
+
+function login() {
+  const input = document.getElementById('passwordInput').value;
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const correct = appData.passwords[ukey];
+  if (input == correct) {
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('errorMsg').style.display = 'none';
+    if (currentUser === 'admin') {
+      document.getElementById('adminPanel').classList.remove('hidden');
+      loadAdminPanel();
+    } else {
+      document.getElementById('mainApp').classList.remove('hidden');
+      const unames = { hamza:'حمزة', jana:'جنى', mohammad:'محمد' };
+      const badge = document.getElementById('userBadge');
+      badge.textContent = `👤 ${unames[currentUser]}`;
+      badge.className = `user-badge ${currentUser}`;
+      updateUI();
+    }
+  } else {
+    document.getElementById('errorMsg').style.display = 'block';
+  }
+}
+
+function logout() {
+  currentUser = null;
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('userSelection').classList.remove('hidden');
+  document.getElementById('passwordScreen').classList.add('hidden');
+  hideForm();
+}
+
+// =============================================
+// BALANCE HELPERS
+// =============================================
+function getSheetName() {
+  return currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+}
+
+function getUserData(name) { return appData.users[name]; }
+
+function getInitialBalance(name) { return getUserData(name||getSheetName()).initialBalance||0; }
+function getInitialShekelBalance(name) { return getUserData(name||getSheetName()).initialShekelBalance||0; }
+
+function getCurrentBalance(name) {
+  const ud = getUserData(name||getSheetName());
+  let bal = ud.initialBalance||0;
+  (ud.transactions||[]).forEach(t => {
+    if (t.currency !== 'shekel') {
+      if (t.type==='add') bal += t.amount;
+      else bal -= t.amount;
+    }
+  });
+  return bal;
+}
+
+function getCurrentShekelBalance(name) {
+  const ud = getUserData(name||getSheetName());
+  let bal = ud.initialShekelBalance||0;
+  (ud.transactions||[]).forEach(t => {
+    if (t.currency === 'shekel') bal -= t.amount;
+  });
+  return bal;
+}
+
+// =============================================
+// EDIT BALANCES
+// =============================================
+function editInitialBalance() {
+  const name = getSheetName();
+  const cur = getInitialBalance(name);
+  const val = prompt(`الرصيد الأساسي بالدولار الحالي: $${cur.toFixed(2)}\nأدخل الرصيد الجديد:`, cur);
+  if (val !== null) {
+    const p = parseFloat(val);
+    if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
+    appData.users[name].initialBalance = p;
+    saveData();
+    updateUI();
+  }
+}
+
+function editInitialShekelBalance() {
+  const name = getSheetName();
+  const cur = getInitialShekelBalance(name);
+  const val = prompt(`الرصيد الأساسي بالشيكل الحالي: ${cur.toFixed(2)} ₪\nأدخل الرصيد الجديد بالشيكل:`, cur);
+  if (val !== null) {
+    const p = parseFloat(val);
+    if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
+    appData.users[name].initialShekelBalance = p;
+    saveData();
+    updateUI();
+  }
+}
+
+function editThaerBalance() {
+  const cur = appData.thaerBalance||0;
+  const val = prompt(`رصيد ثائر الحالي: $${parseFloat(cur).toFixed(2)}\nأدخل الرصيد الجديد:`, cur);
+  if (val !== null) {
+    const p = parseFloat(val);
+    if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
+    appData.thaerBalance = p;
+    saveData();
+    updateAdminStats();
+  }
+}
+
+// =============================================
+// UI UPDATE
+// =============================================
+function updateUI() {
+  const name = getSheetName();
+  const init = getInitialBalance(name);
+  const cur = getCurrentBalance(name);
+  const initS = getInitialShekelBalance(name);
+  const curS = getCurrentShekelBalance(name);
+  const txs = getUserData(name).transactions||[];
+  const dollarTxs = txs.filter(t => t.currency !== 'shekel');
+  const shekelTxs = txs.filter(t => t.currency === 'shekel');
+
+  document.getElementById('initialBalance').textContent = init.toFixed(2);
+  const cel = document.getElementById('currentBalance');
+  cel.textContent = cur.toFixed(2);
+  cel.className = 'stat-value ' + (cur >= init ? 'green' : 'red');
+  document.getElementById('transactionCount').textContent = dollarTxs.length;
+
+  document.getElementById('initialShekelBalance').textContent = initS.toFixed(2);
+  const scel = document.getElementById('currentShekelBalance');
+  scel.textContent = curS.toFixed(2);
+  scel.className = 'stat-value ' + (curS >= 0 ? 'green' : 'red');
+  document.getElementById('shekelTxCount').textContent = shekelTxs.length;
+
+  updateTransactionList();
+}
+
+function updateTransactionList() {
+  const name = getSheetName();
+  const txs = (getUserData(name).transactions||[]);
+  const listEl = document.getElementById('transactionList');
+  if (!txs.length) { listEl.innerHTML = '<div class="empty-state">لا توجد معاملات بعد</div>'; return; }
+  const last10 = txs.slice(-10).reverse();
+  listEl.innerHTML = last10.map(t => renderTxItem(t, false)).join('');
+}
+
+function renderTxItem(t, showUser) {
+  const isShekel = t.currency === 'shekel';
+  const cls = isShekel ? 'shekel' : t.type;
+  const sign = (isShekel || t.type==='subtract') ? '-' : '+';
+  const icon = isShekel ? '🪙' : (t.type==='add' ? '➕' : '➖');
+  const amtDisplay = isShekel
+    ? `${sign}${t.amount.toFixed(2)} ₪`
+    : `${sign}$${t.amount.toFixed(2)}`;
+  const imgHtml = t.image ? `<img src="${t.image}" class="transaction-image" onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src,'_blank')">` : '';
+  const userHtml = showUser ? `<strong style="color:#64748b;font-size:13px">${t.user}</strong>` : '';
+  return `<div class="transaction-item ${cls}">
+    <div class="transaction-info">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="transaction-amount ${cls}">${amtDisplay}</div>
+        ${userHtml}
+      </div>
+      <div class="transaction-details">${t.accountType} • ${t.date} ${t.time}</div>
+      ${!isShekel && t.amountShekel ? `<div class="transaction-details">= ${parseFloat(t.amountShekel).toFixed(2)} ₪</div>` : ''}
+      ${t.buyRate&&t.sellRate ? `<div class="transaction-details">الشراء: ${t.buyRate} ₪ | البيع: ${t.sellRate} ₪</div>` : ''}
+      ${t.notes ? `<div class="transaction-notes">📝 ${t.notes}</div>` : ''}
+    </div>
+    ${imgHtml}
+    <div class="transaction-icon">${icon}</div>
+  </div>`;
+}
+
+// =============================================
+// TRANSACTION FORM
+// =============================================
+function selectType(type) {
+  selectedType = type;
+  document.getElementById('addBtn').className = 'type-btn' + (type==='add' ? ' add-active' : '');
+  document.getElementById('subtractBtn').className = 'type-btn' + (type==='subtract' ? ' subtract-active' : '');
+  document.getElementById('shekelBtn').className = 'type-btn' + (type==='shekel' ? ' shekel-active' : '');
+  const isShekel = type === 'shekel';
+  document.getElementById('dollarAmountGroup').classList.toggle('hidden', isShekel);
+  document.getElementById('shekelAmountGroup').classList.toggle('hidden', !isShekel);
+  const sb = document.getElementById('submitBtn');
+  sb.className = `submit-btn ${type}`;
+  sb.textContent = isShekel ? '🪙 تسجيل صرف شيكل' : (type==='add' ? '✓ إضافة مبلغ' : '✓ خصم مبلغ');
+}
+
+function updateAmountDisplay() {
+  const amount = parseFloat(document.getElementById('amount').value)||0;
+  const sr = parseFloat(appData.shekelRate)||3.65;
+  document.getElementById('amountInShekel').textContent = amount > 0 ? `= ${(amount*sr).toFixed(2)} ₪` : '';
+}
+
+function showForm() {
+  document.getElementById('showFormBtn').classList.add('hidden');
+  document.getElementById('transactionForm').classList.remove('hidden');
+}
+
+function hideForm() {
+  document.getElementById('showFormBtn')?.classList.remove('hidden');
+  document.getElementById('transactionForm')?.classList.add('hidden');
+  const ids = ['amount','notes','shekelAmount'];
+  ids.forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  const ip = document.getElementById('transactionImage'); if(ip) ip.value='';
+  const prev = document.getElementById('imagePreview'); if(prev) prev.classList.add('hidden');
+  const ais = document.getElementById('amountInShekel'); if(ais) ais.textContent='';
+  selectType('add');
+}
+
+function addTransaction() {
+  const name = getSheetName();
+  const isShekel = selectedType === 'shekel';
+  const accountType = document.getElementById('accountType').value;
+  const notes = document.getElementById('notes').value;
+  const imageFile = document.getElementById('transactionImage').files[0];
+  const now = new Date();
+  const date = now.toLocaleDateString('ar-EG');
+  const time = now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  const sell = parseFloat(appData.dollarSellRate)||3.68;
+  const buy = parseFloat(appData.dollarBuyRate)||3.62;
+
+  let transaction;
+
+  if (isShekel) {
+    const amount = parseFloat(document.getElementById('shekelAmount').value);
+    if (!amount || amount <= 0) { alert('الرجاء إدخال مبلغ شيكل صحيح'); return; }
+    transaction = {
+      id: Date.now(), date, time, accountType,
+      type: 'subtract', currency: 'shekel',
+      amount, notes,
+      buyRate: buy, sellRate: sell,
+      image: null
+    };
+  } else {
+    const amount = parseFloat(document.getElementById('amount').value);
+    if (!amount || amount <= 0) { alert('الرجاء إدخال مبلغ صحيح'); return; }
+    transaction = {
+      id: Date.now(), date, time, accountType,
+      type: selectedType, currency: 'dollar',
+      amount, notes,
+      amountShekel: (amount * (parseFloat(appData.shekelRate)||3.65)).toFixed(2),
+      buyRate: buy, sellRate: sell,
+      image: null
+    };
+  }
+
+  const finalize = () => {
+    appData.users[name].transactions.push(transaction);
+    const notifType = isShekel ? 'صرف شيكل' : (selectedType==='add' ? 'إضافة' : 'خصم');
+    const notifAmount = isShekel
+      ? `${transaction.amount.toFixed(2)} ₪`
+      : `$${transaction.amount.toFixed(2)}`;
+    addNotification(name, notifType, notifAmount, notes, isShekel);
+    saveData();
+    hideForm();
+    updateUI();
+  };
+
+  if (imageFile) {
+    const reader = new FileReader();
+    reader.onload = e => { transaction.image = e.target.result; finalize(); };
+    reader.readAsDataURL(imageFile);
+  } else {
+    finalize();
+  }
+}
+
+function addNotification(user, type, amount, notes, isShekel=false) {
+  const now = new Date();
+  appData.notifications.unshift({
+    date: now.toLocaleDateString('ar-EG'),
+    time: now.toLocaleTimeString('ar-EG',{hour:'2-digit',minute:'2-digit'}),
+    user, type, amount, notes, isShekel
+  });
+  if (appData.notifications.length > 150) appData.notifications = appData.notifications.slice(0,150);
+}
+
+function previewImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const p = document.getElementById('imagePreview');
+    p.src = e.target.result;
+    p.classList.remove('hidden');
+  };
+  reader.readAsDataURL(file);
+}
+
+// =============================================
+// ADMIN
+// =============================================
+function loadAdminPanel() {
+  updateAdminStats();
+  loadBanks();
+  loadNotifications();
+  loadDailySummary();
+  filterTransactions();
+  // Set default month to current
+  const now = new Date();
+  const mp = document.getElementById('monthPicker');
+  if (mp) mp.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  loadMonthlyStats();
+}
+
+function updateAdminStats() {
+  const thaer = parseFloat(appData.thaerBalance)||0;
+  document.getElementById('thaerBalance').textContent = thaer.toFixed(2);
+
+  let totalBanks = 0;
+  (appData.banks||[]).forEach(b => { totalBanks += parseFloat(b.balance)||0; });
+  document.getElementById('totalBanksBalance').textContent = totalBanks.toFixed(2);
+  document.getElementById('secondaryTotalBalance').textContent = (thaer+totalBanks).toFixed(2);
+
+  // Show each user's initial balance (display only)
+  const hi = appData.users['حمزة']?.initialBalance||0;
+  const ji = appData.users['جنى']?.initialBalance||0;
+  const mi = appData.users['محمد']?.initialBalance||0;
+  document.getElementById('adminHamzaInitial').textContent = hi.toFixed(2);
+  document.getElementById('adminJanaInitial').textContent = ji.toFixed(2);
+  document.getElementById('adminMohammadInitial').textContent = mi.toFixed(2);
+  document.getElementById('adminTotalInitial').textContent = (hi+ji+mi).toFixed(2);
+}
+
+function loadBanks() {
+  const banks = appData.banks||[];
+  const el = document.getElementById('banksList');
+  if (!banks.length) {
+    el.innerHTML = '<div class="empty-state">لا توجد بنوك بعد — اضغط ➕ إضافة بنك جديد</div>';
+    return;
+  }
+  el.innerHTML = banks.map((b,i) => `
+    <div class="bank-card" id="bcard-${i}">
+      <div class="bank-view" id="bview-${i}">
+        <div class="bank-view-info">
+          <div class="bank-view-name">🏦 ${escHtml(b.name)}</div>
+          <div class="bank-view-bal">$${parseFloat(b.balance||0).toFixed(2)}</div>
+          ${b.notes?`<div class="bank-view-notes">📝 ${escHtml(b.notes)}</div>`:''}
+        </div>
+        <div class="bank-view-btns">
+          <button class="bank-btn-edit" onclick="bankEdit(${i},true)">✏️ تعديل</button>
+          <button class="bank-btn-del" onclick="bankDel(${i})">🗑️</button>
+        </div>
+      </div>
+      <div class="bank-edit-form hidden" id="bedit-${i}">
+        <div class="bank-edit-row">
+          <div>
+            <label class="bank-edit-label">اسم البنك</label>
+            <input class="bank-edit-inp" id="bname-${i}" type="text" value="${escHtml(b.name)}" placeholder="اسم البنك">
+          </div>
+          <div>
+            <label class="bank-edit-label">الرصيد ($)</label>
+            <input class="bank-edit-inp" id="bbal-${i}" type="number" value="${b.balance}" step="0.01" placeholder="0.00">
+          </div>
+        </div>
+        <label class="bank-edit-label">ملاحظات</label>
+        <textarea class="bank-edit-notes" id="bnotes-${i}" placeholder="ملاحظات...">${escHtml(b.notes||'')}</textarea>
+        <div class="bank-edit-actions">
+          <button class="bank-save-btn" onclick="bankSave(${i})">✓ حفظ</button>
+          <button class="bank-cancel-btn" onclick="bankEdit(${i},false)">✕ إلغاء</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function bankEdit(idx, open) {
+  document.getElementById('bview-'+idx).classList.toggle('hidden', open);
+  document.getElementById('bedit-'+idx).classList.toggle('hidden', !open);
+  if (open) document.getElementById('bname-'+idx).focus();
+}
+
+function bankSave(idx) {
+  const name = (document.getElementById('bname-'+idx).value||'').trim() || 'بنك';
+  const bal  = parseFloat(document.getElementById('bbal-'+idx).value)||0;
+  const notes = document.getElementById('bnotes-'+idx).value;
+  appData.banks[idx] = {name, balance:bal, notes};
+  saveData(); loadBanks(); updateAdminStats();
+}
+
+function bankDel(idx) {
+  if (!confirm('حذف هذا البنك؟')) return;
+  appData.banks.splice(idx,1);
+  saveData(); loadBanks(); updateAdminStats();
+}
+
+function addBank() {
+  appData.banks = appData.banks||[];
+  const idx = appData.banks.length;
+  appData.banks.push({name:'بنك جديد', balance:0, notes:''});
+  saveData(); loadBanks(); updateAdminStats();
+  // open edit for new bank and scroll to it
+  setTimeout(()=>{
+    bankEdit(idx, true);
+    const el = document.getElementById('bcard-'+idx);
+    if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+  }, 60);
+}
+
+function updateBank(idx, field, value) {
+  if (!appData.banks[idx]) return;
+  appData.banks[idx][field] = field==='balance'?(parseFloat(value)||0):value;
+  saveData(); updateAdminStats();
+}
+
+function deleteBank(idx) { bankDel(idx); }
+
+function loadNotifications() {
+  const notifs = appData.notifications||[];
+  const el = document.getElementById('notificationsList');
+  if (!notifs.length) { el.innerHTML = '<div class="empty-state">لا توجد إشعارات</div>'; return; }
+  el.innerHTML = notifs.slice(0,25).map((n,i) => `
+    <div class="notification-item ${i===0?'new':''} ${n.isShekel?'shekel-notif':''}">
+      <strong>${n.user}</strong> قام بعملية <strong>${n.type}</strong> بمبلغ <strong>${n.amount}</strong>
+      <br><small>${n.date} ${n.time}</small>
+      ${n.notes ? `<br><small>📝 ${n.notes}</small>` : ''}
+    </div>`).join('');
+}
+
+function loadDailySummary() {
+  const today = new Date().toLocaleDateString('ar-EG');
+  let totalAddD=0, totalSubD=0, totalAddS=0, totalTx=0;
+  ['حمزة','جنى','محمد'].forEach(user => {
+    (appData.users[user]?.transactions||[]).forEach(t => {
+      if (t.date !== today) return;
+      totalTx++;
+      if (t.currency==='shekel') totalAddS += t.amount;
+      else if (t.type==='add') totalAddD += t.amount;
+      else totalSubD += t.amount;
+    });
+  });
+  document.getElementById('dailySummary').innerHTML = `
+    <div class="summary-card"><h3>عدد المعاملات</h3><div class="value">${totalTx}</div></div>
+    <div class="summary-card"><h3>إجمالي الإضافات $</h3><div class="value" style="color:#10b981">+$${totalAddD.toFixed(2)}</div></div>
+    <div class="summary-card"><h3>إجمالي الخصومات $</h3><div class="value" style="color:#ef4444">-$${totalSubD.toFixed(2)}</div></div>
+    <div class="summary-card"><h3>الصافي بالدولار</h3><div class="value" style="color:${totalAddD-totalSubD>=0?'#10b981':'#ef4444'}">$${(totalAddD-totalSubD).toFixed(2)}</div></div>
+    <div class="summary-card"><h3>إجمالي صرف الشيكل</h3><div class="value" style="color:#b45309">-${totalAddS.toFixed(2)} ₪</div></div>`;
+}
+
+function loadMonthlyStats() {
+  const mp = document.getElementById('monthPicker').value;
+  if (!mp) return;
+  const [year, month] = mp.split('-').map(Number);
+  const filterUser = document.getElementById('monthUserFilter').value;
+  const users = filterUser==='all' ? ['حمزة','جنى','محمد'] : [filterUser];
+
+  // Build per-user stats with each transaction separate
+  let rows = [];
+  users.forEach(userName => {
+    (appData.users[userName]?.transactions||[]).forEach(t => {
+      // Parse date
+      const dateParts = t.date.split('/');
+      let txDate;
+      // Try to parse ar-EG date
+      try {
+        // ar-EG format: d/m/yyyy
+        if (dateParts.length === 3) {
+          const d = parseInt(dateParts[0]), m = parseInt(dateParts[1]), y = parseInt(dateParts[2]);
+          txDate = new Date(y, m-1, d);
+        } else {
+          txDate = new Date(t.date);
+        }
+      } catch(e) { txDate = new Date(); }
+
+      if (txDate.getFullYear()===year && txDate.getMonth()+1===month) {
+        rows.push({ ...t, user: userName });
+      }
+    });
+  });
+
+  rows.sort((a,b) => b.id - a.id);
+
+  const el = document.getElementById('monthlyStats');
+  if (!rows.length) {
+    el.innerHTML = '<div class="empty-state">لا توجد معاملات في هذا الشهر</div>';
+    return;
+  }
+
+  // Summary per user
+  let summaryHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px">';
+  users.forEach(userName => {
+    const userRows = rows.filter(r => r.user===userName);
+    const addD = userRows.filter(r=>r.currency!=='shekel'&&r.type==='add').reduce((s,r)=>s+r.amount,0);
+    const subD = userRows.filter(r=>r.currency!=='shekel'&&r.type==='subtract').reduce((s,r)=>s+r.amount,0);
+    const subS = userRows.filter(r=>r.currency==='shekel').reduce((s,r)=>s+r.amount,0);
+    summaryHtml += `<div class="summary-card">
+      <h3 style="font-size:15px;color:#2d3748">${userName}</h3>
+      <div style="font-size:13px;color:#10b981;margin:3px 0">إضافة: +$${addD.toFixed(2)}</div>
+      <div style="font-size:13px;color:#ef4444;margin:3px 0">خصم: -$${subD.toFixed(2)}</div>
+      <div style="font-size:13px;color:#b45309;margin:3px 0">شيكل: -${subS.toFixed(2)} ₪</div>
+      <div style="font-size:13px;font-weight:bold;color:${addD-subD>=0?'#10b981':'#ef4444'};margin-top:5px">صافي: $${(addD-subD).toFixed(2)}</div>
+    </div>`;
+  });
+  summaryHtml += '</div>';
+
+  // Detailed table (each transaction separate)
+  let tableHtml = `<table class="monthly-table">
+    <thead><tr>
+      <th>#</th><th>المستخدم</th><th>التاريخ</th><th>الوقت</th>
+      <th>الحساب</th><th>النوع</th><th>المبلغ $</th><th>المبلغ ₪</th><th>ملاحظات</th>
+    </tr></thead><tbody>`;
+
+  rows.forEach((t,i) => {
+    const isShekel = t.currency==='shekel';
+    const typeLabel = isShekel ? '🪙 شيكل' : (t.type==='add' ? '➕ إضافة' : '➖ خصم');
+    const dollarVal = isShekel ? '' : (t.type==='add' ? `<span class="add-val">+$${t.amount.toFixed(2)}</span>` : `<span class="sub-val">-$${t.amount.toFixed(2)}</span>`);
+    const shekelVal = isShekel ? `<span class="shekel-val">-${t.amount.toFixed(2)} ₪</span>` : (t.amountShekel ? `${parseFloat(t.amountShekel).toFixed(2)} ₪` : '');
+    tableHtml += `<tr>
+      <td>${i+1}</td>
+      <td><strong>${t.user}</strong></td>
+      <td>${t.date}</td>
+      <td>${t.time}</td>
+      <td>${t.accountType}</td>
+      <td>${typeLabel}</td>
+      <td>${dollarVal}</td>
+      <td>${shekelVal}</td>
+      <td>${t.notes||''}</td>
+    </tr>`;
+  });
+  tableHtml += '</tbody></table>';
+
+  el.innerHTML = summaryHtml + tableHtml;
+}
+
+function filterTransactions() {
+  const filter = document.getElementById('userFilter').value;
+  const users = filter==='all' ? ['حمزة','جنى','محمد'] : [filter];
+  let all = [];
+  users.forEach(userName => {
+    (appData.users[userName]?.transactions||[]).forEach(t => all.push({...t, user:userName}));
+  });
+  all.sort((a,b) => b.id - a.id);
+  const listEl = document.getElementById('adminTransactionList');
+  if (!all.length) { listEl.innerHTML = '<div class="empty-state">لا توجد معاملات</div>'; return; }
+  listEl.innerHTML = all.slice(0,40).map(t => renderTxItem(t, true)).join('');
+}
+
+// =============================================
+// SETTINGS
+// =============================================
+function showSettings() {
+  document.getElementById('settingsModal').classList.add('active');
+  ['currentPassword','newPassword','confirmPassword'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('settingsErrorMsg').style.display = 'none';
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+function changePassword() {
+  const cur = document.getElementById('currentPassword').value;
+  const nw = document.getElementById('newPassword').value;
+  const conf = document.getElementById('confirmPassword').value;
+  const err = document.getElementById('settingsErrorMsg');
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  if (cur != appData.passwords[ukey]) {
+    err.textContent='كلمة المرور الحالية غير صحيحة!'; err.style.display='block'; return;
+  }
+  if (nw.length < 4) {
+    err.textContent='كلمة المرور يجب أن تكون 4 أحرف على الأقل!'; err.style.display='block'; return;
+  }
+  if (nw !== conf) {
+    err.textContent='كلمات المرور غير متطابقة!'; err.style.display='block'; return;
+  }
+  appData.passwords[ukey] = nw;
+  saveData();
+  closeModal('settingsModal');
+  alert('✅ تم تغيير كلمة المرور بنجاح!');
+}
+
+// =============================================
+// RESET FUNCTIONS
+// =============================================
+function resetBalances() {
+  if (!confirm('⚠️ سيتم حذف كل المعاملات وإعادة الأرصدة للصفر.\nهل أنت متأكد؟')) return;
+  if (!confirm('✋ تأكيد نهائي — لا رجوع عن هذه العملية!')) return;
+  ['حمزة','جنى','محمد'].forEach(u => {
+    appData.users[u].initialBalance = 0;
+    appData.users[u].initialShekelBalance = 0;
+    appData.users[u].transactions = [];
+  });
+  appData.thaerBalance = 0;
+  appData.banks = (appData.banks||[]).map(b => ({...b, balance:0}));
+  appData.notifications = [];
+  saveData();
+  loadAdminPanel();
+  alert('✅ تم ريسيت جميع الأرصدة والمعاملات بنجاح');
+}
+
+function resetAll() {
+  if (!confirm('💣 هذا سيحذف كل البيانات بما فيها كلمات المرور والبنوك!\nهل أنت متأكد تماماً؟')) return;
+  const code = prompt('اكتب كلمة "حذف" للتأكيد النهائي:');
+  if (code !== 'حذف') { alert('❌ إلغاء — لم يتم الحذف'); return; }
+  localStorage.removeItem('fin_sys_v2');
+  sessionStorage.removeItem('site_unlocked_v1');
+  alert('✅ تم حذف كل البيانات. سيتم إعادة تحميل التطبيق');
+  location.reload();
+}
+
+// =============================================
+// EXPORT EXCEL
+// =============================================
+function exportToExcel() {
+  try {
+    const sheets = [];
+    ['حمزة','جنى','محمد'].forEach(userName => {
+      const ud = appData.users[userName];
+      const rows = [
+        ['الرصيد الأساسي بالدولار', ud.initialBalance||0],
+        ['الرصيد الأساسي بالشيكل', ud.initialShekelBalance||0],
+        ['الرصيد الحالي بالدولار', getCurrentBalance(userName)],
+        ['الرصيد الحالي بالشيكل', getCurrentShekelBalance(userName)],
+        [],
+        ['#','التاريخ','الوقت','الحساب','النوع','العملة','المبلغ','ملاحظات','سعر الشراء','سعر البيع']
+      ];
+      (ud.transactions||[]).forEach((t,i) => {
+        rows.push([i+1, t.date, t.time, t.accountType,
+          t.currency==='shekel'?'صرف شيكل':(t.type==='add'?'إضافة':'خصم'),
+          t.currency==='shekel'?'شيكل':'دولار',
+          t.amount, t.notes||'', t.buyRate||'', t.sellRate||''
+        ]);
+      });
+      sheets.push({ name: userName, rows });
+    });
+    const brows = [['اسم البنك','الرصيد','ملاحظات']];
+    (appData.banks||[]).forEach(b => brows.push([b.name, b.balance, b.notes||'']));
+    sheets.push({ name: 'البنوك', rows: brows });
+    sheets.push({ name: 'ثائر', rows: [['رصيد ثائر', appData.thaerBalance||0]] });
+    const nrows = [['التاريخ','الوقت','المستخدم','النوع','المبلغ','الملاحظات']];
+    (appData.notifications||[]).forEach(n => nrows.push([n.date,n.time,n.user,n.type,n.amount,n.notes||'']));
+    sheets.push({ name: 'الإشعارات', rows: nrows });
+    const xlsxData = MiniXLSX.write(sheets);
+    const blob = new Blob([xlsxData], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `accounts_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.xlsx`;
+    link.click();
+    alert('✅ تم تصدير الملف بنجاح!');
+  } catch(e) { alert('❌ خطأ في التصدير: '+e.message); }
+}
+
+// =============================================
+// UTILS
+// =============================================
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
