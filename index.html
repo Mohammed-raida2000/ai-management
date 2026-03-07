@@ -2,6 +2,9 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <!-- PWA Manifest (inline - no extra files needed) -->
 <link rel="manifest" id="pwa-manifest">
@@ -367,6 +370,7 @@ select{background:white}
     <button class="login-btn" onclick="login()">دخول 🔐</button>
     <button class="back-btn" onclick="backToUserSelection()">رجوع</button>
     <div id="errorMsg" class="error-msg">كلمة المرور غير صحيحة!</div>
+    <button class="back-btn" style="background:#fef9c3;color:#92400e;margin-top:6px" onclick="showForgotPassword()">🔑 نسيت كلمة السر؟</button>
   </div>
 </div>
 
@@ -654,10 +658,12 @@ select{background:white}
       <input type="password" id="confirmPassword" class="password-input">
     </div>
     <div class="button-group">
-      <button class="submit-btn add" onclick="changePassword()">✓ تغيير</button>
+      <button class="submit-btn add" onclick="changePassword()">✓ تغيير كلمة السر</button>
       <button class="cancel-btn" onclick="closeModal('settingsModal')">✕ إلغاء</button>
     </div>
     <div id="settingsErrorMsg" class="error-msg" style="text-align:center"></div>
+    <hr style="margin:20px 0;border-color:#e2e8f0">
+    <button class="submit-btn" style="background:#f59e0b;width:100%;padding:14px" onclick="closeModal('settingsModal');showSecretSetup()">🛡️ إعداد / تغيير السؤال السري</button>
   </div>
 </div>
 
@@ -686,7 +692,10 @@ select{background:white}
         setTimeout(() => {
             lock.remove();
             document.body.classList.remove('locked');
-            document.getElementById('loginScreen').classList.remove('hidden');
+            initFirebase(() => {
+                updateDollarRateDisplay();
+                document.getElementById('loginScreen').classList.remove('hidden');
+            });
         }, 500);
     }
 
@@ -831,11 +840,33 @@ const MiniXLSX = (function() {
 // =============================================
 // DATA
 // =============================================
-const STORAGE_KEY = 'fin_sys_v2';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyAhvjIJmLqoVmbH0w4Za61r8kdbAXHW4iA",
+  authDomain: "faunance-managmnent.firebaseapp.com",
+  databaseURL: "https://faunance-managmnent-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "faunance-managmnent",
+  storageBucket: "faunance-managmnent.firebasestorage.app",
+  messagingSenderId: "167879161316",
+  appId: "1:167879161316:web:be5b2c0e526d44a46e43f1"
+};
+
+// =============================================
+// FIREBASE INIT
+// =============================================
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const DB_PATH = 'fin_app';
+
+let appData = getDefaultData();
+let currentUser = null;
+let selectedType = 'add';
+let fbListener = null;   // real-time listener handle
 
 function getDefaultData() {
   return {
     passwords: { حمزة:'1234', جنى:'5678', محمد:'9012', أدمن:'admin123' },
+    secretQuestions: {},   // { حمزة: {question, answer}, ... }
     users: {
       حمزة: { initialBalance:0, initialShekelBalance:0, transactions:[] },
       جنى:  { initialBalance:0, initialShekelBalance:0, transactions:[] },
@@ -850,51 +881,118 @@ function getDefaultData() {
   };
 }
 
-function loadData() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return getDefaultData();
-    const d = JSON.parse(raw);
-    const def = getDefaultData();
-    d.passwords = d.passwords || def.passwords;
-    d.users = d.users || def.users;
-    d.banks = d.banks || def.banks;
-    d.thaerBalance = d.thaerBalance ?? 0;
-    d.notifications = d.notifications || [];
-    d.dollarBuyRate = d.dollarBuyRate ?? 3.62;
-    d.dollarSellRate = d.dollarSellRate ?? 3.68;
-    d.shekelRate = d.shekelRate ?? 3.65;
-    ['حمزة','جنى','محمد'].forEach(u => {
-      if (!d.users[u]) d.users[u] = def.users[u];
-      d.users[u].initialBalance = d.users[u].initialBalance ?? 0;
-      d.users[u].initialShekelBalance = d.users[u].initialShekelBalance ?? 0;
-      d.users[u].transactions = d.users[u].transactions || [];
-    });
-    return d;
-  } catch(e) { return getDefaultData(); }
+function mergeData(remote) {
+  const def = getDefaultData();
+  remote.passwords = remote.passwords || def.passwords;
+  remote.secretQuestions = remote.secretQuestions || {};
+  remote.users = remote.users || def.users;
+  remote.banks = remote.banks || def.banks;
+  remote.thaerBalance = remote.thaerBalance ?? 0;
+  remote.notifications = remote.notifications || [];
+  remote.dollarBuyRate = remote.dollarBuyRate ?? 3.62;
+  remote.dollarSellRate = remote.dollarSellRate ?? 3.68;
+  remote.shekelRate = remote.shekelRate ?? 3.65;
+  ['حمزة','جنى','محمد'].forEach(u => {
+    if (!remote.users[u]) remote.users[u] = def.users[u];
+    remote.users[u].initialBalance = remote.users[u].initialBalance ?? 0;
+    remote.users[u].initialShekelBalance = remote.users[u].initialShekelBalance ?? 0;
+    // Firebase stores arrays as objects — convert back
+    if (remote.users[u].transactions && !Array.isArray(remote.users[u].transactions)) {
+      remote.users[u].transactions = Object.values(remote.users[u].transactions);
+    }
+    remote.users[u].transactions = remote.users[u].transactions || [];
+  });
+  if (remote.banks && !Array.isArray(remote.banks)) {
+    remote.banks = Object.values(remote.banks);
+  }
+  if (remote.notifications && !Array.isArray(remote.notifications)) {
+    remote.notifications = Object.values(remote.notifications);
+  }
+  return remote;
 }
 
-function saveData() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+// Load once on start, then subscribe to real-time updates
+function initFirebase(callback) {
+  showLoadingOverlay(true);
+  db.ref(DB_PATH).once('value').then(snap => {
+    const val = snap.val();
+    if (val) {
+      appData = mergeData(val);
+    } else {
+      // First time — write defaults to Firebase
+      db.ref(DB_PATH).set(appData);
+    }
+    showLoadingOverlay(false);
+    if (callback) callback();
+    // Subscribe to real-time changes
+    startRealtimeSync();
+  }).catch(err => {
+    showLoadingOverlay(false);
+    console.warn('Firebase offline, using localStorage cache');
+    const cached = localStorage.getItem('fin_cache');
+    if (cached) appData = mergeData(JSON.parse(cached));
+    if (callback) callback();
+  });
+}
+
+function startRealtimeSync() {
+  if (fbListener) db.ref(DB_PATH).off('value', fbListener);
+  fbListener = db.ref(DB_PATH).on('value', snap => {
+    const val = snap.val();
+    if (!val) return;
+    appData = mergeData(val);
+    localStorage.setItem('fin_cache', JSON.stringify(appData));
+    // Refresh UI if logged in
+    if (currentUser && currentUser !== 'admin') updateUI();
+    if (currentUser === 'admin') {
+      updateAdminStats(); loadBanks(); loadNotifications(); loadDailySummary(); filterTransactions();
+    }
+    updateDollarRateDisplay();
+  });
+}
+
+function saveData(path, value) {
+  // path: optional sub-path like 'users/حمزة', value: data
+  // If no path, save whole appData
+  const ref = path ? db.ref(DB_PATH + '/' + path) : db.ref(DB_PATH);
+  const data = value !== undefined ? value : appData;
+  ref.set(data).then(() => {
+    localStorage.setItem('fin_cache', JSON.stringify(appData));
+    showSaveIndicator();
+  }).catch(err => {
+    // Offline fallback
+    localStorage.setItem('fin_cache', JSON.stringify(appData));
+    showSaveIndicator();
+  });
+}
+
+function showSaveIndicator() {
   const el = document.getElementById('saveIndicator');
-  el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 2000);
+  if (el) { el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 2000); }
 }
 
-let appData = loadData();
-let currentUser = null;
-let selectedType = 'add';
+function showLoadingOverlay(show) {
+  let el = document.getElementById('loadingOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loadingOverlay';
+    el.style.cssText = 'position:fixed;inset:0;background:linear-gradient(135deg,#667eea,#764ba2);z-index:999998;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px';
+    el.innerHTML = '<div style="width:50px;height:50px;border:4px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin 0.8s linear infinite"></div><div style="color:white;font-size:18px;font-weight:bold">جاري التحميل...</div><style>@keyframes spin{to{transform:rotate(360deg)}}</style>';
+    document.body.appendChild(el);
+  }
+  el.style.display = show ? 'flex' : 'none';
+}
 
 // =============================================
 // INIT
 // =============================================
 window.onload = function() {
-  updateDollarRateDisplay();
-  // If already unlocked this session, show login
-  if (sessionStorage.getItem('site_unlocked_v1') === '1') {
-    document.getElementById('loginScreen').classList.remove('hidden');
-  }
-  // Otherwise siteLock handles it
+  initFirebase(() => {
+    updateDollarRateDisplay();
+    if (sessionStorage.getItem('site_unlocked_v1') === '1') {
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
+  });
 };
 
 function updateDollarRateDisplay() {
@@ -916,7 +1014,7 @@ function saveShekelRate() {
   const r = parseFloat(document.getElementById('editShekelRateInput').value);
   if (isNaN(r)||r<=0) { alert('❌ أدخل قيمة صحيحة'); return; }
   appData.shekelRate = r;
-  saveData();
+  saveData('shekelRate', r);
   updateDollarRateDisplay();
   alert('✅ تم تحديث سعر الشيكل إلى ' + r.toFixed(2) + ' ₪');
 }
@@ -1018,7 +1116,7 @@ function editInitialBalance() {
     const p = parseFloat(val);
     if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
     appData.users[name].initialBalance = p;
-    saveData();
+    saveData('users/' + name + '/initialBalance', p);
     updateUI();
   }
 }
@@ -1031,7 +1129,7 @@ function editInitialShekelBalance() {
     const p = parseFloat(val);
     if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
     appData.users[name].initialShekelBalance = p;
-    saveData();
+    saveData('users/' + name + '/initialShekelBalance', p);
     updateUI();
   }
 }
@@ -1043,7 +1141,7 @@ function editThaerBalance() {
     const p = parseFloat(val);
     if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
     appData.thaerBalance = p;
-    saveData();
+    saveData('thaerBalance', p);
     updateAdminStats();
   }
 }
@@ -1193,7 +1291,8 @@ function addTransaction() {
       ? `${transaction.amount.toFixed(2)} ₪`
       : `$${transaction.amount.toFixed(2)}`;
     addNotification(name, notifType, notifAmount, notes, isShekel);
-    saveData();
+    saveData('users/' + name, appData.users[name]);
+    saveData('notifications', appData.notifications);
     hideForm();
     updateUI();
   };
@@ -1316,20 +1415,20 @@ function bankSave(idx) {
   const bal  = parseFloat(document.getElementById('bbal-'+idx).value)||0;
   const notes = document.getElementById('bnotes-'+idx).value;
   appData.banks[idx] = {name, balance:bal, notes};
-  saveData(); loadBanks(); updateAdminStats();
+  saveData('banks', appData.banks); loadBanks(); updateAdminStats();
 }
 
 function bankDel(idx) {
   if (!confirm('حذف هذا البنك؟')) return;
   appData.banks.splice(idx,1);
-  saveData(); loadBanks(); updateAdminStats();
+  saveData('banks', appData.banks); loadBanks(); updateAdminStats();
 }
 
 function addBank() {
   appData.banks = appData.banks||[];
   const idx = appData.banks.length;
   appData.banks.push({name:'بنك جديد', balance:0, notes:''});
-  saveData(); loadBanks(); updateAdminStats();
+  saveData('banks', appData.banks); loadBanks(); updateAdminStats();
   // open edit for new bank and scroll to it
   setTimeout(()=>{
     bankEdit(idx, true);
@@ -1503,7 +1602,7 @@ function changePassword() {
     err.textContent='كلمات المرور غير متطابقة!'; err.style.display='block'; return;
   }
   appData.passwords[ukey] = nw;
-  saveData();
+  saveData('passwords', appData.passwords);
   closeModal('settingsModal');
   alert('✅ تم تغيير كلمة المرور بنجاح!');
 }
@@ -1522,7 +1621,9 @@ function resetBalances() {
   appData.thaerBalance = 0;
   appData.banks = (appData.banks||[]).map(b => ({...b, balance:0}));
   appData.notifications = [];
-  saveData();
+  db.ref(DB_PATH).set(appData);
+  localStorage.setItem('fin_cache', JSON.stringify(appData));
+  showSaveIndicator();
   loadAdminPanel();
   alert('✅ تم ريسيت جميع الأرصدة والمعاملات بنجاح');
 }
@@ -1535,6 +1636,124 @@ function resetAll() {
   sessionStorage.removeItem('site_unlocked_v1');
   alert('✅ تم حذف كل البيانات. سيتم إعادة تحميل التطبيق');
   location.reload();
+}
+
+
+// =============================================
+// FORGOT PASSWORD & SECRET QUESTION
+// =============================================
+let forgotAttempts = 0;
+const MAX_FORGOT_ATTEMPTS = 5;
+let forgotLockUntil = 0;
+
+function showForgotPassword() {
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':null;
+  if (!ukey) return;
+
+  const sq = appData.secretQuestions && appData.secretQuestions[ukey];
+  if (!sq || !sq.question) {
+    alert('❌ لم يتم إعداد سؤال سري لهذا المستخدم بعد.\nادخل بكلمة السر الحالية ثم اذهب للإعدادات لإضافة سؤال سري.');
+    return;
+  }
+
+  document.getElementById('forgotUserName').textContent = ukey;
+  document.getElementById('forgotQuestionLabel').textContent = '❓ ' + sq.question;
+  document.getElementById('forgotAnswer').value = '';
+  document.getElementById('forgotAnswerError').style.display = 'none';
+  document.getElementById('forgotAttemptsMsg').textContent = '';
+  document.getElementById('forgotStep1').classList.remove('hidden');
+  document.getElementById('forgotStep2').classList.add('hidden');
+  forgotAttempts = 0;
+  document.getElementById('forgotModal').classList.add('active');
+  setTimeout(() => document.getElementById('forgotAnswer').focus(), 200);
+}
+
+function checkSecretAnswer() {
+  const now = Date.now();
+  if (now < forgotLockUntil) {
+    const secs = Math.ceil((forgotLockUntil - now) / 1000);
+    document.getElementById('forgotAttemptsMsg').textContent = `انتظر ${secs} ثانية...`;
+    return;
+  }
+
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+  const sq = appData.secretQuestions[ukey];
+  const answer = document.getElementById('forgotAnswer').value.trim().toLowerCase();
+  const correct = (sq.answer||'').trim().toLowerCase();
+
+  if (answer === correct) {
+    document.getElementById('forgotStep1').classList.add('hidden');
+    document.getElementById('forgotStep2').classList.remove('hidden');
+    document.getElementById('newPassForgot').value = '';
+    document.getElementById('confirmPassForgot').value = '';
+    document.getElementById('forgotPassError').style.display = 'none';
+    setTimeout(() => document.getElementById('newPassForgot').focus(), 100);
+    forgotAttempts = 0;
+  } else {
+    forgotAttempts++;
+    document.getElementById('forgotAnswer').value = '';
+    document.getElementById('forgotAnswerError').style.display = 'block';
+    if (forgotAttempts >= MAX_FORGOT_ATTEMPTS) {
+      forgotLockUntil = Date.now() + 60000; // 60 sec lock
+      forgotAttempts = 0;
+      document.getElementById('forgotAnswerError').style.display = 'none';
+      let secs = 60;
+      const t = setInterval(() => {
+        secs--;
+        document.getElementById('forgotAttemptsMsg').textContent = `محاولات كثيرة — انتظر ${secs} ثانية`;
+        if (secs <= 0) { clearInterval(t); document.getElementById('forgotAttemptsMsg').textContent = ''; }
+      }, 1000);
+    } else {
+      document.getElementById('forgotAttemptsMsg').textContent = `متبقي ${MAX_FORGOT_ATTEMPTS - forgotAttempts} محاولات`;
+    }
+  }
+}
+
+function setNewPasswordForgot() {
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+  const nw = document.getElementById('newPassForgot').value;
+  const conf = document.getElementById('confirmPassForgot').value;
+  const err = document.getElementById('forgotPassError');
+
+  if (nw.length < 4) { err.textContent='كلمة السر قصيرة جداً (4 أحرف على الأقل)'; err.style.display='block'; return; }
+  if (nw !== conf) { err.textContent='كلمتا السر غير متطابقتين'; err.style.display='block'; return; }
+
+  appData.passwords[ukey] = nw;
+  saveData('passwords', appData.passwords);
+  closeModal('forgotModal');
+  alert('✅ تم تغيير كلمة السر بنجاح!');
+}
+
+// ─── Secret Question Setup ────────────────────
+function showSecretSetup() {
+  document.getElementById('secretAnswerInput').value = '';
+  document.getElementById('secretSetupError').style.display = 'none';
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const sq = appData.secretQuestions && appData.secretQuestions[ukey];
+  if (sq && sq.question) {
+    // Pre-select existing question
+    const sel = document.getElementById('secretQuestionSelect');
+    for (let i=0; i<sel.options.length; i++) {
+      if (sel.options[i].value === sq.question) { sel.selectedIndex = i; break; }
+    }
+  }
+  document.getElementById('secretSetupModal').classList.add('active');
+}
+
+function saveSecretQuestion() {
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const question = document.getElementById('secretQuestionSelect').value;
+  const answer = document.getElementById('secretAnswerInput').value.trim();
+  const err = document.getElementById('secretSetupError');
+
+  if (!answer) { err.textContent='الرجاء إدخال الإجابة'; err.style.display='block'; return; }
+  if (answer.length < 2) { err.textContent='الإجابة قصيرة جداً'; err.style.display='block'; return; }
+
+  if (!appData.secretQuestions) appData.secretQuestions = {};
+  appData.secretQuestions[ukey] = { question, answer: answer.toLowerCase() };
+  saveData('secretQuestions', appData.secretQuestions);
+  closeModal('secretSetupModal');
+  alert('✅ تم حفظ السؤال السري بنجاح!');
 }
 
 // =============================================
@@ -1586,5 +1805,72 @@ function escHtml(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 </script>
+
+<!-- Forgot Password Modal -->
+<div id="forgotModal" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;margin-bottom:6px">🔑 استعادة كلمة السر</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:20px" id="forgotSubtitle">أجب على السؤال السري لـ <strong id="forgotUserName"></strong></p>
+    <div id="forgotStep1">
+      <div class="form-group">
+        <label id="forgotQuestionLabel" style="font-size:16px;color:#2d3748;background:#f1f5f9;padding:14px;border-radius:10px;display:block"></label>
+      </div>
+      <div class="form-group">
+        <label>إجابتك</label>
+        <input type="text" id="forgotAnswer" class="password-input" placeholder="أدخل الإجابة" onkeydown="if(event.key==='Enter')checkSecretAnswer()">
+      </div>
+      <div id="forgotAnswerError" class="error-msg" style="text-align:center">❌ إجابة خاطئة!</div>
+      <div id="forgotAttemptsMsg" style="text-align:center;color:#94a3b8;font-size:12px;margin-top:8px"></div>
+      <div class="button-group" style="margin-top:16px">
+        <button class="submit-btn add" onclick="checkSecretAnswer()">✓ تحقق</button>
+        <button class="cancel-btn" onclick="closeModal('forgotModal')">✕ إلغاء</button>
+      </div>
+    </div>
+    <div id="forgotStep2" class="hidden">
+      <div class="form-group">
+        <label>كلمة السر الجديدة</label>
+        <input type="password" id="newPassForgot" class="password-input" placeholder="كلمة السر الجديدة">
+      </div>
+      <div class="form-group">
+        <label>تأكيد كلمة السر</label>
+        <input type="password" id="confirmPassForgot" class="password-input" placeholder="أعد الإدخال">
+      </div>
+      <div id="forgotPassError" class="error-msg" style="text-align:center"></div>
+      <div class="button-group" style="margin-top:16px">
+        <button class="submit-btn add" onclick="setNewPasswordForgot()">✓ تغيير كلمة السر</button>
+        <button class="cancel-btn" onclick="closeModal('forgotModal')">✕ إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Secret Question Modal (first time or from settings) -->
+<div id="secretSetupModal" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;margin-bottom:6px">🛡️ إعداد السؤال السري</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:20px">يُستخدم لاستعادة كلمة السر إذا نسيتها</p>
+    <div class="form-group">
+      <label>اختر سؤالاً سرياً</label>
+      <select id="secretQuestionSelect" style="width:100%;padding:12px;border:2px solid #e2e8f0;border-radius:10px;font-size:15px;font-family:inherit">
+        <option value="ما اسم أمك قبل الزواج؟">ما اسم أمك قبل الزواج؟</option>
+        <option value="ما اسم مدرستك الابتدائية؟">ما اسم مدرستك الابتدائية؟</option>
+        <option value="ما اسم أول صديق لك؟">ما اسم أول صديق لك؟</option>
+        <option value="ما اسم حيوانك الأليف الأول؟">ما اسم حيوانك الأليف الأول؟</option>
+        <option value="في أي مدينة وُلدت؟">في أي مدينة وُلدت؟</option>
+        <option value="ما هو طبقك المفضل؟">ما هو طبقك المفضل؟</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>الإجابة السرية</label>
+      <input type="text" id="secretAnswerInput" class="password-input" placeholder="إجابتك السرية">
+    </div>
+    <div id="secretSetupError" class="error-msg" style="text-align:center"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveSecretQuestion()">✓ حفظ</button>
+      <button class="cancel-btn" onclick="closeModal('secretSetupModal')">✕ لاحقاً</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
