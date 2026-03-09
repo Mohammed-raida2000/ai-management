@@ -48,11 +48,18 @@
   // 2. Register inline Service Worker for offline caching
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'fin-v1';
+const CACHE = 'fin-v3';
+const OFFLINE_URLS = [
+  self.location.href.replace('/sw.js','/'),
+  self.location.href.replace('/sw.js',''),
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+];
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll([self.location.href.replace('/sw.js','/'), self.location.href.replace('/sw.js','')]))
-    .catch(()=>{})
+    caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS).catch(()=>{}))
   );
   self.skipWaiting();
 });
@@ -61,16 +68,27 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 self.addEventListener('fetch', e => {
+  // Network first for Firebase, cache first for static assets
+  const url = e.request.url;
+  if (url.includes('firebasedatabase.app') || url.includes('firebase')) {
+    e.respondWith(
+      fetch(e.request).catch(() => {
+        // Offline: return empty response so app uses localStorage cache
+        return new Response(JSON.stringify(null), {headers:{'Content-Type':'application/json'}});
+      })
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
-        if (resp && resp.status === 200) {
+      const fetchPromise = fetch(e.request).then(resp => {
+        if (resp && resp.status === 200 && e.request.method === 'GET') {
           const clone = resp.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return resp;
-      }).catch(() => cached || new Response('Offline', {status:503}));
+      }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
@@ -337,6 +355,43 @@ select{background:white}
 .save-indicator{position:fixed;bottom:18px;right:18px;background:#10b981;color:white;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:bold;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:opacity 0.5s;opacity:0;pointer-events:none;z-index:9999}
 .save-indicator.show{opacity:1}
 
+/* ══ RESPONSIVE IMPROVEMENTS ══ */
+@media(max-width:600px){
+  body{padding:10px}
+  .header{padding:12px 14px;gap:8px}
+  .header h1{font-size:17px}
+  .btn{padding:7px 12px;font-size:12px}
+  .dark-toggle{font-size:18px}
+  .user-badge{padding:5px 10px;font-size:12px}
+  .stat-card{padding:14px}
+  .stat-value{font-size:22px}
+  .stat-icon{font-size:24px}
+  .form-card,.history-card,.admin-section,.dollar-rate-card{padding:16px 14px}
+  .modal-content{padding:22px 16px}
+  .login-screen{padding:28px 18px;margin:20px auto}
+  .login-screen h1{font-size:20px}
+  .user-select-btn{padding:14px;font-size:16px}
+  .transaction-item{padding:10px 12px}
+  .transaction-amount{font-size:16px}
+  .add-btn{padding:14px;font-size:16px}
+  .charts-grid{grid-template-columns:1fr}
+  .daily-summary{grid-template-columns:1fr 1fr}
+  .bank-view{flex-wrap:wrap}
+  .stats-grid,.stats-grid-4{grid-template-columns:1fr 1fr}
+  .sl-card{padding:28px 18px}
+  .sl-title{font-size:18px}
+}
+@media(max-width:380px){
+  .stats-grid,.stats-grid-4{grid-template-columns:1fr}
+  .header{flex-direction:column;align-items:flex-start}
+  .user-info{width:100%;justify-content:flex-end}
+}
+/* Smooth scrolling */
+html{scroll-behavior:smooth}
+/* Better touch targets */
+button{min-height:36px}
+
+
 /* ══ EDIT TX MODAL ══ */
 .edit-tx-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:7px;transition:background 0.15s;color:#64748b}
 .edit-tx-btn:hover{background:#e2e8f0}
@@ -490,10 +545,8 @@ body.dark .perm-row{border-bottom-color:#2d3748}
   <h1>💰 نظام إدارة الحسابات</h1>
   <div id="userSelection">
     <h2 style="color:#64748b;font-size:18px;margin-bottom:18px">اختر المستخدم</h2>
-    <button class="user-select-btn hamza" onclick="selectUser('hamza')">👤 حمزة</button>
-    <button class="user-select-btn jana" onclick="selectUser('jana')">👤 جنى</button>
-    <button class="user-select-btn mohammad" onclick="selectUser('mohammad')">👤 محمد</button>
-    <button class="user-select-btn admin" onclick="selectUser('admin')">🔐 الأدمن</button>
+    <div id="dynamicUserBtns"></div>
+    <button class="user-select-btn admin" onclick="selectUser('admin')" style="background:#ef4444;margin-top:8px">🔐 الأدمن</button>
   </div>
   <div id="passwordScreen" class="hidden">
     <h2 id="passwordTitle" style="margin-bottom:16px">أدخل كلمة المرور</h2>
@@ -518,24 +571,14 @@ body.dark .perm-row{border-bottom-color:#2d3748}
     </div>
   </div>
 
-  <!-- Dollar Rates - display only for users -->
-  <div class="dollar-rate-card">
-    <h2>💵 أسعار الصرف</h2>
+  <!-- Shekel Rate only -->
+  <div class="dollar-rate-card" style="padding:14px 20px">
     <div class="rates-container">
-      <div class="rate-item">
-        <div class="rate-label">سعر الشراء $</div>
-        <div class="rate-value" id="buyRate">3.62</div>
-      </div>
-      <div class="rate-item sell">
-        <div class="rate-label">سعر البيع $</div>
-        <div class="rate-value" id="sellRate">3.68</div>
-      </div>
-      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
-        <div class="rate-label">سعر صرف الشيكل</div>
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b;min-width:160px">
+        <div class="rate-label">🪙 سعر صرف الشيكل</div>
         <div class="rate-value" style="color:#b45309" id="shekelRateDisplay">3.65</div>
       </div>
     </div>
-    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:8px">للعرض فقط — آخر تحديث: <span id="rateUpdateTime">--</span></p>
   </div>
 
   <!-- Stats: Dollar -->
@@ -645,23 +688,17 @@ body.dark .perm-row{border-bottom-color:#2d3748}
     </div>
   </div>
 
-  <div class="dollar-rate-card">
-    <h2>💵 أسعار الصرف</h2>
-    <div class="rates-container">
-      <div class="rate-item"><div class="rate-label">سعر الشراء $</div><div class="rate-value" id="adminBuyRate">3.62</div></div>
-      <div class="rate-item sell"><div class="rate-label">سعر البيع $</div><div class="rate-value" id="adminSellRate">3.68</div></div>
-      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
-        <div class="rate-label">سعر صرف الشيكل</div>
+  <div class="dollar-rate-card" style="padding:16px 20px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b;min-width:160px">
+        <div class="rate-label">🪙 سعر صرف الشيكل</div>
         <div class="rate-value" style="color:#b45309" id="adminShekelRateDisplay">3.65</div>
       </div>
+      <div class="rate-edit-group" style="margin-top:0">
+        <input type="number" id="editShekelRateInput" class="rate-edit-input" step="0.01" placeholder="3.65" style="border-color:#f59e0b">
+        <button class="rate-save-btn" style="background:#f59e0b" onclick="saveShekelRate()">✓ تحديث</button>
+      </div>
     </div>
-    <div class="rate-edit-group">
-      <label style="font-size:13px;color:#b45309;font-weight:bold">🪙 تعديل سعر الشيكل:</label>
-      <input type="number" id="editShekelRateInput" class="rate-edit-input" step="0.01" placeholder="3.65" style="border-color:#f59e0b">
-      <button class="rate-save-btn" style="background:#f59e0b" onclick="saveShekelRate()">✓ تحديث</button>
-    </div>
-    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:4px">سعر الدولار للعرض فقط ولا يؤثر على أي رصيد</p>
-    <p style="text-align:center;color:#64748b;font-size:11px;margin-top:3px">آخر تحديث: <span id="adminRateUpdateTime">--</span></p>
   </div>
 
   <!-- Admin Stats Row 1 -->
@@ -760,22 +797,6 @@ body.dark .perm-row{border-bottom-color:#2d3748}
     <div class="daily-summary" id="dailySummary"></div>
   </div>
 
-  <!-- Monthly Stats -->
-  <div class="admin-section">
-    <h2>📅 إحصائيات شهرية لكل مستخدم</h2>
-    <div class="month-filter-row">
-      <label style="font-size:14px;color:#64748b">الشهر:</label>
-      <input type="month" id="monthPicker" onchange="loadMonthlyStats()">
-      <select id="monthUserFilter" onchange="loadMonthlyStats()" style="min-width:120px">
-        <option value="all">الكل</option>
-        <option value="حمزة">حمزة</option>
-        <option value="جنى">جنى</option>
-        <option value="محمد">محمد</option>
-      </select>
-    </div>
-    <div id="monthlyStats"></div>
-  </div>
-
   <!-- User Management -->
   <div class="admin-section">
     <h2>👥 إدارة المستخدمين</h2>
@@ -838,6 +859,11 @@ body.dark .perm-row{border-bottom-color:#2d3748}
 
 <div class="save-indicator" id="saveIndicator">✅ تم الحفظ تلقائياً</div>
 
+
+<!-- Offline Indicator -->
+<div id="offlineBar" style="display:none;position:fixed;top:0;left:0;right:0;background:#f59e0b;color:white;text-align:center;padding:8px;font-size:14px;font-weight:bold;z-index:99998">
+  📴 أنت غير متصل بالإنترنت — التطبيق يعمل من الذاكرة المحلية
+</div>
 <!-- AUTO LOCK OVERLAY -->
 <div id="autoLockOverlay">
   <div class="lock-resume-card">
@@ -1112,6 +1138,7 @@ function initFirebase(callback) {
       db.ref(DB_PATH).set(appData);
     }
     showLoadingOverlay(false);
+    renderUserButtons();
     if (callback) callback();
     // Subscribe to real-time changes
     startRealtimeSync();
@@ -1215,7 +1242,8 @@ function saveShekelRate() {
 function selectUser(user) {
   currentUser = user;
   const names = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'الأدمن' };
-  document.getElementById('passwordTitle').textContent = `أدخل كلمة مرور ${names[user]}`;
+  const displayName = names[user] || user;
+  document.getElementById('passwordTitle').textContent = `أدخل كلمة مرور ${displayName}`;
   document.getElementById('userSelection').classList.add('hidden');
   document.getElementById('passwordScreen').classList.remove('hidden');
   document.getElementById('passwordInput').value = '';
@@ -1231,13 +1259,16 @@ function backToUserSelection() {
 
 function login() {
   const input = document.getElementById('passwordInput').value;
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  // Support both old keys (hamza/jana/mohammad) and dynamic Arabic keys
+  const legacyMap = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'أدمن' };
+  const ukey = legacyMap[currentUser] || currentUser;
   const correct = appData.passwords[ukey];
   if (input == correct) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('errorMsg').style.display = 'none';
     resetAutoLock();
-    const ukey2 = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+    const legacyMap2 = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'أدمن' };
+    const ukey2 = legacyMap2[currentUser] || currentUser;
     addAuditLog(ukey2, 'تسجيل دخول', '');
     saveData('auditLog', appData.auditLog);
     if (currentUser === 'admin') {
@@ -1271,7 +1302,8 @@ function logout() {
 // BALANCE HELPERS
 // =============================================
 function getSheetName() {
-  return currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+  const map = { hamza:'حمزة', jana:'جنى', mohammad:'محمد' };
+  return map[currentUser] || currentUser;
 }
 
 function getUserData(name) { return appData.users[name]; }
@@ -1543,10 +1575,7 @@ function loadAdminPanel() {
   loadAuditLog();
   loadUserMgmt();
   updateUserFilters();
-  const now = new Date();
-  const mp = document.getElementById('monthPicker');
-  if (mp) mp.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  loadMonthlyStats();
+  // Monthly stats removed
 }
 
 function updateAdminStats() {
@@ -2134,12 +2163,26 @@ function loadAuditLog() {
   if (!el) return;
   const logs = appData.auditLog || [];
   if (!logs.length) { el.innerHTML = '<div class="empty-state">لا توجد سجلات بعد</div>'; return; }
-  el.innerHTML = logs.slice(0, 30).map(l => `
-    <div class="audit-item">
-      <strong>${l.user}</strong> — ${l.action}
-      ${l.details ? `<span style="color:#64748b"> (${l.details})</span>` : ''}
-      <br><small style="color:#94a3b8">${l.date} ${l.time}</small>
-    </div>`).join('');
+  const renderLog = l => `<div class="audit-item">
+    <strong>${l.user}</strong> — ${l.action}
+    ${l.details ? `<span style="color:#64748b"> (${l.details})</span>` : ''}
+    <br><small style="color:#94a3b8">${l.date} ${l.time}</small>
+  </div>`;
+  const first3 = logs.slice(0,3).map(renderLog).join('');
+  const rest = logs.slice(3);
+  el.innerHTML = first3 + (rest.length ? `
+    <div id="auditMore" class="hidden">${rest.map(renderLog).join('')}</div>
+    <button onclick="toggleAuditMore()" id="auditMoreBtn"
+      style="width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;cursor:pointer;font-size:13px;color:#667eea;font-weight:bold;margin-top:8px">
+      ▼ عرض المزيد (${rest.length})
+    </button>` : '');
+}
+
+function toggleAuditMore() {
+  const more = document.getElementById('auditMore');
+  const btn = document.getElementById('auditMoreBtn');
+  const isHidden = more.classList.toggle('hidden');
+  btn.textContent = isHidden ? `▼ عرض المزيد` : '▲ إخفاء';
 }
 
 // =============================================
@@ -2453,6 +2496,41 @@ function updateUserFilters() {
     if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
   });
 }
+
+
+// =============================================
+// DYNAMIC USER BUTTONS
+// =============================================
+function renderUserButtons() {
+  const el = document.getElementById('dynamicUserBtns');
+  if (!el) return;
+  const users = Object.keys(appData.users||{});
+  const colors = appData.userColors || {};
+  const fixedColors = { حمزة:'#3b82f6', جنى:'#ec4899', محمد:'#8b5cf6' };
+  el.innerHTML = users.map(u => {
+    const color = colors[u] || fixedColors[u] || '#667eea';
+    return `<button class="user-select-btn" onclick="selectUser('${u}')"
+      style="background:${color};margin:6px 0;width:100%">👤 ${u}</button>`;
+  }).join('');
+}
+
+
+// =============================================
+// OFFLINE DETECTION
+// =============================================
+function updateOnlineStatus() {
+  const bar = document.getElementById('offlineBar');
+  if (!navigator.onLine) {
+    if(bar) bar.style.display = 'block';
+    document.body.style.paddingTop = '40px';
+  } else {
+    if(bar) bar.style.display = 'none';
+    document.body.style.paddingTop = '';
+  }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+window.addEventListener('load', updateOnlineStatus);
 
 // =============================================
 // UTILS
