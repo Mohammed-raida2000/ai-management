@@ -5,6 +5,8 @@
 <!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
 <!-- PWA Manifest (inline - no extra files needed) -->
 <link rel="manifest" id="pwa-manifest">
@@ -46,11 +48,18 @@
   // 2. Register inline Service Worker for offline caching
   if ('serviceWorker' in navigator) {
     const swCode = `
-const CACHE = 'fin-v1';
+const CACHE = 'fin-v3';
+const OFFLINE_URLS = [
+  self.location.href.replace('/sw.js','/'),
+  self.location.href.replace('/sw.js',''),
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js',
+  'https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js',
+  'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+];
 self.addEventListener('install', e => {
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll([self.location.href.replace('/sw.js','/'), self.location.href.replace('/sw.js','')]))
-    .catch(()=>{})
+    caches.open(CACHE).then(c => c.addAll(OFFLINE_URLS).catch(()=>{}))
   );
   self.skipWaiting();
 });
@@ -59,16 +68,27 @@ self.addEventListener('activate', e => {
   self.clients.claim();
 });
 self.addEventListener('fetch', e => {
+  // Network first for Firebase, cache first for static assets
+  const url = e.request.url;
+  if (url.includes('firebasedatabase.app') || url.includes('firebase')) {
+    e.respondWith(
+      fetch(e.request).catch(() => {
+        // Offline: return empty response so app uses localStorage cache
+        return new Response(JSON.stringify(null), {headers:{'Content-Type':'application/json'}});
+      })
+    );
+    return;
+  }
   e.respondWith(
     caches.match(e.request).then(cached => {
-      if (cached) return cached;
-      return fetch(e.request).then(resp => {
-        if (resp && resp.status === 200) {
+      const fetchPromise = fetch(e.request).then(resp => {
+        if (resp && resp.status === 200 && e.request.method === 'GET') {
           const clone = resp.clone();
           caches.open(CACHE).then(c => c.put(e.request, clone));
         }
         return resp;
-      }).catch(() => cached || new Response('Offline', {status:503}));
+      }).catch(() => cached);
+      return cached || fetchPromise;
     })
   );
 });
@@ -334,6 +354,173 @@ select{background:white}
 /* SAVE INDICATOR */
 .save-indicator{position:fixed;bottom:18px;right:18px;background:#10b981;color:white;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:bold;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:opacity 0.5s;opacity:0;pointer-events:none;z-index:9999}
 .save-indicator.show{opacity:1}
+
+/* ══ SHOW/HIDE PASSWORD ══ */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-left:44px!important}
+.pw-eye{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:#64748b}
+
+/* ══ PIN PAD ══ */
+.pin-display{display:flex;justify-content:center;gap:12px;margin:18px 0}
+.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid #667eea;background:transparent;transition:background 0.2s}
+.pin-dot.filled{background:#667eea}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto}
+.pin-btn{padding:16px;font-size:22px;font-weight:bold;border:2px solid #e2e8f0;border-radius:14px;background:white;cursor:pointer;transition:all 0.15s;color:#2d3748}
+.pin-btn:hover{background:#667eea;color:white;border-color:#667eea;transform:scale(1.05)}
+.pin-btn:active{transform:scale(0.95)}
+body.dark .pin-btn{background:#1e2a3a;border-color:#2d3748;color:#e2e8f0}
+body.dark .pin-btn:hover{background:#667eea;color:white}
+
+/* ══ SEARCH BAR ══ */
+.search-bar{width:100%;padding:11px 16px 11px 42px;font-size:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;background:white;transition:border-color 0.2s;margin-bottom:12px}
+.search-bar:focus{outline:none;border-color:#667eea}
+body.dark .search-bar{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
+.search-wrap{position:relative}
+.search-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;margin-bottom:12px}
+
+/* ══ DATE FILTER ══ */
+.date-filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.date-filter-row input[type=date]{padding:8px 10px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit;background:white;color:#2d3748}
+body.dark .date-filter-row input[type=date]{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
+.clear-filter-btn{padding:8px 14px;background:#e2e8f0;border:none;border-radius:10px;cursor:pointer;font-size:12px;color:#64748b}
+.clear-filter-btn:hover{background:#cbd5e0}
+
+/* ══ CONVERTER ══ */
+.converter-card{background:white;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+body.dark .converter-card{background:#1e2a3a}
+.converter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.converter-input{flex:1;min-width:100px;padding:12px;font-size:16px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;font-family:inherit}
+body.dark .converter-input{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
+.converter-input:focus{outline:none;border-color:#667eea}
+.converter-result{flex:1;min-width:100px;padding:12px;font-size:18px;font-weight:bold;color:#667eea;text-align:center;background:#f1f5f9;border-radius:10px}
+body.dark .converter-result{background:#162032}
+.swap-btn{padding:10px 14px;background:#667eea;color:white;border:none;border-radius:10px;cursor:pointer;font-size:18px;transition:transform 0.2s}
+.swap-btn:hover{transform:rotate(180deg)}
+
+/* ══ UNDO TOAST ══ */
+#undoToast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:12px 20px;border-radius:14px;font-size:14px;display:none;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 24px rgba(0,0,0,0.3);white-space:nowrap}
+#undoToast.show{display:flex}
+#undoToast button{background:#667eea;border:none;color:white;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold}
+
+/* ══ COPY BALANCE ══ */
+.copy-bal-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px;color:#94a3b8;transition:all 0.15s}
+.copy-bal-btn:hover{background:#e2e8f0;color:#667eea}
+
+
+/* ══ RESPONSIVE IMPROVEMENTS ══ */
+@media(max-width:600px){
+  body{padding:10px}
+  .header{padding:12px 14px;gap:8px}
+  .header h1{font-size:17px}
+  .btn{padding:7px 12px;font-size:12px}
+  .dark-toggle{font-size:18px}
+  .user-badge{padding:5px 10px;font-size:12px}
+  .stat-card{padding:14px}
+  .stat-value{font-size:22px}
+  .stat-icon{font-size:24px}
+  .form-card,.history-card,.admin-section,.dollar-rate-card{padding:16px 14px}
+  .modal-content{padding:22px 16px}
+  .login-screen{padding:28px 18px;margin:20px auto}
+  .login-screen h1{font-size:20px}
+  .user-select-btn{padding:14px;font-size:16px}
+  .transaction-item{padding:10px 12px}
+  .transaction-amount{font-size:16px}
+  .add-btn{padding:14px;font-size:16px}
+  .charts-grid{grid-template-columns:1fr}
+  .daily-summary{grid-template-columns:1fr 1fr}
+  .bank-view{flex-wrap:wrap}
+  .stats-grid,.stats-grid-4{grid-template-columns:1fr 1fr}
+  .sl-card{padding:28px 18px}
+  .sl-title{font-size:18px}
+}
+@media(max-width:380px){
+  .stats-grid,.stats-grid-4{grid-template-columns:1fr}
+  .header{flex-direction:column;align-items:flex-start}
+  .user-info{width:100%;justify-content:flex-end}
+}
+/* Smooth scrolling */
+html{scroll-behavior:smooth}
+/* Better touch targets */
+button{min-height:36px}
+
+
+/* ══ EDIT TX MODAL ══ */
+.edit-tx-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:7px;transition:background 0.15s;color:#64748b}
+.edit-tx-btn:hover{background:#e2e8f0}
+body.dark .edit-tx-btn:hover{background:#2d3748}
+.del-tx-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:7px;color:#ef4444}
+.del-tx-btn:hover{background:#fee2e2}
+
+/* ══ USER MANAGEMENT ══ */
+.user-mgmt-card{border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;background:white;gap:12px;flex-wrap:wrap}
+body.dark .user-mgmt-card{background:#1e2a3a;border-color:#2d3748}
+.user-mgmt-name{font-size:16px;font-weight:bold;color:#2d3748}
+body.dark .user-mgmt-name{color:#e2e8f0}
+.user-mgmt-btns{display:flex;gap:8px}
+
+
+/* ══ DARK MODE ══ */
+body.dark{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)}
+body.dark .login-screen,body.dark .header,body.dark .dollar-rate-card,
+body.dark .stat-card,body.dark .form-card,body.dark .history-card,
+body.dark .admin-section,body.dark .modal-content,body.dark .bank-card{
+  background:#1e2a3a;color:#e2e8f0;border-color:#2d3748}
+body.dark .stat-label,body.dark .transaction-details,body.dark .rate-label{color:#94a3b8}
+body.dark .form-group label{color:#cbd5e0}
+body.dark .form-group input,body.dark .form-group select,body.dark .form-group textarea,
+body.dark .bank-edit-inp,body.dark .bank-edit-notes,body.dark .password-input{
+  background:#2d3748;color:#e2e8f0;border-color:#4a5568}
+body.dark .type-btn{background:#2d3748;color:#cbd5e0;border-color:#4a5568}
+body.dark .cancel-btn,body.dark .back-btn{background:#2d3748;color:#cbd5e0}
+body.dark .bank-view{background:#1e2a3a}
+body.dark .bank-edit-form{background:#162032}
+body.dark .summary-card{background:#162032}
+body.dark .monthly-table th{background:#162032;color:#94a3b8}
+body.dark .monthly-table td{border-color:#2d3748}
+body.dark .monthly-table tr:nth-child(even) td{background:#162032}
+body.dark .notification-item{background:#162032}
+body.dark h1,body.dark h2,body.dark .header h1{color:#e2e8f0}
+body.dark .login-screen h1{color:#e2e8f0}
+body.dark select{background:#2d3748;color:#e2e8f0}
+body.dark .rate-item{background:#162032;border-color:#4a5568}
+body.dark .rate-item.sell{background:#2d1f1f}
+body.dark .transaction-item.add{background:#1a2e22;border-color:#166534}
+body.dark .transaction-item.subtract{background:#2d1f1f;border-color:#7f1d1d}
+body.dark .transaction-item.shekel{background:#2d2a1a;border-color:#78350f}
+
+/* ══ DARK MODE TOGGLE BTN ══ */
+.dark-toggle{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:transform 0.2s}
+.dark-toggle:hover{transform:scale(1.2)}
+
+/* ══ CHARTS ══ */
+.charts-section{background:white;border-radius:16px;padding:24px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
+body.dark .charts-section{background:#1e2a3a}
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
+.chart-wrap{position:relative;height:240px}
+
+/* ══ AUDIT LOG ══ */
+.audit-item{padding:10px 14px;border-radius:10px;background:#f8fafc;margin-bottom:7px;border-right:3px solid #8b5cf6;font-size:13px}
+body.dark .audit-item{background:#162032;border-right-color:#7c3aed}
+
+/* ══ AUTO LOCK OVERLAY ══ */
+#autoLockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99990;align-items:center;justify-content:center;flex-direction:column;gap:20px}
+#autoLockOverlay.show{display:flex}
+.lock-resume-card{background:white;border-radius:20px;padding:40px;text-align:center;max-width:340px;width:90%}
+body.dark .lock-resume-card{background:#1e2a3a;color:#e2e8f0}
+.lock-resume-card h2{margin-bottom:12px;color:#2d3748}
+body.dark .lock-resume-card h2{color:#e2e8f0}
+
+/* ══ PERMISSIONS ══ */
+.perm-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #e2e8f0}
+body.dark .perm-row{border-bottom-color:#2d3748}
+.perm-toggle{position:relative;display:inline-block;width:46px;height:26px}
+.perm-toggle input{opacity:0;width:0;height:0}
+.perm-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e0;border-radius:26px;transition:0.3s}
+.perm-slider:before{position:absolute;content:"";height:20px;width:20px;right:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s}
+.perm-toggle input:checked + .perm-slider{background:#667eea}
+.perm-toggle input:checked + .perm-slider:before{transform:translateX(-20px)}
+
 </style>
 </head>
 <body class="locked">
@@ -410,14 +597,15 @@ select{background:white}
   <h1>💰 نظام إدارة الحسابات</h1>
   <div id="userSelection">
     <h2 style="color:#64748b;font-size:18px;margin-bottom:18px">اختر المستخدم</h2>
-    <button class="user-select-btn hamza" onclick="selectUser('hamza')">👤 حمزة</button>
-    <button class="user-select-btn jana" onclick="selectUser('jana')">👤 جنى</button>
-    <button class="user-select-btn mohammad" onclick="selectUser('mohammad')">👤 محمد</button>
-    <button class="user-select-btn admin" onclick="selectUser('admin')">🔐 الأدمن</button>
+    <div id="dynamicUserBtns"></div>
+    <button class="user-select-btn admin" onclick="selectUser('admin')" style="background:#ef4444;margin-top:8px">🔐 الأدمن</button>
   </div>
   <div id="passwordScreen" class="hidden">
     <h2 id="passwordTitle" style="margin-bottom:16px">أدخل كلمة المرور</h2>
-    <input type="password" id="passwordInput" class="password-input" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')login()">
+    <div class="pw-wrap">
+      <input type="password" id="passwordInput" class="password-input" placeholder="كلمة المرور" onkeydown="if(event.key==='Enter')login()">
+      <button class="pw-eye" type="button" onclick="togglePw('passwordInput',this)">👁️</button>
+    </div>
     <button class="login-btn" onclick="login()">دخول 🔐</button>
     <button class="back-btn" onclick="backToUserSelection()">رجوع</button>
     <div id="errorMsg" class="error-msg">كلمة المرور غير صحيحة!</div>
@@ -432,29 +620,20 @@ select{background:white}
     <div class="user-info">
       <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
       <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
+      <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="وضع ليلي">🌙</button>
       <div class="user-badge" id="userBadge"></div>
       <button class="btn logout-btn" onclick="logout()">خروج 🚪</button>
     </div>
   </div>
 
-  <!-- Dollar Rates - display only for users -->
-  <div class="dollar-rate-card">
-    <h2>💵 أسعار الصرف</h2>
+  <!-- Shekel Rate only -->
+  <div class="dollar-rate-card" style="padding:14px 20px">
     <div class="rates-container">
-      <div class="rate-item">
-        <div class="rate-label">سعر الشراء $</div>
-        <div class="rate-value" id="buyRate">3.62</div>
-      </div>
-      <div class="rate-item sell">
-        <div class="rate-label">سعر البيع $</div>
-        <div class="rate-value" id="sellRate">3.68</div>
-      </div>
-      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
-        <div class="rate-label">سعر صرف الشيكل</div>
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b;min-width:160px">
+        <div class="rate-label">🪙 سعر صرف الشيكل</div>
         <div class="rate-value" style="color:#b45309" id="shekelRateDisplay">3.65</div>
       </div>
     </div>
-    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:8px">للعرض فقط — آخر تحديث: <span id="rateUpdateTime">--</span></p>
   </div>
 
   <!-- Stats: Dollar -->
@@ -470,7 +649,7 @@ select{background:white}
     <div class="stat-card">
       <div class="stat-icon">💵</div>
       <div class="stat-label">الرصيد الحالي ($)</div>
-      <div class="stat-value green" id="currentBalance">0.00</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px"><div class="stat-value green" id="currentBalance">0.00</div><button class="copy-bal-btn" onclick="copyBalance('currentBalance','$')">📋</button></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">📊</div>
@@ -492,13 +671,24 @@ select{background:white}
     <div class="stat-card">
       <div class="stat-icon">🪙</div>
       <div class="stat-label">الرصيد الحالي (₪)</div>
-      <div class="stat-value green" id="currentShekelBalance">0.00</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px"><div class="stat-value green" id="currentShekelBalance">0.00</div><button class="copy-bal-btn" onclick="copyBalance('currentShekelBalance','₪')">📋</button></div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">📋</div>
       <div class="stat-label">معاملات الشيكل</div>
       <div class="stat-value amber" id="shekelTxCount">0</div>
     </div>
+  </div>
+
+  <!-- Currency Converter -->
+  <div class="converter-card">
+    <h3 style="margin-bottom:14px;color:#2d3748;font-size:15px">💱 حاسبة التحويل السريعة</h3>
+    <div class="converter-row">
+      <input class="converter-input" id="convDollar" type="number" placeholder="دولار $" oninput="convertFromDollar()" step="0.01">
+      <button class="swap-btn" onclick="swapConverter()">⇄</button>
+      <input class="converter-input" id="convShekel" type="number" placeholder="شيكل ₪" oninput="convertFromShekel()" step="0.01">
+    </div>
+    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:8px">سعر الصرف: <span id="convRate">3.65</span> ₪ للدولار</p>
   </div>
 
   <button class="add-btn" id="showFormBtn" onclick="showForm()">➕ إضافة معاملة جديدة</button>
@@ -533,6 +723,7 @@ select{background:white}
     <div class="form-group">
       <label>صورة المعاملة (اختياري)</label>
       <input type="file" id="transactionImage" accept="image/*" onchange="previewImage(event)">
+      <small id="imageSizeInfo" style="color:#10b981;display:block;margin-top:4px"></small>
       <img id="imagePreview" class="image-preview hidden">
     </div>
     <div class="form-group">
@@ -546,7 +737,19 @@ select{background:white}
   </div>
 
   <div class="history-card">
-    <h2>📜 آخر 10 معاملات</h2>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">📜 المعاملات</h2>
+    </div>
+    <div class="search-wrap">
+      <input class="search-bar" id="txSearch" type="text" placeholder="🔍 بحث في المعاملات..." oninput="filterUserTx()">
+    </div>
+    <div class="date-filter-row">
+      <span style="font-size:13px;color:#64748b">من:</span>
+      <input type="date" id="txDateFrom" onchange="filterUserTx()">
+      <span style="font-size:13px;color:#64748b">إلى:</span>
+      <input type="date" id="txDateTo" onchange="filterUserTx()">
+      <button class="clear-filter-btn" onclick="clearTxFilter()">✕ مسح</button>
+    </div>
     <div id="transactionList"><div class="empty-state">لا توجد معاملات بعد</div></div>
   </div>
 </div>
@@ -558,28 +761,23 @@ select{background:white}
     <div class="user-info">
       <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
       <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
+      <button class="dark-toggle" onclick="toggleDark()" id="darkBtnAdmin" title="وضع ليلي">🌙</button>
       <div class="user-badge admin">🔐 الأدمن</div>
       <button class="btn logout-btn" onclick="logout()">خروج 🚪</button>
     </div>
   </div>
 
-  <div class="dollar-rate-card">
-    <h2>💵 أسعار الصرف</h2>
-    <div class="rates-container">
-      <div class="rate-item"><div class="rate-label">سعر الشراء $</div><div class="rate-value" id="adminBuyRate">3.62</div></div>
-      <div class="rate-item sell"><div class="rate-label">سعر البيع $</div><div class="rate-value" id="adminSellRate">3.68</div></div>
-      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b">
-        <div class="rate-label">سعر صرف الشيكل</div>
+  <div class="dollar-rate-card" style="padding:16px 20px">
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b;min-width:160px">
+        <div class="rate-label">🪙 سعر صرف الشيكل</div>
         <div class="rate-value" style="color:#b45309" id="adminShekelRateDisplay">3.65</div>
       </div>
+      <div class="rate-edit-group" style="margin-top:0">
+        <input type="number" id="editShekelRateInput" class="rate-edit-input" step="0.01" placeholder="3.65" style="border-color:#f59e0b">
+        <button class="rate-save-btn" style="background:#f59e0b" onclick="saveShekelRate()">✓ تحديث</button>
+      </div>
     </div>
-    <div class="rate-edit-group">
-      <label style="font-size:13px;color:#b45309;font-weight:bold">🪙 تعديل سعر الشيكل:</label>
-      <input type="number" id="editShekelRateInput" class="rate-edit-input" step="0.01" placeholder="3.65" style="border-color:#f59e0b">
-      <button class="rate-save-btn" style="background:#f59e0b" onclick="saveShekelRate()">✓ تحديث</button>
-    </div>
-    <p style="text-align:center;color:#94a3b8;font-size:11px;margin-top:4px">سعر الدولار للعرض فقط ولا يؤثر على أي رصيد</p>
-    <p style="text-align:center;color:#64748b;font-size:11px;margin-top:3px">آخر تحديث: <span id="adminRateUpdateTime">--</span></p>
   </div>
 
   <!-- Admin Stats Row 1 -->
@@ -630,6 +828,35 @@ select{background:white}
     </div>
   </div>
 
+  <!-- Charts -->
+  <div class="charts-section">
+    <h2 style="color:#2d3748;margin-bottom:18px">📊 الرسوم البيانية</h2>
+    <div class="charts-grid">
+      <div>
+        <p style="text-align:center;font-size:13px;color:#64748b;margin-bottom:10px">توزيع المعاملات</p>
+        <div class="chart-wrap"><canvas id="txPieChart"></canvas></div>
+      </div>
+      <div>
+        <p style="text-align:center;font-size:13px;color:#64748b;margin-bottom:10px">إضافات vs خصومات (آخر 7 أيام)</p>
+        <div class="chart-wrap"><canvas id="txBarChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permissions -->
+  <div class="admin-section">
+    <h2>🔐 صلاحيات المستخدمين</h2>
+    <p style="color:#64748b;font-size:13px;margin-bottom:16px">تحكم بما يستطيع كل مستخدم رؤيته أو فعله</p>
+    <div id="permissionsPanel"></div>
+    <button class="btn" style="background:#667eea;color:white;margin-top:14px" onclick="savePermissions()">💾 حفظ الصلاحيات</button>
+  </div>
+
+  <!-- Audit Log -->
+  <div class="admin-section">
+    <h2>📋 سجل التعديلات</h2>
+    <div id="auditLog"></div>
+  </div>
+
   <!-- Banks -->
   <div class="admin-section">
     <h2>🏦 إدارة البنوك</h2>
@@ -649,20 +876,11 @@ select{background:white}
     <div class="daily-summary" id="dailySummary"></div>
   </div>
 
-  <!-- Monthly Stats -->
+  <!-- User Management -->
   <div class="admin-section">
-    <h2>📅 إحصائيات شهرية لكل مستخدم</h2>
-    <div class="month-filter-row">
-      <label style="font-size:14px;color:#64748b">الشهر:</label>
-      <input type="month" id="monthPicker" onchange="loadMonthlyStats()">
-      <select id="monthUserFilter" onchange="loadMonthlyStats()" style="min-width:120px">
-        <option value="all">الكل</option>
-        <option value="حمزة">حمزة</option>
-        <option value="جنى">جنى</option>
-        <option value="محمد">محمد</option>
-      </select>
-    </div>
-    <div id="monthlyStats"></div>
+    <h2>👥 إدارة المستخدمين</h2>
+    <button class="btn" style="background:#667eea;color:white;margin-bottom:14px" onclick="showAddUserModal()">➕ إضافة مستخدم جديد</button>
+    <div id="userMgmtList"></div>
   </div>
 
   <!-- Reset Zone -->
@@ -682,12 +900,17 @@ select{background:white}
   <!-- All Transactions -->
   <div class="admin-section">
     <h2>📜 جميع المعاملات</h2>
-    <select id="userFilter" style="margin-bottom:16px;padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:14px" onchange="filterTransactions()">
-      <option value="all">الكل</option>
-      <option value="حمزة">حمزة</option>
-      <option value="جنى">جنى</option>
-      <option value="محمد">محمد</option>
-    </select>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;align-items:center">
+      <select id="userFilter" style="padding:9px 12px;border-radius:8px;border:1px solid #e2e8f0;font-size:14px;background:white" onchange="filterTransactions()">
+        <option value="all">الكل</option>
+      </select>
+      <input type="date" id="adminDateFrom" onchange="filterTransactions()" style="padding:8px 10px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit">
+      <input type="date" id="adminDateTo" onchange="filterTransactions()" style="padding:8px 10px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit">
+      <button class="clear-filter-btn" onclick="clearAdminFilter()">✕ مسح</button>
+    </div>
+    <div class="search-wrap" style="margin-bottom:10px">
+      <input class="search-bar" id="adminTxSearch" type="text" placeholder="🔍 بحث..." oninput="filterTransactions()" style="margin-bottom:0">
+    </div>
     <div id="adminTransactionList"></div>
   </div>
 </div>
@@ -698,15 +921,15 @@ select{background:white}
     <h2 style="text-align:center;margin-bottom:22px">⚙️ الإعدادات</h2>
     <div class="form-group">
       <label>كلمة المرور الحالية</label>
-      <input type="password" id="currentPassword" class="password-input">
+      <div class="pw-wrap"><input type="password" id="currentPassword" class="password-input"><button class="pw-eye" type="button" onclick="togglePw('currentPassword',this)">👁️</button></div>
     </div>
     <div class="form-group">
       <label>كلمة المرور الجديدة</label>
-      <input type="password" id="newPassword" class="password-input">
+      <div class="pw-wrap"><input type="password" id="newPassword" class="password-input"><button class="pw-eye" type="button" onclick="togglePw('newPassword',this)">👁️</button></div>
     </div>
     <div class="form-group">
       <label>تأكيد كلمة المرور</label>
-      <input type="password" id="confirmPassword" class="password-input">
+      <div class="pw-wrap"><input type="password" id="confirmPassword" class="password-input"><button class="pw-eye" type="button" onclick="togglePw('confirmPassword',this)">👁️</button></div>
     </div>
     <div class="button-group">
       <button class="submit-btn add" onclick="changePassword()">✓ تغيير كلمة السر</button>
@@ -714,11 +937,29 @@ select{background:white}
     </div>
     <div id="settingsErrorMsg" class="error-msg" style="text-align:center"></div>
     <hr style="margin:20px 0;border-color:#e2e8f0">
-    <button class="submit-btn" style="background:#f59e0b;width:100%;padding:14px" onclick="closeModal('settingsModal');showSecretSetup()">🛡️ إعداد / تغيير السؤال السري</button>
+    <button class="submit-btn" style="background:#f59e0b;width:100%;padding:14px;margin-bottom:8px" onclick="closeModal('settingsModal');showSecretSetup()">🛡️ إعداد / تغيير السؤال السري</button>
+    <button class="submit-btn" style="background:#8b5cf6;width:100%;padding:14px" onclick="closeModal('settingsModal');showPinSetup()">🔐 إعداد رمز PIN</button>
   </div>
 </div>
 
 <div class="save-indicator" id="saveIndicator">✅ تم الحفظ تلقائياً</div>
+
+
+<!-- Offline Indicator -->
+<div id="offlineBar" style="display:none;position:fixed;top:0;left:0;right:0;color:white;text-align:center;padding:8px;font-size:14px;font-weight:bold;z-index:99998;transition:background 0.3s">
+  📴 أنت غير متصل — التغييرات ستُرفع تلقائياً عند عودة الإنترنت
+</div>
+<!-- AUTO LOCK OVERLAY -->
+<div id="autoLockOverlay">
+  <div class="lock-resume-card">
+    <div style="font-size:48px;margin-bottom:12px">🔒</div>
+    <h2>تم القفل التلقائي</h2>
+    <p style="color:#64748b;font-size:14px;margin-bottom:20px">لحماية حسابك تم القفل بعد عدم النشاط</p>
+    <div class="pw-wrap"><input type="password" id="resumePassInput" class="password-input" placeholder="أدخل كلمة المرور للمتابعة" onkeydown="if(event.key==='Enter')resumeSession()"><button class="pw-eye" type="button" onclick="togglePw('resumePassInput',this)">👁️</button></div>
+    <button class="login-btn" style="margin-top:8px" onclick="resumeSession()">🔓 متابعة</button>
+    <div id="resumeError" class="error-msg" style="text-align:center">❌ كلمة المرور غير صحيحة</div>
+  </div>
+</div>
 
 <script>
 
@@ -909,6 +1150,26 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const DB_PATH = 'fin_app';
 
+// ✅ تفعيل الحفظ المحلي التلقائي — يخزن البيانات ويرفعها لما يرجع النت
+db.ref('.info/connected').on('value', snap => {
+  const connected = snap.val();
+  const bar = document.getElementById('offlineBar');
+  if (bar) {
+    if (!connected) {
+      bar.style.display = 'block';
+      bar.innerHTML = '📴 أنت غير متصل — التغييرات ستُرفع تلقائياً عند عودة الإنترنت';
+      bar.style.background = '#f59e0b';
+    } else {
+      bar.innerHTML = '✅ عاد الاتصال — جاري مزامنة البيانات...';
+      bar.style.background = '#10b981';
+      setTimeout(() => { bar.style.display = 'none'; }, 3000);
+    }
+  }
+});
+
+// ✅ تفعيل قائمة انتظار أوفلاين — Firebase يحفظ العمليات ويرسلها لما يرجع النت
+db.ref(DB_PATH).keepSynced(true);
+
 let appData = getDefaultData();
 let currentUser = null;
 let selectedType = 'add';
@@ -916,7 +1177,7 @@ let fbListener = null;   // real-time listener handle
 
 function getDefaultData() {
   return {
-    passwords: { حمزة:'1234', جنى:'1234', محمد:'1234', أدمن:'1234' },
+    passwords: { حمزة:'1234', جنى:'1234', محمد:'1234', أدمن:'1234' }, // افتراضي — يُستخدم مرة واحدة فقط عند أول تشغيل
     secretQuestions: {},   // { حمزة: {question, answer}, ... }
     users: {
       حمزة: { initialBalance:0, initialShekelBalance:0, transactions:[] },
@@ -934,6 +1195,7 @@ function getDefaultData() {
 
 function mergeData(remote) {
   const def = getDefaultData();
+  // ✅ كلمات المرور تأتي من Firebase فقط — لا تُستبدل أبداً من الكود
   remote.passwords = remote.passwords || def.passwords;
   remote.secretQuestions = remote.secretQuestions || {};
   remote.users = remote.users || def.users;
@@ -959,6 +1221,13 @@ function mergeData(remote) {
   if (remote.notifications && !Array.isArray(remote.notifications)) {
     remote.notifications = Object.values(remote.notifications);
   }
+  remote.permissions = remote.permissions || null;
+  remote.userColors = remote.userColors || {};
+  remote.pins = remote.pins || {};
+  if (remote.auditLog && !Array.isArray(remote.auditLog)) {
+    remote.auditLog = Object.values(remote.auditLog);
+  }
+  remote.auditLog = remote.auditLog || [];
   return remote;
 }
 
@@ -974,6 +1243,7 @@ function initFirebase(callback) {
       db.ref(DB_PATH).set(appData);
     }
     showLoadingOverlay(false);
+    renderUserButtons();
     if (callback) callback();
     // Subscribe to real-time changes
     startRealtimeSync();
@@ -1003,18 +1273,13 @@ function startRealtimeSync() {
 }
 
 function saveData(path, value) {
-  // path: optional sub-path like 'users/حمزة', value: data
-  // If no path, save whole appData
   const ref = path ? db.ref(DB_PATH + '/' + path) : db.ref(DB_PATH);
   const data = value !== undefined ? value : appData;
-  ref.set(data).then(() => {
-    localStorage.setItem('fin_cache', JSON.stringify(appData));
-    showSaveIndicator();
-  }).catch(err => {
-    // Offline fallback
-    localStorage.setItem('fin_cache', JSON.stringify(appData));
-    showSaveIndicator();
-  });
+  // Firebase SDK تلقائياً يحفظ العمليات أوفلاين ويرسلها لما يرجع النت
+  ref.set(data);
+  // دائماً احفظ نسخة محلية كـ backup
+  localStorage.setItem('fin_cache', JSON.stringify(appData));
+  showSaveIndicator();
 }
 
 function showSaveIndicator() {
@@ -1038,6 +1303,7 @@ function showLoadingOverlay(show) {
 // INIT
 // =============================================
 window.onload = function() {
+  initDarkMode();
   initFirebase(() => {
     updateDollarRateDisplay();
     if (sessionStorage.getItem('site_unlocked_v1') === '1') {
@@ -1074,13 +1340,17 @@ function saveShekelRate() {
 // LOGIN
 // =============================================
 function selectUser(user) {
-  currentUser = user;
-  const names = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'الأدمن' };
-  document.getElementById('passwordTitle').textContent = `أدخل كلمة مرور ${names[user]}`;
+  // Map legacy English keys to Arabic
+  const legacyMap = { hamza:'حمزة', jana:'جنى', mohammad:'محمد' };
+  currentUser = legacyMap[user] || user; // store Arabic name directly
+  const displayName = currentUser === 'admin' ? 'الأدمن' : currentUser;
+  document.getElementById('passwordTitle').textContent = `أدخل كلمة مرور ${displayName}`;
   document.getElementById('userSelection').classList.add('hidden');
   document.getElementById('passwordScreen').classList.remove('hidden');
   document.getElementById('passwordInput').value = '';
   document.getElementById('errorMsg').style.display = 'none';
+  // Try PIN login first if set
+  if (tryPinLogin(user)) return;
   setTimeout(() => document.getElementById('passwordInput').focus(), 100);
 }
 
@@ -1092,20 +1362,30 @@ function backToUserSelection() {
 
 function login() {
   const input = document.getElementById('passwordInput').value;
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  // currentUser is now Arabic name or 'admin'
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
   const correct = appData.passwords[ukey];
   if (input == correct) {
     document.getElementById('loginScreen').classList.add('hidden');
     document.getElementById('errorMsg').style.display = 'none';
+    resetAutoLock();
+    const ukey2 = ukey;
+    addAuditLog(ukey2, 'تسجيل دخول', '');
+    saveData('auditLog', appData.auditLog);
     if (currentUser === 'admin') {
       document.getElementById('adminPanel').classList.remove('hidden');
       loadAdminPanel();
     } else {
       document.getElementById('mainApp').classList.remove('hidden');
-      const unames = { hamza:'حمزة', jana:'جنى', mohammad:'محمد' };
       const badge = document.getElementById('userBadge');
-      badge.textContent = `👤 ${unames[currentUser]}`;
-      badge.className = `user-badge ${currentUser}`;
+      badge.textContent = `👤 ${currentUser}`;
+      badge.style.background = (appData.userColors&&appData.userColors[currentUser]) || '#3b82f6';
+      badge.style.color = 'white';
+      badge.style.borderRadius = '20px';
+      badge.style.padding = '7px 16px';
+      badge.style.fontSize = '13px';
+      badge.style.fontWeight = 'bold';
+      badge.className = 'user-badge';
       updateUI();
     }
   } else {
@@ -1114,6 +1394,7 @@ function login() {
 }
 
 function logout() {
+  clearTimeout(autoLockTimer);
   currentUser = null;
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
@@ -1127,7 +1408,8 @@ function logout() {
 // BALANCE HELPERS
 // =============================================
 function getSheetName() {
-  return currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+  // currentUser is already Arabic name (set in selectUser)
+  return currentUser;
 }
 
 function getUserData(name) { return appData.users[name]; }
@@ -1244,6 +1526,11 @@ function renderTxItem(t, showUser) {
     : `${sign}$${t.amount.toFixed(2)}`;
   const imgHtml = t.image ? `<img src="${t.image}" class="transaction-image" onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src,'_blank')">` : '';
   const userHtml = showUser ? `<strong style="color:#64748b;font-size:13px">${t.user}</strong>` : '';
+  const ownerUser = showUser ? t.user : (currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد');
+  const editBtns = `<div style="display:flex;gap:4px;margin-top:6px">
+    <button class="edit-tx-btn" onclick="openEditTx('${ownerUser}',${t.id})" title="تعديل">✏️</button>
+    <button class="del-tx-btn" onclick="deleteTx('${ownerUser}',${t.id})" title="حذف">🗑️</button>
+  </div>`;
   return `<div class="transaction-item ${cls}">
     <div class="transaction-info">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -1254,6 +1541,7 @@ function renderTxItem(t, showUser) {
       ${!isShekel && t.amountShekel ? `<div class="transaction-details">= ${parseFloat(t.amountShekel).toFixed(2)} ₪</div>` : ''}
       ${t.buyRate&&t.sellRate ? `<div class="transaction-details">الشراء: ${t.buyRate} ₪ | البيع: ${t.sellRate} ₪</div>` : ''}
       ${t.notes ? `<div class="transaction-notes">📝 ${t.notes}</div>` : ''}
+      ${editBtns}
     </div>
     ${imgHtml}
     <div class="transaction-icon">${icon}</div>
@@ -1349,9 +1637,10 @@ function addTransaction() {
   };
 
   if (imageFile) {
-    const reader = new FileReader();
-    reader.onload = e => { transaction.image = e.target.result; finalize(); };
-    reader.readAsDataURL(imageFile);
+    compressImage(imageFile, 800, 0.6).then(compressed => {
+      transaction.image = compressed;
+      finalize();
+    });
   } else {
     finalize();
   }
@@ -1370,13 +1659,44 @@ function addNotification(user, type, amount, notes, isShekel=false) {
 function previewImage(event) {
   const file = event.target.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
+  compressImage(file, 800, 0.6).then(compressed => {
     const p = document.getElementById('imagePreview');
-    p.src = e.target.result;
+    p.src = compressed;
     p.classList.remove('hidden');
-  };
-  reader.readAsDataURL(file);
+    // Show size info
+    const originalKB = Math.round(file.size / 1024);
+    const compressedKB = Math.round((compressed.length * 0.75) / 1024);
+    const label = document.getElementById('imageSizeInfo');
+    if (label) label.textContent = `📦 ${originalKB}KB ← ضُغطت إلى → ${compressedKB}KB`;
+  });
+}
+
+// =============================================
+// IMAGE COMPRESSION
+// =============================================
+function compressImage(file, maxWidth, quality) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        // Scale down if too large
+        if (w > maxWidth) {
+          h = Math.round(h * maxWidth / w);
+          w = maxWidth;
+        }
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 // =============================================
@@ -1388,11 +1708,12 @@ function loadAdminPanel() {
   loadNotifications();
   loadDailySummary();
   filterTransactions();
-  // Set default month to current
-  const now = new Date();
-  const mp = document.getElementById('monthPicker');
-  if (mp) mp.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
-  loadMonthlyStats();
+  loadCharts();
+  loadPermissionsPanel();
+  loadAuditLog();
+  loadUserMgmt();
+  updateUserFilters();
+  // Monthly stats removed
 }
 
 function updateAdminStats() {
@@ -1614,13 +1935,33 @@ function loadMonthlyStats() {
 }
 
 function filterTransactions() {
-  const filter = document.getElementById('userFilter').value;
-  const users = filter==='all' ? ['حمزة','جنى','محمد'] : [filter];
+  const filter = document.getElementById('userFilter')?.value || 'all';
+  const query = (document.getElementById('adminTxSearch')?.value||'').toLowerCase();
+  const from = document.getElementById('adminDateFrom')?.value;
+  const to = document.getElementById('adminDateTo')?.value;
+  const allUsers = Object.keys(appData.users||{});
+  const users = filter==='all' ? allUsers : [filter];
   let all = [];
   users.forEach(userName => {
     (appData.users[userName]?.transactions||[]).forEach(t => all.push({...t, user:userName}));
   });
   all.sort((a,b) => b.id - a.id);
+  if (query) all = all.filter(t =>
+    (t.notes||'').toLowerCase().includes(query) ||
+    String(t.amount).includes(query) ||
+    (t.accountType||'').toLowerCase().includes(query) ||
+    (t.user||'').includes(query)
+  );
+  if (from || to) {
+    all = all.filter(t => {
+      const parts = t.date.split('/');
+      if (parts.length !== 3) return true;
+      const txDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+      if (from && txDate < new Date(from)) return false;
+      if (to && txDate > new Date(to)) return false;
+      return true;
+    });
+  }
   const listEl = document.getElementById('adminTransactionList');
   if (!all.length) { listEl.innerHTML = '<div class="empty-state">لا توجد معاملات</div>'; return; }
   listEl.innerHTML = all.slice(0,40).map(t => renderTxItem(t, true)).join('');
@@ -1642,7 +1983,7 @@ function changePassword() {
   const nw = document.getElementById('newPassword').value;
   const conf = document.getElementById('confirmPassword').value;
   const err = document.getElementById('settingsErrorMsg');
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
   if (cur != appData.passwords[ukey]) {
     err.textContent='كلمة المرور الحالية غير صحيحة!'; err.style.display='block'; return;
   }
@@ -1698,7 +2039,7 @@ const MAX_FORGOT_ATTEMPTS = 5;
 let forgotLockUntil = 0;
 
 function showForgotPassword() {
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':null;
+  const ukey = (currentUser === 'admin') ? null : currentUser;
   if (!ukey) return;
 
   const sq = appData.secretQuestions && appData.secretQuestions[ukey];
@@ -1779,7 +2120,7 @@ function setNewPasswordForgot() {
 function showSecretSetup() {
   document.getElementById('secretAnswerInput').value = '';
   document.getElementById('secretSetupError').style.display = 'none';
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
   const sq = appData.secretQuestions && appData.secretQuestions[ukey];
   if (sq && sq.question) {
     // Pre-select existing question
@@ -1792,7 +2133,7 @@ function showSecretSetup() {
 }
 
 function saveSecretQuestion() {
-  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':'أدمن';
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
   const question = document.getElementById('secretQuestionSelect').value;
   const answer = document.getElementById('secretAnswerInput').value.trim();
   const err = document.getElementById('secretSetupError');
@@ -1812,41 +2153,804 @@ function saveSecretQuestion() {
 // =============================================
 function exportToExcel() {
   try {
-    const sheets = [];
-    ['حمزة','جنى','محمد'].forEach(userName => {
+    if (typeof XLSX === 'undefined') { alert('❌ مكتبة Excel لم تُحمّل — تحقق من الاتصال'); return; }
+    const wb = XLSX.utils.book_new();
+    const headerStyle = { font:{bold:true,color:{rgb:'FFFFFF'}}, fill:{fgColor:{rgb:'667EEA'}}, alignment:{horizontal:'center',vertical:'center',wrapText:true}, border:{bottom:{style:'medium',color:{rgb:'764BA2'}}} };
+    const summaryStyle = { font:{bold:true}, fill:{fgColor:{rgb:'EEF2FF'}}, alignment:{horizontal:'right'} };
+    const addStyle = { font:{color:{rgb:'065F46'}}, fill:{fgColor:{rgb:'D1FAE5'}}, alignment:{horizontal:'center'} };
+    const subStyle = { font:{color:{rgb:'7F1D1D'}}, fill:{fgColor:{rgb:'FEE2E2'}}, alignment:{horizontal:'center'} };
+    const shekelStyle = { font:{color:{rgb:'78350F'}}, fill:{fgColor:{rgb:'FEF9C3'}}, alignment:{horizontal:'center'} };
+    const numStyle = { numFmt:'#,##0.00', alignment:{horizontal:'center'} };
+    const centerStyle = { alignment:{horizontal:'center'} };
+    const allUsers = Object.keys(appData.users||{});
+
+    allUsers.forEach(userName => {
       const ud = appData.users[userName];
-      const rows = [
-        ['الرصيد الأساسي بالدولار', ud.initialBalance||0],
-        ['الرصيد الأساسي بالشيكل', ud.initialShekelBalance||0],
-        ['الرصيد الحالي بالدولار', getCurrentBalance(userName)],
-        ['الرصيد الحالي بالشيكل', getCurrentShekelBalance(userName)],
-        [],
-        ['#','التاريخ','الوقت','الحساب','النوع','العملة','المبلغ','ملاحظات','سعر الشراء','سعر البيع']
-      ];
+      const wsData = [];
+      // Summary rows
+      wsData.push([{v:'💼 ملخص الحساب',s:{font:{bold:true,sz:13},fill:{fgColor:{rgb:'764BA2'}},font:{bold:true,color:{rgb:'FFFFFF'},sz:12},alignment:{horizontal:'center'}}},'','','','','','','','','']);
+      wsData.push([{v:'الرصيد الأساسي $',s:summaryStyle},{v:ud.initialBalance||0,s:{...numStyle,...summaryStyle}},'','',{v:'الرصيد الأساسي ₪',s:summaryStyle},{v:ud.initialShekelBalance||0,s:{...numStyle,...summaryStyle}},'','','','']);
+      wsData.push([{v:'الرصيد الحالي $',s:summaryStyle},{v:getCurrentBalance(userName),s:{...numStyle,...summaryStyle}},'','',{v:'الرصيد الحالي ₪',s:summaryStyle},{v:getCurrentShekelBalance(userName),s:{...numStyle,...summaryStyle}},'','','','']);
+      wsData.push([]);
+      // Header row
+      wsData.push([
+        {v:'#',s:headerStyle},{v:'التاريخ',s:headerStyle},{v:'الوقت',s:headerStyle},
+        {v:'الحساب',s:headerStyle},{v:'النوع',s:headerStyle},{v:'العملة',s:headerStyle},
+        {v:'المبلغ',s:headerStyle},{v:'القيمة بالشيكل',s:headerStyle},
+        {v:'ملاحظات',s:headerStyle},{v:'سعر الشراء',s:headerStyle}
+      ]);
+      // Data rows
       (ud.transactions||[]).forEach((t,i) => {
-        rows.push([i+1, t.date, t.time, t.accountType,
-          t.currency==='shekel'?'صرف شيكل':(t.type==='add'?'إضافة':'خصم'),
-          t.currency==='shekel'?'شيكل':'دولار',
-          t.amount, t.notes||'', t.buyRate||'', t.sellRate||''
+        const isShekel = t.currency==='shekel';
+        const typeLabel = isShekel ? '🪙 شيكل' : (t.type==='add'?'➕ إضافة':'➖ خصم');
+        const rowStyle = isShekel ? shekelStyle : (t.type==='add' ? addStyle : subStyle);
+        wsData.push([
+          {v:i+1,s:centerStyle},
+          {v:t.date,s:centerStyle},
+          {v:t.time,s:centerStyle},
+          {v:t.accountType,s:centerStyle},
+          {v:typeLabel,s:rowStyle},
+          {v:isShekel?'شيكل ₪':'دولار $',s:centerStyle},
+          {v:t.amount,s:{...numStyle,...rowStyle}},
+          {v:t.amountShekel?parseFloat(t.amountShekel):'' ,s:numStyle},
+          {v:t.notes||'',s:{}},
+          {v:t.buyRate||'',s:centerStyle}
         ]);
       });
-      sheets.push({ name: userName, rows });
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols'] = [{wch:5},{wch:14},{wch:10},{wch:12},{wch:14},{wch:10},{wch:12},{wch:14},{wch:20},{wch:10}];
+      ws['!rtl'] = true;
+      // Merge title row
+      ws['!merges'] = [{s:{r:0,c:0},e:{r:0,c:9}}];
+      XLSX.utils.book_append_sheet(wb, ws, userName);
     });
-    const brows = [['اسم البنك','الرصيد','ملاحظات']];
-    (appData.banks||[]).forEach(b => brows.push([b.name, b.balance, b.notes||'']));
-    sheets.push({ name: 'البنوك', rows: brows });
-    sheets.push({ name: 'ثائر', rows: [['رصيد ثائر', appData.thaerBalance||0]] });
-    const nrows = [['التاريخ','الوقت','المستخدم','النوع','المبلغ','الملاحظات']];
-    (appData.notifications||[]).forEach(n => nrows.push([n.date,n.time,n.user,n.type,n.amount,n.notes||'']));
-    sheets.push({ name: 'الإشعارات', rows: nrows });
-    const xlsxData = MiniXLSX.write(sheets);
-    const blob = new Blob([xlsxData], {type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `accounts_${new Date().toLocaleDateString('en-GB').replace(/\//g,'-')}.xlsx`;
-    link.click();
+
+    // Banks sheet
+    const bData = [[{v:'🏦 البنوك',s:{font:{bold:true,color:{rgb:'FFFFFF'},sz:12},fill:{fgColor:{rgb:'10B981'}},alignment:{horizontal:'center'}}},'','']];
+    bData.push([{v:'اسم البنك',s:headerStyle},{v:'الرصيد ($)',s:headerStyle},{v:'ملاحظات',s:headerStyle}]);
+    (appData.banks||[]).forEach(b => bData.push([{v:b.name},{v:b.balance,s:numStyle},{v:b.notes||''}]));
+    const bWs = XLSX.utils.aoa_to_sheet(bData);
+    bWs['!cols'] = [{wch:20},{wch:14},{wch:25}];
+    bWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:2}}];
+    bWs['!rtl'] = true;
+    XLSX.utils.book_append_sheet(wb, bWs, 'البنوك');
+
+    // Summary sheet
+    const sData = [[{v:'📊 ملخص إجمالي',s:{font:{bold:true,color:{rgb:'FFFFFF'},sz:13},fill:{fgColor:{rgb:'764BA2'}},alignment:{horizontal:'center'}}},'','']];
+    sData.push([{v:'المستخدم',s:headerStyle},{v:'الرصيد الحالي $',s:headerStyle},{v:'عدد المعاملات',s:headerStyle}]);
+    allUsers.forEach(u => {
+      sData.push([{v:u,s:{font:{bold:true}}},{v:getCurrentBalance(u),s:numStyle},{v:(appData.users[u]?.transactions||[]).length,s:centerStyle}]);
+    });
+    sData.push([]);
+    sData.push([{v:'رصيد ثائر',s:{font:{bold:true}}},{v:appData.thaerBalance||0,s:numStyle},'']);
+    let totalBanks=0; (appData.banks||[]).forEach(b=>totalBanks+=parseFloat(b.balance||0));
+    sData.push([{v:'مجموع البنوك',s:{font:{bold:true}}},{v:totalBanks,s:numStyle},'']);
+    const sWs = XLSX.utils.aoa_to_sheet(sData);
+    sWs['!cols'] = [{wch:18},{wch:18},{wch:16}];
+    sWs['!merges'] = [{s:{r:0,c:0},e:{r:0,c:2}}];
+    sWs['!rtl'] = true;
+    XLSX.utils.book_append_sheet(wb, sWs, 'الملخص');
+
+    const date = new Date().toLocaleDateString('en-GB').replace(/\//g,'-');
+    XLSX.writeFile(wb, `حسابات_${date}.xlsx`);
     alert('✅ تم تصدير الملف بنجاح!');
-  } catch(e) { alert('❌ خطأ في التصدير: '+e.message); }
+  } catch(e) { alert('❌ خطأ في التصدير: '+e.message); console.error(e); }
+}
+
+
+// =============================================
+// DARK MODE
+// =============================================
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('darkMode', isDark ? '1' : '0');
+  ['darkBtn','darkBtnAdmin'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = isDark ? '☀️' : '🌙';
+  });
+}
+
+function initDarkMode() {
+  if (localStorage.getItem('darkMode') === '1') {
+    document.body.classList.add('dark');
+    ['darkBtn','darkBtnAdmin'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = '☀️';
+    });
+  }
+}
+
+// =============================================
+// AUTO LOCK
+// =============================================
+let autoLockTimer = null;
+const AUTO_LOCK_MINUTES = 5;
+
+function resetAutoLock() {
+  clearTimeout(autoLockTimer);
+  if (!currentUser) return;
+  autoLockTimer = setTimeout(() => {
+    if (currentUser) activateAutoLock();
+  }, AUTO_LOCK_MINUTES * 60 * 1000);
+}
+
+function activateAutoLock() {
+  document.getElementById('autoLockOverlay').classList.add('show');
+  document.getElementById('resumePassInput').value = '';
+  document.getElementById('resumeError').style.display = 'none';
+  setTimeout(() => document.getElementById('resumePassInput').focus(), 200);
+}
+
+function resumeSession() {
+  const input = document.getElementById('resumePassInput').value;
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
+  if (input == appData.passwords[ukey]) {
+    document.getElementById('autoLockOverlay').classList.remove('show');
+    document.getElementById('resumePassInput').value = '';
+    resetAutoLock();
+  } else {
+    document.getElementById('resumeError').style.display = 'block';
+    document.getElementById('resumePassInput').value = '';
+  }
+}
+
+// Listen for user activity
+['click','keydown','touchstart','scroll'].forEach(evt => {
+  document.addEventListener(evt, resetAutoLock, { passive: true });
+});
+
+// =============================================
+// AUDIT LOG
+// =============================================
+function addAuditLog(user, action, details) {
+  if (!appData.auditLog) appData.auditLog = [];
+  const now = new Date();
+  appData.auditLog.unshift({
+    user, action, details,
+    date: now.toLocaleDateString('ar-EG'),
+    time: now.toLocaleTimeString('ar-EG', {hour:'2-digit', minute:'2-digit'}),
+    ts: Date.now()
+  });
+  if (appData.auditLog.length > 200) appData.auditLog = appData.auditLog.slice(0, 200);
+}
+
+function loadAuditLog() {
+  const el = document.getElementById('auditLog');
+  if (!el) return;
+  const logs = appData.auditLog || [];
+  if (!logs.length) { el.innerHTML = '<div class="empty-state">لا توجد سجلات بعد</div>'; return; }
+  const renderLog = l => `<div class="audit-item">
+    <strong>${l.user}</strong> — ${l.action}
+    ${l.details ? `<span style="color:#64748b"> (${l.details})</span>` : ''}
+    <br><small style="color:#94a3b8">${l.date} ${l.time}</small>
+  </div>`;
+  const first3 = logs.slice(0,3).map(renderLog).join('');
+  const rest = logs.slice(3);
+  el.innerHTML = first3 + (rest.length ? `
+    <div id="auditMore" class="hidden">${rest.map(renderLog).join('')}</div>
+    <button onclick="toggleAuditMore()" id="auditMoreBtn"
+      style="width:100%;padding:10px;background:#f1f5f9;border:none;border-radius:10px;cursor:pointer;font-size:13px;color:#667eea;font-weight:bold;margin-top:8px">
+      ▼ عرض المزيد (${rest.length})
+    </button>` : '');
+}
+
+function toggleAuditMore() {
+  const more = document.getElementById('auditMore');
+  const btn = document.getElementById('auditMoreBtn');
+  const isHidden = more.classList.toggle('hidden');
+  btn.textContent = isHidden ? `▼ عرض المزيد` : '▲ إخفاء';
+}
+
+// =============================================
+// CHARTS
+// =============================================
+let pieChart = null, barChart = null;
+
+function loadCharts() {
+  loadPieChart();
+  loadBarChart();
+}
+
+function loadPieChart() {
+  const ctx = document.getElementById('txPieChart');
+  if (!ctx) return;
+  let adds = 0, subs = 0, shekels = 0;
+  ['حمزة','جنى','محمد'].forEach(u => {
+    (appData.users[u]?.transactions || []).forEach(t => {
+      if (t.currency === 'shekel') shekels++;
+      else if (t.type === 'add') adds++;
+      else subs++;
+    });
+  });
+  if (pieChart) pieChart.destroy();
+  pieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['إضافات $', 'خصومات $', 'صرف ₪'],
+      datasets: [{
+        data: [adds, subs, shekels],
+        backgroundColor: ['#10b981','#ef4444','#f59e0b'],
+        borderWidth: 0
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { family: 'Segoe UI' } } } }
+    }
+  });
+}
+
+function loadBarChart() {
+  const ctx = document.getElementById('txBarChart');
+  if (!ctx) return;
+  const days = [];
+  const adds = [], subs = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const label = d.toLocaleDateString('ar-EG', {day:'numeric', month:'numeric'});
+    const dateStr = d.toLocaleDateString('ar-EG');
+    days.push(label);
+    let a = 0, s = 0;
+    ['حمزة','جنى','محمد'].forEach(u => {
+      (appData.users[u]?.transactions || []).forEach(t => {
+        if (t.date === dateStr && t.currency !== 'shekel') {
+          if (t.type === 'add') a += t.amount;
+          else s += t.amount;
+        }
+      });
+    });
+    adds.push(parseFloat(a.toFixed(2)));
+    subs.push(parseFloat(s.toFixed(2)));
+  }
+  if (barChart) barChart.destroy();
+  barChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: days,
+      datasets: [
+        { label: 'إضافات $', data: adds, backgroundColor: '#10b981', borderRadius: 6 },
+        { label: 'خصومات $', data: subs, backgroundColor: '#ef4444', borderRadius: 6 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+}
+
+// =============================================
+// PERMISSIONS
+// =============================================
+const DEFAULT_PERMS = {
+  حمزة: { canViewBalance: true, canAddTx: true, canViewHistory: true, canExport: true },
+  جنى:  { canViewBalance: true, canAddTx: true, canViewHistory: true, canExport: true },
+  محمد: { canViewBalance: true, canAddTx: true, canViewHistory: true, canExport: true }
+};
+
+const PERM_LABELS = {
+  canViewBalance: 'عرض الرصيد',
+  canAddTx: 'إضافة معاملات',
+  canViewHistory: 'عرض السجل',
+  canExport: 'تصدير Excel'
+};
+
+function loadPermissionsPanel() {
+  const el = document.getElementById('permissionsPanel');
+  if (!el) return;
+  const perms = appData.permissions || DEFAULT_PERMS;
+  let html = '';
+  ['حمزة','جنى','محمد'].forEach(user => {
+    const p = perms[user] || DEFAULT_PERMS[user];
+    html += `<div style="margin-bottom:20px">
+      <h3 style="font-size:15px;color:#667eea;margin-bottom:10px">👤 ${user}</h3>`;
+    Object.keys(PERM_LABELS).forEach(key => {
+      html += `<div class="perm-row">
+        <span style="font-size:14px">${PERM_LABELS[key]}</span>
+        <label class="perm-toggle">
+          <input type="checkbox" id="perm_${user}_${key}" ${p[key] ? 'checked' : ''}>
+          <span class="perm-slider"></span>
+        </label>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  el.innerHTML = html;
+}
+
+function savePermissions() {
+  if (!appData.permissions) appData.permissions = {};
+  ['حمزة','جنى','محمد'].forEach(user => {
+    appData.permissions[user] = {};
+    Object.keys(PERM_LABELS).forEach(key => {
+      const cb = document.getElementById(`perm_${user}_${key}`);
+      appData.permissions[user][key] = cb ? cb.checked : true;
+    });
+  });
+  saveData('permissions', appData.permissions);
+  addAuditLog('الأدمن', 'تعديل الصلاحيات', '');
+  saveData('auditLog', appData.auditLog);
+  alert('✅ تم حفظ الصلاحيات');
+}
+
+function checkPermission(perm) {
+  if (!currentUser || currentUser === 'admin') return true;
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد';
+  const perms = appData.permissions && appData.permissions[ukey];
+  if (!perms) return true;
+  return perms[perm] !== false;
+}
+
+
+// =============================================
+// EDIT / DELETE TRANSACTION
+// =============================================
+let editTxType = 'add';
+
+function setEditType(type) {
+  editTxType = type;
+  ['add','subtract','shekel'].forEach(t => {
+    const btn = document.getElementById('edit' + (t==='add'?'Add':t==='subtract'?'Sub':'Shekel') + 'Btn');
+    if(btn) btn.className = 'type-btn' + (t===type ? (t==='add'?' add-active':t==='subtract'?' subtract-active':' shekel-active') : '');
+  });
+  document.getElementById('editDollarGroup').classList.toggle('hidden', type==='shekel');
+  document.getElementById('editShekelGroup').classList.toggle('hidden', type!=='shekel');
+}
+
+function openEditTx(userName, txId) {
+  const ud = appData.users[userName];
+  if (!ud) return;
+  const tx = (ud.transactions||[]).find(t => t.id === txId);
+  if (!tx) return;
+  document.getElementById('editTxUser').value = userName;
+  document.getElementById('editTxId').value = txId;
+  document.getElementById('editTxNotes').value = tx.notes || '';
+  document.getElementById('editTxAccount').value = tx.accountType || 'بايبال';
+  const type = tx.currency==='shekel' ? 'shekel' : tx.type;
+  setEditType(type);
+  if (type === 'shekel') {
+    document.getElementById('editTxShekelAmount').value = tx.amount;
+  } else {
+    document.getElementById('editTxAmount').value = tx.amount;
+  }
+  document.getElementById('editTxModal').classList.add('active');
+}
+
+function saveEditTx() {
+  const userName = document.getElementById('editTxUser').value;
+  const txId = parseInt(document.getElementById('editTxId').value);
+  const ud = appData.users[userName];
+  if (!ud) return;
+  const idx = (ud.transactions||[]).findIndex(t => t.id === txId);
+  if (idx === -1) return;
+  const tx = ud.transactions[idx];
+  const isShekel = editTxType === 'shekel';
+  const newAmount = parseFloat(isShekel
+    ? document.getElementById('editTxShekelAmount').value
+    : document.getElementById('editTxAmount').value);
+  if (!newAmount || newAmount <= 0) { alert('❌ أدخل مبلغاً صحيحاً'); return; }
+  tx.amount = newAmount;
+  tx.type = isShekel ? 'subtract' : editTxType;
+  tx.currency = isShekel ? 'shekel' : 'dollar';
+  tx.accountType = document.getElementById('editTxAccount').value;
+  tx.notes = document.getElementById('editTxNotes').value;
+  if (!isShekel) tx.amountShekel = (newAmount * (appData.shekelRate||3.65)).toFixed(2);
+  addAuditLog(userName, 'تعديل معاملة', `المبلغ: ${newAmount}`);
+  saveData('users/' + userName, ud);
+  saveData('auditLog', appData.auditLog);
+  closeModal('editTxModal');
+  if (currentUser !== 'admin') updateUI();
+  else { filterTransactions(); updateAdminStats(); }
+}
+
+function deleteTx(userName, txId) {
+  const ud = appData.users[userName];
+  if (!ud) return;
+  const tx = (ud.transactions||[]).find(t => t.id === txId);
+  if (!tx) return;
+  ud.transactions = (ud.transactions||[]).filter(t => t.id !== txId);
+  addAuditLog(userName, 'حذف معاملة', `ID: ${txId}`);
+  saveData('users/' + userName, ud);
+  saveData('auditLog', appData.auditLog);
+  showUndoToast(tx, userName);
+  if (currentUser !== 'admin') updateUI();
+  else { filterTransactions(); updateAdminStats(); }
+}
+
+// =============================================
+// USER MANAGEMENT
+// =============================================
+function loadUserMgmt() {
+  const el = document.getElementById('userMgmtList');
+  if (!el) return;
+  const users = Object.keys(appData.users||{});
+  const colors = appData.userColors || {};
+  if (!users.length) { el.innerHTML = '<div class="empty-state">لا يوجد مستخدمون</div>'; return; }
+  el.innerHTML = users.map(u => {
+    const color = colors[u] || '#3b82f6';
+    const bal = getCurrentBalance(u);
+    return `<div class="user-mgmt-card">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="width:14px;height:40px;border-radius:4px;background:${color}"></div>
+        <div>
+          <div class="user-mgmt-name">👤 ${u}</div>
+          <div style="font-size:13px;color:#64748b">رصيد: $${bal.toFixed(2)}</div>
+        </div>
+      </div>
+      <div class="user-mgmt-btns">
+        <button class="btn" style="background:#f59e0b;color:white;font-size:13px;padding:8px 14px" onclick="resetUserPass('${u}')">🔑 تغيير كلمة السر</button>
+        <button class="btn" style="background:#ef4444;color:white;font-size:13px;padding:8px 14px" onclick="deleteUser('${u}')">🗑️ حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showAddUserModal() {
+  document.getElementById('newUserName').value = '';
+  document.getElementById('newUserPass').value = '';
+  document.getElementById('addUserError').style.display = 'none';
+  document.getElementById('addUserModal').classList.add('active');
+  setTimeout(() => document.getElementById('newUserName').focus(), 100);
+}
+
+function addNewUser() {
+  const name = document.getElementById('newUserName').value.trim();
+  const pass = document.getElementById('newUserPass').value;
+  const color = document.getElementById('newUserColor').value;
+  const err = document.getElementById('addUserError');
+  if (!name) { err.textContent='أدخل اسم المستخدم'; err.style.display='block'; return; }
+  if (pass.length < 4) { err.textContent='كلمة المرور 4 أحرف على الأقل'; err.style.display='block'; return; }
+  if (appData.users[name]) { err.textContent='هذا المستخدم موجود مسبقاً'; err.style.display='block'; return; }
+  appData.users[name] = { initialBalance:0, initialShekelBalance:0, transactions:[] };
+  appData.passwords[name] = pass;
+  if (!appData.userColors) appData.userColors = {};
+  appData.userColors[name] = color;
+  saveData('users/' + name, appData.users[name]);
+  saveData('passwords', appData.passwords);
+  saveData('userColors', appData.userColors);
+  addAuditLog('الأدمن', 'إضافة مستخدم', name);
+  saveData('auditLog', appData.auditLog);
+  closeModal('addUserModal');
+  loadUserMgmt();
+  updateUserFilters();
+  renderUserButtons();
+  alert('✅ تم إضافة المستخدم ' + name);
+}
+
+function deleteUser(name) {
+  if (!confirm(`حذف المستخدم "${name}" وكل بياناته؟`)) return;
+  if (!confirm('تأكيد نهائي — لا رجوع!')) return;
+  delete appData.users[name];
+  delete appData.passwords[name];
+  if (appData.userColors) delete appData.userColors[name];
+  db.ref(DB_PATH + '/users/' + name).remove();
+  db.ref(DB_PATH + '/passwords/' + name).remove();
+  saveData('auditLog', appData.auditLog);
+  loadUserMgmt();
+  updateUserFilters();
+  renderUserButtons();
+  filterTransactions();
+  alert('✅ تم حذف المستخدم ' + name);
+}
+
+function resetUserPass(name) {
+  const newPass = prompt(`كلمة مرور جديدة للمستخدم "${name}":`);
+  if (!newPass || newPass.length < 4) { alert('❌ كلمة مرور قصيرة جداً'); return; }
+  appData.passwords[name] = newPass;
+  saveData('passwords', appData.passwords);
+  addAuditLog('الأدمن', 'تغيير كلمة مرور', name);
+  saveData('auditLog', appData.auditLog);
+  alert('✅ تم تغيير كلمة مرور ' + name);
+}
+
+function updateUserFilters() {
+  // Update userFilter select + monthUserFilter
+  const users = Object.keys(appData.users||{});
+  ['userFilter','monthUserFilter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="all">الكل</option>' + users.map(u => `<option value="${u}">${u}</option>`).join('');
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  });
+}
+
+
+// =============================================
+// DYNAMIC USER BUTTONS
+// =============================================
+function renderUserButtons() {
+  const el = document.getElementById('dynamicUserBtns');
+  if (!el) return;
+  const users = Object.keys(appData.users||{});
+  const colors = appData.userColors || {};
+  const fixedColors = { حمزة:'#3b82f6', جنى:'#ec4899', محمد:'#8b5cf6' };
+  // Store users list globally for selectUserByIndex
+  window._userList = users;
+  el.innerHTML = users.map((u, idx) => {
+    const color = colors[u] || fixedColors[u] || '#667eea';
+    return `<button class="user-select-btn" onclick="selectUserByIndex(${idx})"
+      style="background:${color};margin:6px 0;width:100%;color:white">👤 ${u}</button>`;
+  }).join('');
+}
+
+function selectUserByIndex(idx) {
+  const u = window._userList[idx];
+  if (!u) return;
+  selectUser(u);
+}
+
+
+// =============================================
+// OFFLINE DETECTION — handled by Firebase .info/connected
+// =============================================
+function updateOnlineStatus() {
+  // Firebase handles this automatically via .info/connected
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+
+// =============================================
+// SHOW/HIDE PASSWORD
+// =============================================
+function togglePw(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  btn.textContent = isHidden ? '🙈' : '👁️';
+}
+
+// =============================================
+// COPY BALANCE
+// =============================================
+function copyBalance(elId, symbol) {
+  const val = document.getElementById(elId)?.textContent;
+  if (!val) return;
+  navigator.clipboard?.writeText(val + ' ' + symbol).then(() => {
+    showToast('📋 تم النسخ: ' + val + ' ' + symbol);
+  }).catch(() => showToast('📋 ' + val + ' ' + symbol));
+}
+
+function showToast(msg, duration=2000) {
+  let t = document.getElementById('simpleToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'simpleToast';
+    t.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:10px 20px;border-radius:12px;font-size:14px;z-index:9997;transition:opacity 0.3s;white-space:nowrap';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.style.display='none',300); }, duration);
+}
+
+// =============================================
+// CURRENCY CONVERTER
+// =============================================
+function convertFromDollar() {
+  const d = parseFloat(document.getElementById('convDollar').value)||0;
+  const rate = parseFloat(appData.shekelRate)||3.65;
+  document.getElementById('convShekel').value = d > 0 ? (d*rate).toFixed(2) : '';
+  document.getElementById('convRate').textContent = rate.toFixed(2);
+}
+function convertFromShekel() {
+  const s = parseFloat(document.getElementById('convShekel').value)||0;
+  const rate = parseFloat(appData.shekelRate)||3.65;
+  document.getElementById('convDollar').value = s > 0 ? (s/rate).toFixed(2) : '';
+  document.getElementById('convRate').textContent = rate.toFixed(2);
+}
+function swapConverter() {
+  const d = document.getElementById('convDollar').value;
+  const s = document.getElementById('convShekel').value;
+  document.getElementById('convDollar').value = s;
+  document.getElementById('convShekel').value = d;
+}
+
+// =============================================
+// SEARCH & DATE FILTER (User)
+// =============================================
+function filterUserTx() {
+  const name = getSheetName();
+  const query = (document.getElementById('txSearch')?.value||'').toLowerCase();
+  const from = document.getElementById('txDateFrom')?.value;
+  const to = document.getElementById('txDateTo')?.value;
+  let txs = [...(getUserData(name).transactions||[])].reverse();
+
+  if (query) txs = txs.filter(t =>
+    (t.notes||'').toLowerCase().includes(query) ||
+    String(t.amount).includes(query) ||
+    (t.accountType||'').toLowerCase().includes(query)
+  );
+  if (from || to) {
+    txs = txs.filter(t => {
+      const parts = t.date.split('/');
+      if (parts.length !== 3) return true;
+      const txDate = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+      if (from && txDate < new Date(from)) return false;
+      if (to && txDate > new Date(to)) return false;
+      return true;
+    });
+  }
+  const listEl = document.getElementById('transactionList');
+  if (!txs.length) { listEl.innerHTML = '<div class="empty-state">لا توجد نتائج</div>'; return; }
+  listEl.innerHTML = txs.slice(0,20).map(t => renderTxItem(t, false)).join('');
+}
+
+function clearTxFilter() {
+  ['txSearch','txDateFrom','txDateTo'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  updateTransactionList();
+}
+
+// =============================================
+// SEARCH & DATE FILTER (Admin)
+// =============================================
+function clearAdminFilter() {
+  ['adminTxSearch','adminDateFrom','adminDateTo'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.value='';
+  });
+  filterTransactions();
+}
+
+// =============================================
+// UNDO LAST TRANSACTION
+// =============================================
+let lastDeletedTx = null;
+let undoTimer = null;
+
+function showUndoToast(tx, userName) {
+  lastDeletedTx = { tx, userName };
+  const toast = document.getElementById('undoToast');
+  const msg = document.getElementById('undoMsg');
+  const isShekel = tx.currency==='shekel';
+  msg.textContent = `🗑️ حُذفت: ${isShekel?'':'$'}${tx.amount.toFixed(2)}${isShekel?' ₪':''}`;
+  toast.classList.add('show');
+  clearTimeout(undoTimer);
+  undoTimer = setTimeout(() => {
+    toast.classList.remove('show');
+    lastDeletedTx = null;
+  }, 5000);
+}
+
+function undoLastTx() {
+  if (!lastDeletedTx) return;
+  const { tx, userName } = lastDeletedTx;
+  if (!appData.users[userName]) return;
+  appData.users[userName].transactions.push(tx);
+  appData.users[userName].transactions.sort((a,b)=>a.id-b.id);
+  saveData('users/'+userName, appData.users[userName]);
+  document.getElementById('undoToast').classList.remove('show');
+  lastDeletedTx = null;
+  clearTimeout(undoTimer);
+  if (currentUser !== 'admin') updateUI();
+  else { filterTransactions(); updateAdminStats(); }
+  showToast('✅ تم التراجع عن الحذف');
+}
+
+// =============================================
+// PIN SYSTEM
+// =============================================
+let pinSetupStep = 1;
+let pinSetupFirst = '';
+let pinLoginInput = '';
+
+function showPinSetup() {
+  pinSetupStep = 1;
+  pinSetupFirst = '';
+  updatePinDisplay('pinSetupDisplay', '');
+  document.getElementById('pinSetupMsg').textContent = 'أدخل الرمز الجديد (4 أرقام)';
+  document.getElementById('pinSetupModal').classList.add('active');
+}
+
+function pinSetupPress(val) {
+  const ukey = currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':currentUser==='mohammad'?'محمد':currentUser;
+  let cur = pinSetupStep === 1 ? pinSetupFirst : (document.getElementById('pinSetupMsg').dataset.conf||'');
+  if (val === 'del') { cur = cur.slice(0,-1); }
+  else if (cur.length < 4) { cur += val; }
+
+  if (pinSetupStep === 1) {
+    pinSetupFirst = cur;
+    updatePinDisplay('pinSetupDisplay', cur);
+    if (cur.length === 4) {
+      pinSetupStep = 2;
+      document.getElementById('pinSetupMsg').textContent = 'أعد إدخال الرمز للتأكيد';
+      document.getElementById('pinSetupMsg').dataset.conf = '';
+      updatePinDisplay('pinSetupDisplay', '');
+    }
+  } else {
+    document.getElementById('pinSetupMsg').dataset.conf = cur;
+    updatePinDisplay('pinSetupDisplay', cur);
+    if (cur.length === 4) {
+      if (cur === pinSetupFirst) {
+        if (!appData.pins) appData.pins = {};
+        appData.pins[ukey] = cur;
+        saveData('pins', appData.pins);
+        closeModal('pinSetupModal');
+        showToast('✅ تم حفظ رمز PIN');
+      } else {
+        document.getElementById('pinSetupMsg').textContent = '❌ الرمزان غير متطابقان — أعد المحاولة';
+        pinSetupStep = 1;
+        pinSetupFirst = '';
+        document.getElementById('pinSetupMsg').dataset.conf = '';
+        setTimeout(() => updatePinDisplay('pinSetupDisplay',''), 500);
+      }
+    }
+  }
+}
+
+function updatePinDisplay(displayId, val) {
+  for(let i=0;i<4;i++){
+    const dot = document.getElementById(displayId.replace('Display','')+'d'+i) ||
+                document.getElementById('p'+(displayId.includes('Setup')?'s':'l')+'d'+i);
+    if(dot) dot.classList.toggle('filled', i < val.length);
+  }
+}
+
+function tryPinLogin(user) {
+  const legacyMap = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'أدمن' };
+  const ukey = legacyMap[user] || user;
+  const pin = appData.pins && appData.pins[ukey];
+  if (!pin) return false; // No PIN set
+  pinLoginInput = '';
+  updatePinDisplay('pinLoginDisplay','');
+  document.getElementById('pinLoginError').style.display='none';
+  document.getElementById('pinLoginUser').textContent = '👤 ' + ukey;
+  document.getElementById('pinLoginModal').classList.add('active');
+  return true;
+}
+
+function pinLoginPress(val) {
+  if (val === 'del') { pinLoginInput = pinLoginInput.slice(0,-1); }
+  else if (pinLoginInput.length < 4) { pinLoginInput += val; }
+  updatePinDisplay('pinLoginDisplay', pinLoginInput);
+  document.getElementById('pinLoginError').style.display='none';
+  if (pinLoginInput.length === 4) {
+    const legacyMap = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'أدمن' };
+    const ukey = legacyMap[currentUser] || currentUser;
+    const correct = appData.pins && appData.pins[ukey];
+    if (pinLoginInput === correct) {
+      closeModal('pinLoginModal');
+      proceedAfterAuth();
+    } else {
+      document.getElementById('pinLoginError').style.display='block';
+      pinLoginInput = '';
+      setTimeout(() => updatePinDisplay('pinLoginDisplay',''), 400);
+    }
+  }
+}
+
+function usePwInstead() {
+  closeModal('pinLoginModal');
+  // Show password screen (already shown)
+}
+
+function proceedAfterAuth() {
+  const legacyMap = { hamza:'حمزة', jana:'جنى', mohammad:'محمد', admin:'أدمن' };
+  const ukey = legacyMap[currentUser] || currentUser;
+  resetAutoLock();
+  addAuditLog(ukey, 'تسجيل دخول (PIN)', '');
+  saveData('auditLog', appData.auditLog);
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('errorMsg').style.display='none';
+  if (currentUser === 'admin') {
+    document.getElementById('adminPanel').classList.remove('hidden');
+    loadAdminPanel();
+  } else {
+    document.getElementById('mainApp').classList.remove('hidden');
+    const badge = document.getElementById('userBadge');
+    badge.textContent = '👤 ' + ukey;
+    badge.className = 'user-badge';
+    badge.style.background = (appData.userColors&&appData.userColors[ukey])||'#3b82f6';
+    updateUI();
+  }
 }
 
 // =============================================
@@ -1857,6 +2961,142 @@ function escHtml(str) {
 }
 </script>
 
+<!-- Edit Transaction Modal -->
+<div id="editTxModal" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;margin-bottom:20px">✏️ تعديل المعاملة</h2>
+    <input type="hidden" id="editTxUser">
+    <input type="hidden" id="editTxId">
+    <div class="form-group">
+      <label>نوع العملية</label>
+      <div class="type-buttons">
+        <button type="button" class="type-btn" id="editAddBtn" onclick="setEditType('add')">➕ إضافة $</button>
+        <button type="button" class="type-btn" id="editSubBtn" onclick="setEditType('subtract')">➖ خصم $</button>
+        <button type="button" class="type-btn" id="editShekelBtn" onclick="setEditType('shekel')">🪙 صرف ₪</button>
+      </div>
+    </div>
+    <div class="form-group" id="editDollarGroup">
+      <label>المبلغ ($)</label>
+      <input type="number" id="editTxAmount" step="0.01" class="password-input">
+    </div>
+    <div class="form-group hidden" id="editShekelGroup">
+      <label>المبلغ (₪)</label>
+      <input type="number" id="editTxShekelAmount" step="0.01" class="password-input">
+    </div>
+    <div class="form-group">
+      <label>نوع الحساب</label>
+      <select id="editTxAccount" style="width:100%;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit">
+        <option value="بايبال">بايبال</option>
+        <option value="كاست">كاست</option>
+        <option value="بايننس">بايننس</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>ملاحظات</label>
+      <textarea id="editTxNotes" style="width:100%;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;height:80px;resize:vertical"></textarea>
+    </div>
+    <div class="button-group">
+      <button class="submit-btn add" onclick="saveEditTx()">✓ حفظ التعديل</button>
+      <button class="cancel-btn" onclick="closeModal('editTxModal')">✕ إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div id="addUserModal" class="modal">
+  <div class="modal-content">
+    <h2 style="text-align:center;margin-bottom:20px">➕ إضافة مستخدم جديد</h2>
+    <div class="form-group">
+      <label>اسم المستخدم (عربي)</label>
+      <input type="text" id="newUserName" class="password-input" placeholder="مثال: سارة">
+    </div>
+    <div class="form-group">
+      <label>كلمة المرور</label>
+      <input type="password" id="newUserPass" class="password-input" placeholder="كلمة المرور">
+    </div>
+    <div class="form-group">
+      <label>اللون</label>
+      <select id="newUserColor" style="width:100%;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit">
+        <option value="#3b82f6">أزرق</option>
+        <option value="#ec4899">وردي</option>
+        <option value="#8b5cf6">بنفسجي</option>
+        <option value="#10b981">أخضر</option>
+        <option value="#f59e0b">برتقالي</option>
+        <option value="#ef4444">أحمر</option>
+      </select>
+    </div>
+    <div id="addUserError" class="error-msg" style="text-align:center"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="addNewUser()">✓ إضافة</button>
+      <button class="cancel-btn" onclick="closeModal('addUserModal')">✕ إلغاء</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Undo Toast -->
+<div id="undoToast">
+  <span id="undoMsg">↩️ تم حذف المعاملة</span>
+  <button onclick="undoLastTx()">تراجع</button>
+</div>
+
+<!-- PIN Setup Modal -->
+<div id="pinSetupModal" class="modal">
+  <div class="modal-content" style="max-width:340px">
+    <h2 style="text-align:center;margin-bottom:6px">🔐 إعداد رمز PIN</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:20px">رمز من 4 أرقام للدخول السريع</p>
+    <div class="pin-display" id="pinSetupDisplay">
+      <div class="pin-dot" id="psd0"></div>
+      <div class="pin-dot" id="psd1"></div>
+      <div class="pin-dot" id="psd2"></div>
+      <div class="pin-dot" id="psd3"></div>
+    </div>
+    <p id="pinSetupMsg" style="text-align:center;color:#64748b;font-size:13px;margin-bottom:12px">أدخل الرمز الجديد</p>
+    <div class="pin-pad" id="pinSetupPad">
+      <button class="pin-btn" onclick="pinSetupPress('1')">1</button>
+      <button class="pin-btn" onclick="pinSetupPress('2')">2</button>
+      <button class="pin-btn" onclick="pinSetupPress('3')">3</button>
+      <button class="pin-btn" onclick="pinSetupPress('4')">4</button>
+      <button class="pin-btn" onclick="pinSetupPress('5')">5</button>
+      <button class="pin-btn" onclick="pinSetupPress('6')">6</button>
+      <button class="pin-btn" onclick="pinSetupPress('7')">7</button>
+      <button class="pin-btn" onclick="pinSetupPress('8')">8</button>
+      <button class="pin-btn" onclick="pinSetupPress('9')">9</button>
+      <button class="pin-btn" onclick="pinSetupPress('del')" style="font-size:16px">⌫</button>
+      <button class="pin-btn" onclick="pinSetupPress('0')">0</button>
+      <button class="pin-btn" onclick="closeModal('pinSetupModal')" style="font-size:13px;color:#ef4444">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- PIN Login Modal -->
+<div id="pinLoginModal" class="modal">
+  <div class="modal-content" style="max-width:340px">
+    <h2 style="text-align:center;margin-bottom:6px">🔐 أدخل رمز PIN</h2>
+    <p style="text-align:center;color:#64748b;font-size:13px;margin-bottom:6px" id="pinLoginUser"></p>
+    <div class="pin-display" id="pinLoginDisplay">
+      <div class="pin-dot" id="pld0"></div>
+      <div class="pin-dot" id="pld1"></div>
+      <div class="pin-dot" id="pld2"></div>
+      <div class="pin-dot" id="pld3"></div>
+    </div>
+    <div id="pinLoginError" class="error-msg" style="text-align:center;margin-bottom:8px">❌ رمز خاطئ!</div>
+    <div class="pin-pad">
+      <button class="pin-btn" onclick="pinLoginPress('1')">1</button>
+      <button class="pin-btn" onclick="pinLoginPress('2')">2</button>
+      <button class="pin-btn" onclick="pinLoginPress('3')">3</button>
+      <button class="pin-btn" onclick="pinLoginPress('4')">4</button>
+      <button class="pin-btn" onclick="pinLoginPress('5')">5</button>
+      <button class="pin-btn" onclick="pinLoginPress('6')">6</button>
+      <button class="pin-btn" onclick="pinLoginPress('7')">7</button>
+      <button class="pin-btn" onclick="pinLoginPress('8')">8</button>
+      <button class="pin-btn" onclick="pinLoginPress('9')">9</button>
+      <button class="pin-btn" onclick="pinLoginPress('del')" style="font-size:16px">⌫</button>
+      <button class="pin-btn" onclick="pinLoginPress('0')">0</button>
+      <button class="pin-btn" onclick="usePwInstead()" style="font-size:11px;color:#667eea">كلمة السر</button>
+    </div>
+  </div>
+</div>
 <!-- Forgot Password Modal -->
 <div id="forgotModal" class="modal">
   <div class="modal-content">
