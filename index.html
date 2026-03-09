@@ -1629,6 +1629,8 @@ function startRealtimeSync() {
     if (!val) return;
     appData = mergeData(val);
     localStorage.setItem('fin_cache', JSON.stringify(appData));
+    // Always refresh user buttons (new users may have been added)
+    renderUserButtons();
     // Refresh UI if logged in
     if (currentUser && currentUser !== 'admin') updateUI();
     if (currentUser === 'admin') {
@@ -3031,11 +3033,27 @@ function updateUserFilters() {
 function renderUserButtons() {
   const el = document.getElementById('dynamicUserBtns');
   if (!el) return;
-  const users = Object.keys(appData.users||{});
+  let users = Object.keys(appData.users || {});
+  // Fallback: if Firebase not loaded yet, use localStorage cache
+  if (!users.length) {
+    try {
+      const cached = localStorage.getItem('fin_cache');
+      if (cached) {
+        const c = JSON.parse(cached);
+        users = Object.keys(c.users || {});
+        if (users.length && !Object.keys(appData.users||{}).length) {
+          appData = mergeData(c);
+        }
+      }
+    } catch(e) {}
+  }
   const colors = appData.userColors || {};
   const fixedColors = { حمزة:'#3b82f6', جنى:'#ec4899', محمد:'#8b5cf6' };
-  // Store users list globally for selectUserByIndex
   window._userList = users;
+  if (!users.length) {
+    el.innerHTML = '<p style="color:var(--text2);font-size:13px;text-align:center;padding:8px">جاري التحميل...</p>';
+    return;
+  }
   el.innerHTML = users.map((u, idx) => {
     const color = colors[u] || fixedColors[u] || '#667eea';
     return `<button class="user-select-btn" onclick="selectUserByIndex(${idx})"
