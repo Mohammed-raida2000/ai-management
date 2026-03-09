@@ -193,334 +193,637 @@ self.addEventListener('fetch', e => {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>💰 نظام إدارة الحسابات المالية</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
-.container{max-width:1200px;margin:0 auto}
-.hidden{display:none!important}
+/* ══════════════════════════════════════════════════════
+   VARIABLES & RESET
+══════════════════════════════════════════════════════ */
+:root {
+  --primary: #667eea; --primary2: #764ba2;
+  --green:   #10b981; --red:    #ef4444;
+  --amber:   #f59e0b; --blue:   #3b82f6;
+  --purple:  #8b5cf6; --pink:   #ec4899;
 
-/* BANK CARDS */
-.bank-card{border:1px solid #e2e8f0;border-radius:14px;margin-bottom:12px;overflow:hidden;background:white;box-shadow:0 2px 8px rgba(0,0,0,0.06)}
-.bank-view{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;gap:12px}
-.bank-view-info{flex:1}
-.bank-view-name{font-size:16px;font-weight:bold;color:#1e293b;margin-bottom:3px}
-.bank-view-bal{font-size:24px;font-weight:bold;color:#10b981}
-.bank-view-notes{font-size:12px;color:#64748b;margin-top:4px}
-.bank-view-btns{display:flex;gap:8px;flex-shrink:0}
-.bank-btn-edit{background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:9px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:bold;color:#475569;transition:background 0.15s}
-.bank-btn-edit:hover{background:#e2e8f0}
-.bank-btn-del{background:#fef2f2;border:1.5px solid #fecaca;border-radius:9px;padding:8px 12px;cursor:pointer;font-size:15px;color:#ef4444;transition:background 0.15s}
-.bank-btn-del:hover{background:#fee2e2}
-.bank-edit-form{padding:16px 18px;background:#f8fafc;border-top:1px solid #e2e8f0}
-.bank-edit-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:10px}
-@media(max-width:480px){.bank-edit-row{grid-template-columns:1fr}}
-.bank-edit-label{font-size:12px;color:#64748b;font-weight:bold;display:block;margin-bottom:5px}
-.bank-edit-inp{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;transition:border-color 0.2s}
-.bank-edit-inp:focus{outline:none;border-color:#667eea}
-.bank-edit-notes{width:100%;padding:10px 12px;border:1.5px solid #e2e8f0;border-radius:9px;font-size:14px;font-family:inherit;height:70px;resize:vertical;margin-bottom:10px}
-.bank-edit-notes:focus{outline:none;border-color:#667eea}
-.bank-edit-actions{display:flex;gap:8px}
-.bank-save-btn{flex:1;padding:10px;background:#10b981;color:white;border:none;border-radius:9px;cursor:pointer;font-weight:bold;font-size:14px}
-.bank-cancel-btn{padding:10px 16px;background:#e2e8f0;color:#4a5568;border:none;border-radius:9px;cursor:pointer;font-size:14px}
+  --bg:     #f1f5f9;
+  --card:   #ffffff;
+  --border: #e2e8f0;
+  --text:   #1e293b;
+  --text2:  #64748b;
+  --text3:  #94a3b8;
 
-/* Body locked: hide everything except siteLock */
-body.locked>*:not(#siteLock){visibility:hidden;pointer-events:none}
-body.locked #siteLock{visibility:visible;pointer-events:all}
+  --r-sm: 8px; --r: 14px; --r-lg: 20px;
+  --shadow: 0 2px 12px rgba(0,0,0,.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,.14);
+  --font: 'Segoe UI', Tahoma, sans-serif;
+}
+body.dark {
+  --bg: #0f172a; --card: #1e2a3a;
+  --border: #2d3748; --text: #e2e8f0;
+  --text2: #94a3b8; --text3: #64748b;
+}
 
-/* LOGIN */
-.login-screen{background:white;border-radius:20px;padding:50px;max-width:500px;margin:80px auto;box-shadow:0 20px 60px rgba(0,0,0,0.3);text-align:center}
-.login-screen h1{color:#2d3748;font-size:30px;margin-bottom:25px}
-.user-select-btn{width:100%;padding:18px;margin:8px 0;font-size:18px;font-weight:bold;border:none;border-radius:12px;cursor:pointer;transition:transform 0.2s;color:white}
-.user-select-btn.hamza{background:#3b82f6}.user-select-btn.jana{background:#ec4899}
-.user-select-btn.mohammad{background:#8b5cf6}.user-select-btn.admin{background:#ef4444}
-.user-select-btn:hover{transform:scale(1.02)}
-.password-input{width:100%;padding:16px;font-size:17px;border:2px solid #e2e8f0;border-radius:12px;margin-bottom:12px;text-align:center;font-family:inherit}
-.login-btn{width:100%;padding:16px;font-size:17px;background:#3b82f6;color:white;border:none;border-radius:12px;cursor:pointer;font-weight:bold}
-.login-btn:hover{background:#2563eb}
-.back-btn{width:100%;padding:12px;font-size:15px;background:#e2e8f0;color:#4a5568;border:none;border-radius:12px;cursor:pointer;margin-top:8px}
-.error-msg{color:#ef4444;font-size:15px;margin-top:12px;display:none}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box }
+html { scroll-behavior:smooth; -webkit-text-size-adjust:100% }
 
-/* HEADER */
-.header{background:white;border-radius:16px;padding:18px 25px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1);flex-wrap:wrap;gap:10px}
-.header h1{color:#2d3748;font-size:22px}
-.user-info{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.btn{padding:9px 18px;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:bold;transition:transform 0.1s,opacity 0.2s}
-.btn:hover{transform:scale(1.03);opacity:0.9}
-.export-btn{background:#3b82f6;color:white}.settings-btn{background:#f59e0b;color:white}
-.logout-btn{background:#ef4444;color:white}
-.user-badge{padding:7px 16px;border-radius:20px;font-size:13px;font-weight:bold;color:white}
-.user-badge.hamza{background:#3b82f6}.user-badge.jana{background:#ec4899}
-.user-badge.mohammad{background:#8b5cf6}.user-badge.admin{background:#ef4444}
+body {
+  font-family: var(--font);
+  background: linear-gradient(135deg,var(--primary) 0%,var(--primary2) 100%);
+  min-height:100dvh;
+  padding: clamp(10px,3vw,24px);
+  color: var(--text);
+  transition: background .3s;
+}
+body.dark { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%) }
+body.locked > *:not(#siteLock) { visibility:hidden; pointer-events:none }
+body.locked #siteLock           { visibility:visible; pointer-events:all }
+.hidden   { display:none !important }
+.container{ max-width:1100px; margin:0 auto }
+button    { min-height:36px; cursor:pointer; font-family:var(--font) }
+select    { background:var(--card); color:var(--text) }
 
-/* RATE CARD */
-.dollar-rate-card{background:white;border-radius:16px;padding:18px 25px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-.dollar-rate-card h2{color:#2d3748;margin-bottom:14px;font-size:17px}
-.rates-container{display:flex;gap:15px;justify-content:center;flex-wrap:wrap;align-items:center}
-.rate-item{background:#f0fdf4;border:2px solid #10b981;border-radius:12px;padding:12px 25px;text-align:center;min-width:130px}
-.rate-item.sell{background:#fef2f2;border-color:#ef4444}
-.rate-label{font-size:13px;color:#64748b;margin-bottom:4px}
-.rate-value{font-size:26px;font-weight:bold;color:#10b981}
-.rate-item.sell .rate-value{color:#ef4444}
-.rate-edit-group{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;margin-top:12px}
-.rate-edit-input{width:90px;padding:8px 10px;font-size:15px;border:2px solid #e2e8f0;border-radius:8px;text-align:center;font-family:inherit}
-.rate-save-btn{padding:8px 16px;background:#10b981;color:white;border:none;border-radius:8px;cursor:pointer;font-size:14px;font-weight:bold}
-.rate-save-btn:hover{background:#059669}
+/* ══════════════════════════════════════════════════════
+   SITE LOCK
+══════════════════════════════════════════════════════ */
+#siteLock { position:fixed; inset:0; z-index:999999 }
 
-/* STATS */
-.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
-.stats-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-@media(max-width:700px){.stats-grid,.stats-grid-4{grid-template-columns:1fr 1fr}}
-@media(max-width:400px){.stats-grid,.stats-grid-4{grid-template-columns:1fr}}
-.stat-card{background:white;border-radius:16px;padding:22px;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,0.1);position:relative}
-.stat-icon{font-size:32px;margin-bottom:6px}
-.stat-label{font-size:13px;color:#64748b;margin-bottom:6px}
-.stat-value{font-size:28px;font-weight:bold;color:#2d3748}
-.stat-value.blue{color:#3b82f6}.stat-value.green{color:#10b981}
-.stat-value.red{color:#ef4444}.stat-value.amber{color:#f59e0b}
-.stat-value.purple{color:#8b5cf6}
-.inline-edit-row{display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap}
-.edit-mini-btn{background:#e2e8f0;border:none;border-radius:8px;padding:4px 10px;cursor:pointer;font-size:12px;color:#4a5568}
-.edit-mini-btn:hover{background:#cbd5e0}
-.top-right-btn{position:absolute;top:8px;left:8px;background:#e2e8f0;border:none;border-radius:8px;padding:4px 9px;cursor:pointer;font-size:11px;color:#4a5568}
-.top-right-btn:hover{background:#cbd5e0}
+.sl-bg {
+  width:100%; height:100%;
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden; position:relative;
+}
+.sl-circles { position:absolute; inset:0; pointer-events:none }
+.sl-circle  { position:absolute; border-radius:50%; background:rgba(255,255,255,.07) }
+.c1 { width:400px;height:400px;top:-100px;right:-100px; animation:slFloat 8s ease-in-out infinite }
+.c2 { width:300px;height:300px;bottom:-80px;left:-80px;  animation:slFloat 10s ease-in-out infinite reverse }
+.c3 { width:200px;height:200px;top:50%;left:50%;transform:translate(-50%,-50%); animation:slFloat 6s ease-in-out infinite }
+@keyframes slFloat { 0%,100%{transform:translateY(0) scale(1)} 50%{transform:translateY(-20px) scale(1.05)} }
 
-/* FORM */
-.add-btn{width:100%;padding:18px;font-size:18px;background:linear-gradient(135deg,#667eea,#764ba2);color:white;border:none;border-radius:16px;cursor:pointer;margin-bottom:18px;font-weight:bold;transition:transform 0.1s}
-.add-btn:hover{transform:scale(1.01)}
-.form-card{background:white;border-radius:16px;padding:28px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-.form-card h2{color:#2d3748;margin-bottom:18px}
-.form-group{margin-bottom:18px}
-.form-group label{display:block;font-size:14px;color:#4a5568;margin-bottom:6px;font-weight:bold}
-.form-group input[type=number],.form-group input[type=text],.form-group input[type=password],
-.form-group select,.form-group textarea{width:100%;padding:13px 15px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;transition:border-color 0.2s}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:#667eea}
-.form-group textarea{height:90px;resize:vertical}
-.type-buttons{display:flex;gap:10px}
-.type-btn{flex:1;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;cursor:pointer;background:white;font-weight:bold;transition:all 0.2s}
-.type-btn.add-active{background:#dcfce7;border-color:#10b981;color:#10b981}
-.type-btn.subtract-active{background:#fee2e2;border-color:#ef4444;color:#ef4444}
-.type-btn.shekel-active{background:#fef9c3;border-color:#f59e0b;color:#b45309}
-.button-group{display:flex;gap:10px}
-.submit-btn{flex:1;padding:15px;font-size:16px;border:none;border-radius:10px;cursor:pointer;font-weight:bold;color:white}
-.submit-btn.add{background:#10b981}.submit-btn.subtract{background:#ef4444}.submit-btn.shekel{background:#f59e0b}
-.cancel-btn{padding:15px 22px;font-size:16px;background:#e2e8f0;color:#4a5568;border:none;border-radius:10px;cursor:pointer;font-weight:bold}
-.image-preview{max-width:100%;max-height:180px;border-radius:10px;display:block;margin-top:10px}
+.sl-card {
+  background: rgba(255,255,255,.15);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+  border:1px solid rgba(255,255,255,.25);
+  border-radius:28px;
+  padding: clamp(22px,6vw,44px) clamp(18px,5vw,36px);
+  width:92%; max-width:400px;
+  text-align:center;
+  box-shadow:0 25px 60px rgba(0,0,0,.25);
+  position:relative; z-index:1;
+  animation:slSlideUp .6s cubic-bezier(.16,1,.3,1);
+}
+@keyframes slSlideUp { from{opacity:0;transform:translateY(40px)} to{opacity:1;transform:translateY(0)} }
 
-/* HISTORY */
-.history-card{background:white;border-radius:16px;padding:28px;box-shadow:0 4px 20px rgba(0,0,0,0.1);margin-bottom:18px}
-.history-card h2{color:#2d3748;margin-bottom:18px}
-.transaction-item{padding:14px;border-radius:12px;margin-bottom:10px;display:flex;align-items:center;gap:12px;border:1px solid #e2e8f0}
-.transaction-item.add{background:#f0fdf4;border-color:#bbf7d0}
-.transaction-item.subtract{background:#fef2f2;border-color:#fecaca}
-.transaction-item.shekel{background:#fefce8;border-color:#fde68a}
-.transaction-info{flex:1}
-.transaction-amount{font-size:18px;font-weight:bold;margin-bottom:3px}
-.transaction-amount.add{color:#10b981}.transaction-amount.subtract{color:#ef4444}.transaction-amount.shekel{color:#b45309}
-.transaction-details{font-size:12px;color:#64748b}
-.transaction-notes{font-size:12px;color:#92400e;margin-top:3px}
-.transaction-icon{font-size:22px}
-.transaction-image{width:55px;height:55px;object-fit:cover;border-radius:8px;cursor:pointer}
-.empty-state{text-align:center;color:#94a3b8;padding:35px;font-size:15px}
+.sl-icon-wrap { position:relative; display:inline-block; margin-bottom:16px }
+.sl-icon-ring {
+  position:absolute; inset:-8px; border-radius:50%;
+  border:2px solid rgba(255,255,255,.4);
+  animation:slPulse 2s ease-in-out infinite;
+}
+@keyframes slPulse { 0%,100%{transform:scale(1);opacity:.6} 50%{transform:scale(1.15);opacity:1} }
+.sl-icon  { font-size:clamp(40px,10vw,52px); display:block; filter:drop-shadow(0 4px 12px rgba(0,0,0,.2)) }
+.sl-title { color:white; font-size:clamp(16px,4.5vw,22px); font-weight:bold; margin-bottom:8px; text-shadow:0 2px 8px rgba(0,0,0,.15) }
+.sl-sub   { color:rgba(255,255,255,.8); font-size:14px; margin-bottom:24px }
 
-/* ADMIN */
-.admin-section{background:white;border-radius:16px;padding:28px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-.admin-section h2{color:#2d3748;margin-bottom:18px}
-.bank-item{border:1px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:10px}
-.bank-item input,.bank-item textarea{width:100%;padding:9px;margin-bottom:7px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit}
-.bank-item textarea{height:70px;resize:vertical}
-.notification-item{padding:11px;border-radius:10px;background:#f8fafc;margin-bottom:8px;border-right:4px solid #3b82f6;font-size:13px}
-.notification-item.new{background:#eff6ff;border-right-color:#2563eb}
-.notification-item.shekel-notif{border-right-color:#f59e0b;background:#fefce8}
-.daily-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-@media(max-width:700px){.daily-summary{grid-template-columns:1fr 1fr}}
-.summary-card{background:#f8fafc;border-radius:12px;padding:18px;text-align:center}
-.summary-card h3{font-size:13px;color:#64748b;margin-bottom:6px}
-.summary-card .value{font-size:20px;font-weight:bold;color:#2d3748}
-.monthly-table{width:100%;border-collapse:collapse;margin-top:10px}
-.monthly-table th,.monthly-table td{padding:10px 12px;text-align:center;border:1px solid #e2e8f0;font-size:13px}
-.monthly-table th{background:#f1f5f9;color:#475569;font-weight:bold}
-.monthly-table tr:nth-child(even) td{background:#f8fafc}
-.monthly-table td.add-val{color:#10b981;font-weight:bold}
-.monthly-table td.sub-val{color:#ef4444;font-weight:bold}
-.monthly-table td.shekel-val{color:#b45309;font-weight:bold}
-.month-filter-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
-.month-filter-row select,.month-filter-row input{padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;font-size:14px;font-family:inherit;background:white}
+.sl-input-wrap { position:relative; margin-bottom:14px }
+.sl-input {
+  width:100%; padding:15px 46px 15px 16px;
+  font-size:clamp(17px,5vw,20px); letter-spacing:6px;
+  background:rgba(255,255,255,.2); border:2px solid rgba(255,255,255,.3);
+  border-radius:var(--r); color:white; text-align:center;
+  font-family:var(--font); transition:all .2s; outline:none;
+}
+.sl-input::placeholder { letter-spacing:4px; color:rgba(255,255,255,.5); font-size:22px }
+.sl-input:focus { background:rgba(255,255,255,.25); border-color:rgba(255,255,255,.7); box-shadow:0 0 0 4px rgba(255,255,255,.1) }
+.sl-input-icon { position:absolute; left:14px; top:50%; transform:translateY(-50%); font-size:17px; pointer-events:none }
 
-/* MODAL */
-.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center}
-.modal.active{display:flex}
-.modal-content{background:white;border-radius:20px;padding:38px;max-width:500px;width:92%;box-shadow:0 20px 60px rgba(0,0,0,0.4);max-height:90vh;overflow-y:auto}
-select{background:white}
+.sl-btn {
+  width:100%; padding:15px;
+  background:white; color:var(--primary);
+  border:none; border-radius:var(--r);
+  font-size:clamp(15px,4vw,17px); font-weight:bold;
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  transition:all .2s; box-shadow:0 4px 20px rgba(0,0,0,.15);
+}
+.sl-btn:hover  { transform:translateY(-2px); box-shadow:0 8px 28px rgba(0,0,0,.2) }
+.sl-btn:active { transform:translateY(0) }
+.sl-arrow { font-size:18px; transition:transform .2s }
+.sl-btn:hover .sl-arrow { transform:translateX(-4px) }
 
-/* SAVE INDICATOR */
-.save-indicator{position:fixed;bottom:18px;right:18px;background:#10b981;color:white;padding:11px 18px;border-radius:12px;font-size:14px;font-weight:bold;box-shadow:0 4px 20px rgba(0,0,0,0.2);transition:opacity 0.5s;opacity:0;pointer-events:none;z-index:9999}
-.save-indicator.show{opacity:1}
+.sl-error    { color:#fde68a; font-size:13px; margin-top:12px; display:none; background:rgba(239,68,68,.2); border-radius:var(--r-sm); padding:9px }
+.sl-attempts { color:rgba(255,255,255,.7); font-size:12px; margin-top:8px }
+@keyframes shake { 0%,100%{transform:translateX(0)} 20%,60%{transform:translateX(-8px)} 40%,80%{transform:translateX(8px)} }
+.sl-input.shake { animation:shake .4s ease }
 
-/* ══ SHOW/HIDE PASSWORD ══ */
-.pw-wrap{position:relative}
-.pw-wrap input{padding-left:44px!important}
-.pw-eye{position:absolute;left:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:18px;padding:4px;color:#64748b}
+/* ══════════════════════════════════════════════════════
+   LOGIN SCREEN
+══════════════════════════════════════════════════════ */
+.login-screen {
+  background:var(--card); border-radius:var(--r-lg);
+  padding: clamp(22px,6vw,50px) clamp(18px,5vw,40px);
+  max-width:460px; margin:clamp(16px,8vh,80px) auto;
+  box-shadow:var(--shadow-lg); text-align:center;
+}
+.login-screen h1 { color:var(--text); font-size:clamp(18px,5vw,26px); margin-bottom:22px }
 
-/* ══ PIN PAD ══ */
-.pin-display{display:flex;justify-content:center;gap:12px;margin:18px 0}
-.pin-dot{width:16px;height:16px;border-radius:50%;border:2px solid #667eea;background:transparent;transition:background 0.2s}
-.pin-dot.filled{background:#667eea}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:240px;margin:0 auto}
-.pin-btn{padding:16px;font-size:22px;font-weight:bold;border:2px solid #e2e8f0;border-radius:14px;background:white;cursor:pointer;transition:all 0.15s;color:#2d3748}
-.pin-btn:hover{background:#667eea;color:white;border-color:#667eea;transform:scale(1.05)}
-.pin-btn:active{transform:scale(0.95)}
-body.dark .pin-btn{background:#1e2a3a;border-color:#2d3748;color:#e2e8f0}
-body.dark .pin-btn:hover{background:#667eea;color:white}
+.user-select-btn {
+  width:100%; padding:clamp(11px,3vw,16px);
+  margin:6px 0; font-size:clamp(14px,4vw,17px);
+  font-weight:bold; border:none; border-radius:var(--r);
+  color:white; transition:transform .15s,opacity .15s;
+}
+.user-select-btn:hover  { transform:scale(1.02); opacity:.92 }
+.user-select-btn:active { transform:scale(.98) }
 
-/* ══ SEARCH BAR ══ */
-.search-bar{width:100%;padding:11px 16px 11px 42px;font-size:14px;border:2px solid #e2e8f0;border-radius:12px;font-family:inherit;background:white;transition:border-color 0.2s;margin-bottom:12px}
-.search-bar:focus{outline:none;border-color:#667eea}
-body.dark .search-bar{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
-.search-wrap{position:relative}
-.search-icon{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:16px;pointer-events:none;margin-bottom:12px}
+.password-input {
+  width:100%; padding:13px 15px;
+  font-size:16px; border:2px solid var(--border);
+  border-radius:var(--r); margin-bottom:10px;
+  text-align:center; background:var(--card); color:var(--text);
+  transition:border-color .2s;
+}
+.password-input:focus { outline:none; border-color:var(--primary) }
 
-/* ══ DATE FILTER ══ */
-.date-filter-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-.date-filter-row input[type=date]{padding:8px 10px;border:2px solid #e2e8f0;border-radius:10px;font-size:13px;font-family:inherit;background:white;color:#2d3748}
-body.dark .date-filter-row input[type=date]{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
-.clear-filter-btn{padding:8px 14px;background:#e2e8f0;border:none;border-radius:10px;cursor:pointer;font-size:12px;color:#64748b}
-.clear-filter-btn:hover{background:#cbd5e0}
+.login-btn {
+  width:100%; padding:14px; font-size:16px;
+  background:var(--blue); color:white;
+  border:none; border-radius:var(--r); font-weight:bold;
+  transition:background .2s;
+}
+.login-btn:hover { background:#2563eb }
 
-/* ══ CONVERTER ══ */
-.converter-card{background:white;border-radius:16px;padding:20px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-body.dark .converter-card{background:#1e2a3a}
-.converter-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.converter-input{flex:1;min-width:100px;padding:12px;font-size:16px;border:2px solid #e2e8f0;border-radius:10px;text-align:center;font-family:inherit}
-body.dark .converter-input{background:#2d3748;color:#e2e8f0;border-color:#4a5568}
-.converter-input:focus{outline:none;border-color:#667eea}
-.converter-result{flex:1;min-width:100px;padding:12px;font-size:18px;font-weight:bold;color:#667eea;text-align:center;background:#f1f5f9;border-radius:10px}
-body.dark .converter-result{background:#162032}
-.swap-btn{padding:10px 14px;background:#667eea;color:white;border:none;border-radius:10px;cursor:pointer;font-size:18px;transition:transform 0.2s}
-.swap-btn:hover{transform:rotate(180deg)}
+.back-btn {
+  width:100%; padding:11px; font-size:14px;
+  background:var(--border); color:var(--text2);
+  border:none; border-radius:var(--r); margin-top:8px;
+}
+.error-msg { color:var(--red); font-size:14px; margin-top:10px; display:none }
 
-/* ══ UNDO TOAST ══ */
-#undoToast{position:fixed;bottom:70px;left:50%;transform:translateX(-50%);background:#1e293b;color:white;padding:12px 20px;border-radius:14px;font-size:14px;display:none;align-items:center;gap:12px;z-index:9998;box-shadow:0 8px 24px rgba(0,0,0,0.3);white-space:nowrap}
-#undoToast.show{display:flex}
-#undoToast button{background:#667eea;border:none;color:white;padding:6px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:bold}
+.pw-wrap { position:relative }
+.pw-wrap input { padding-left:44px !important }
+.pw-eye { position:absolute; left:12px; top:50%; transform:translateY(-50%); background:none; border:none; font-size:18px; color:var(--text2); min-height:unset }
 
-/* ══ COPY BALANCE ══ */
-.copy-bal-btn{background:none;border:none;cursor:pointer;font-size:13px;padding:2px 6px;border-radius:6px;color:#94a3b8;transition:all 0.15s}
-.copy-bal-btn:hover{background:#e2e8f0;color:#667eea}
+/* ══════════════════════════════════════════════════════
+   OFFLINE BAR
+══════════════════════════════════════════════════════ */
+#offlineBar {
+  display:none; position:fixed; top:0; left:0; right:0;
+  color:white; text-align:center; padding:9px;
+  font-size:13px; font-weight:bold;
+  z-index:99998; transition:background .3s;
+}
+
+/* ══════════════════════════════════════════════════════
+   HEADER
+══════════════════════════════════════════════════════ */
+.header {
+  background:var(--card); border-radius:var(--r);
+  padding: clamp(11px,2.5vw,18px) clamp(13px,3.5vw,24px);
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:14px; box-shadow:var(--shadow);
+  flex-wrap:wrap; gap:8px;
+}
+.header h1 { color:var(--text); font-size:clamp(15px,4vw,21px); white-space:nowrap }
+.user-info  { display:flex; gap:8px; align-items:center; flex-wrap:wrap }
+
+.btn {
+  padding: clamp(7px,2vw,10px) clamp(10px,2.5vw,17px);
+  border:none; border-radius:var(--r-sm);
+  font-size:clamp(11px,2.5vw,13px); font-weight:bold;
+  transition:transform .1s,opacity .15s; white-space:nowrap;
+}
+.btn:hover  { transform:scale(1.03); opacity:.9 }
+.btn:active { transform:scale(.97) }
+.export-btn   { background:var(--blue);  color:white }
+.settings-btn { background:var(--amber); color:white }
+.logout-btn   { background:var(--red);   color:white }
+
+.user-badge { padding:5px 13px; border-radius:20px; font-size:12px; font-weight:bold; color:white; white-space:nowrap }
+.dark-toggle { background:none; border:none; font-size:20px; padding:4px 8px; border-radius:var(--r-sm); transition:transform .2s; min-height:unset }
+.dark-toggle:hover { transform:scale(1.2) }
+
+/* ══════════════════════════════════════════════════════
+   SHARED CARD BASE
+══════════════════════════════════════════════════════ */
+.dollar-rate-card,.form-card,.history-card,
+.admin-section,.charts-section,.converter-card {
+  background:var(--card); border-radius:var(--r);
+  padding: clamp(14px,3.5vw,26px);
+  margin-bottom:14px; box-shadow:var(--shadow);
+}
+.dollar-rate-card h2,.form-card h2,
+.history-card h2,.admin-section h2 {
+  color:var(--text); margin-bottom:14px;
+  font-size:clamp(14px,3.5vw,17px);
+}
+
+/* ══════════════════════════════════════════════════════
+   SHEKEL RATE CARD
+══════════════════════════════════════════════════════ */
+.rates-container  { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; align-items:center }
+.rate-item        { background:#f0fdf4; border:2px solid var(--green); border-radius:var(--r); padding:11px 18px; text-align:center; min-width:130px }
+.rate-item.sell   { background:#fef2f2; border-color:var(--red) }
+.rate-label       { font-size:12px; color:var(--text2); margin-bottom:4px }
+.rate-value       { font-size:clamp(20px,4vw,26px); font-weight:bold; color:var(--green) }
+.rate-item.sell .rate-value { color:var(--red) }
+.rate-edit-group  { display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:center; margin-top:10px }
+.rate-edit-input  { width:88px; padding:8px 10px; font-size:15px; border:2px solid var(--border); border-radius:var(--r-sm); text-align:center; background:var(--card); color:var(--text) }
+.rate-save-btn    { padding:8px 14px; background:var(--green); color:white; border:none; border-radius:var(--r-sm); font-size:14px; font-weight:bold }
+.rate-save-btn:hover { opacity:.85 }
+
+/* ══════════════════════════════════════════════════════
+   STATS GRIDS
+══════════════════════════════════════════════════════ */
+.stats-grid   { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px }
+.stats-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:14px }
+
+.stat-card {
+  background:var(--card); border-radius:var(--r);
+  padding: clamp(13px,3vw,22px);
+  text-align:center; box-shadow:var(--shadow); position:relative;
+}
+.stat-icon  { font-size:clamp(22px,5vw,30px); margin-bottom:5px }
+.stat-label { font-size:clamp(10px,2.5vw,12px); color:var(--text2); margin-bottom:5px }
+.stat-value { font-size:clamp(18px,4.5vw,26px); font-weight:bold; color:var(--text) }
+.stat-value.blue   { color:var(--blue) }
+.stat-value.green  { color:var(--green) }
+.stat-value.red    { color:var(--red) }
+.stat-value.amber  { color:var(--amber) }
+.stat-value.purple { color:var(--purple) }
+
+.inline-edit-row { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap }
+.edit-mini-btn   { background:var(--border); border:none; border-radius:var(--r-sm); padding:4px 9px; font-size:12px; color:var(--text2) }
+.edit-mini-btn:hover { background:#cbd5e0 }
+.top-right-btn   { position:absolute; top:7px; left:7px; background:var(--border); border:none; border-radius:var(--r-sm); padding:4px 8px; font-size:11px; color:var(--text2) }
+.top-right-btn:hover { background:#cbd5e0 }
+.copy-bal-btn    { background:none; border:none; font-size:12px; padding:2px 6px; border-radius:6px; color:var(--text3); transition:all .15s; min-height:unset }
+.copy-bal-btn:hover { background:var(--border); color:var(--primary) }
+
+/* ══════════════════════════════════════════════════════
+   TRANSACTION FORM
+══════════════════════════════════════════════════════ */
+.add-btn {
+  width:100%; padding:clamp(13px,3vw,18px);
+  font-size:clamp(14px,3.5vw,17px);
+  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  color:white; border:none; border-radius:var(--r);
+  margin-bottom:14px; font-weight:bold; transition:transform .1s;
+}
+.add-btn:hover { transform:scale(1.01) }
+
+.form-group       { margin-bottom:14px }
+.form-group label { display:block; font-size:13px; color:var(--text2); margin-bottom:5px; font-weight:bold }
+
+.form-group input[type=number],
+.form-group input[type=text],
+.form-group input[type=password],
+.form-group select,
+.form-group textarea {
+  width:100%; padding:11px 13px;
+  font-size:15px; border:2px solid var(--border);
+  border-radius:var(--r-sm); background:var(--card); color:var(--text);
+  transition:border-color .2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus { outline:none; border-color:var(--primary) }
+.form-group textarea { height:80px; resize:vertical }
+
+.type-buttons  { display:flex; gap:8px }
+.type-btn {
+  flex:1; padding:clamp(10px,2.5vw,13px);
+  font-size:clamp(13px,3vw,15px);
+  border:2px solid var(--border); border-radius:var(--r-sm);
+  background:var(--card); font-weight:bold; color:var(--text);
+  transition:all .15s;
+}
+.type-btn.add-active      { background:#dcfce7; border-color:var(--green);  color:var(--green) }
+.type-btn.subtract-active { background:#fee2e2; border-color:var(--red);    color:var(--red) }
+.type-btn.shekel-active   { background:#fef9c3; border-color:var(--amber);  color:#92400e }
+
+.button-group { display:flex; gap:10px }
+.submit-btn {
+  flex:1; padding:13px; font-size:15px;
+  border:none; border-radius:var(--r-sm); font-weight:bold; color:white;
+  transition:opacity .15s;
+}
+.submit-btn:hover      { opacity:.88 }
+.submit-btn.add        { background:var(--green) }
+.submit-btn.subtract   { background:var(--red) }
+.submit-btn.shekel     { background:var(--amber) }
+.cancel-btn {
+  padding:13px 16px; font-size:15px;
+  background:var(--border); color:var(--text2);
+  border:none; border-radius:var(--r-sm); font-weight:bold;
+}
+.cancel-btn:hover { background:#cbd5e0 }
+.image-preview { max-width:100%; max-height:180px; border-radius:var(--r-sm); display:block; margin-top:10px }
+
+/* ══════════════════════════════════════════════════════
+   TRANSACTIONS LIST
+══════════════════════════════════════════════════════ */
+.transaction-item {
+  padding: clamp(9px,2.5vw,13px);
+  border-radius:var(--r-sm); margin-bottom:9px;
+  display:flex; align-items:flex-start; gap:9px;
+  border:1px solid var(--border);
+}
+.transaction-item.add      { background:#f0fdf4; border-color:#bbf7d0 }
+.transaction-item.subtract { background:#fef2f2; border-color:#fecaca }
+.transaction-item.shekel   { background:#fefce8; border-color:#fde68a }
+
+.transaction-info   { flex:1; min-width:0 }
+.transaction-amount { font-size:clamp(14px,3.5vw,17px); font-weight:bold; margin-bottom:3px }
+.transaction-amount.add      { color:var(--green) }
+.transaction-amount.subtract { color:var(--red) }
+.transaction-amount.shekel   { color:#b45309 }
+.transaction-details { font-size:11px; color:var(--text2); line-height:1.6 }
+.transaction-notes   { font-size:12px; color:#92400e; margin-top:3px }
+.transaction-icon    { font-size:19px; flex-shrink:0 }
+.transaction-image   { width:50px; height:50px; object-fit:cover; border-radius:var(--r-sm); cursor:pointer; flex-shrink:0 }
+
+.edit-tx-btn { background:none; border:none; font-size:14px; padding:3px 6px; border-radius:6px; color:var(--text2); transition:background .15s; min-height:unset }
+.edit-tx-btn:hover { background:var(--border) }
+.del-tx-btn  { background:none; border:none; font-size:14px; padding:3px 6px; border-radius:6px; color:var(--red); min-height:unset }
+.del-tx-btn:hover  { background:#fee2e2 }
+.empty-state { text-align:center; color:var(--text3); padding:30px; font-size:15px }
+
+/* ══════════════════════════════════════════════════════
+   BANK CARDS
+══════════════════════════════════════════════════════ */
+.bank-card      { border:1px solid var(--border); border-radius:var(--r); margin-bottom:10px; overflow:hidden; background:var(--card); box-shadow:var(--shadow) }
+.bank-view      { display:flex; justify-content:space-between; align-items:center; padding:clamp(11px,2.5vw,16px) clamp(13px,3vw,18px); gap:10px }
+.bank-view-info { flex:1; min-width:0 }
+.bank-view-name { font-size:15px; font-weight:bold; color:var(--text); margin-bottom:2px }
+.bank-view-bal  { font-size:clamp(17px,4vw,22px); font-weight:bold; color:var(--green) }
+.bank-view-notes{ font-size:12px; color:var(--text2); margin-top:3px }
+.bank-view-btns { display:flex; gap:8px; flex-shrink:0 }
+
+.bank-btn-edit { background:var(--bg); border:1.5px solid var(--border); border-radius:var(--r-sm); padding:7px 11px; font-size:13px; font-weight:bold; color:var(--text2); transition:background .15s }
+.bank-btn-edit:hover { background:var(--border) }
+.bank-btn-del  { background:#fef2f2; border:1.5px solid #fecaca; border-radius:var(--r-sm); padding:7px 10px; font-size:13px; color:var(--red) }
+.bank-btn-del:hover  { background:#fee2e2 }
+
+.bank-edit-form    { padding:clamp(11px,2.5vw,16px) clamp(13px,3vw,18px); background:var(--bg); border-top:1px solid var(--border) }
+.bank-edit-row     { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px }
+.bank-edit-label   { font-size:12px; color:var(--text2); font-weight:bold; display:block; margin-bottom:4px }
+.bank-edit-inp,
+.bank-edit-notes   { width:100%; padding:9px 11px; border:1.5px solid var(--border); border-radius:var(--r-sm); font-size:14px; background:var(--card); color:var(--text); transition:border-color .2s }
+.bank-edit-inp:focus,
+.bank-edit-notes:focus { outline:none; border-color:var(--primary) }
+.bank-edit-notes   { height:65px; resize:vertical; margin-bottom:10px }
+.bank-edit-actions { display:flex; gap:8px }
+.bank-save-btn     { flex:1; padding:9px; background:var(--green); color:white; border:none; border-radius:var(--r-sm); font-weight:bold; font-size:14px }
+.bank-cancel-btn   { padding:9px 13px; background:var(--border); color:var(--text2); border:none; border-radius:var(--r-sm); font-size:14px }
+
+/* ══════════════════════════════════════════════════════
+   ADMIN — NOTIFICATIONS / DAILY SUMMARY
+══════════════════════════════════════════════════════ */
+.notification-item           { padding:9px 12px; border-radius:var(--r-sm); background:var(--bg); margin-bottom:7px; border-right:4px solid var(--blue); font-size:13px }
+.notification-item.new       { background:#eff6ff; border-right-color:#2563eb }
+.notification-item.shekel-notif { border-right-color:var(--amber); background:#fefce8 }
+
+.daily-summary { display:grid; grid-template-columns:repeat(4,1fr); gap:10px }
+.summary-card  { background:var(--bg); border-radius:var(--r-sm); padding:clamp(11px,3vw,17px); text-align:center }
+.summary-card h3    { font-size:12px; color:var(--text2); margin-bottom:5px }
+.summary-card .value{ font-size:clamp(15px,3.5vw,19px); font-weight:bold; color:var(--text) }
+
+.monthly-table { width:100%; border-collapse:collapse; margin-top:10px; font-size:clamp(11px,2.5vw,13px) }
+.monthly-table th,
+.monthly-table td   { padding:8px 9px; text-align:center; border:1px solid var(--border) }
+.monthly-table th   { background:var(--bg); color:var(--text2); font-weight:bold }
+.monthly-table tr:nth-child(even) td { background:var(--bg) }
+.monthly-table td.add-val    { color:var(--green); font-weight:bold }
+.monthly-table td.sub-val    { color:var(--red);   font-weight:bold }
+.monthly-table td.shekel-val { color:#b45309;       font-weight:bold }
+
+/* ══════════════════════════════════════════════════════
+   USER MANAGEMENT
+══════════════════════════════════════════════════════ */
+.user-mgmt-card  { border:1px solid var(--border); border-radius:var(--r); padding:clamp(11px,2.5vw,16px) clamp(13px,3vw,18px); margin-bottom:10px; display:flex; justify-content:space-between; align-items:center; background:var(--card); gap:10px; flex-wrap:wrap }
+.user-mgmt-name  { font-size:15px; font-weight:bold; color:var(--text) }
+.user-mgmt-btns  { display:flex; gap:8px; flex-wrap:wrap }
+
+/* ══════════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════════ */
+.modal         { display:none; position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:1000; align-items:center; justify-content:center; padding:14px }
+.modal.active  { display:flex }
+.modal-content { background:var(--card); border-radius:var(--r-lg); padding:clamp(18px,5vw,36px); max-width:500px; width:100%; box-shadow:var(--shadow-lg); max-height:90dvh; overflow-y:auto }
+
+/* ══════════════════════════════════════════════════════
+   CHARTS
+══════════════════════════════════════════════════════ */
+.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px }
+.chart-wrap  { position:relative; height:210px }
+
+/* ══════════════════════════════════════════════════════
+   AUDIT LOG
+══════════════════════════════════════════════════════ */
+.audit-item { padding:9px 12px; border-radius:var(--r-sm); background:var(--bg); margin-bottom:6px; border-right:3px solid var(--purple); font-size:13px }
+
+/* ══════════════════════════════════════════════════════
+   PERMISSIONS
+══════════════════════════════════════════════════════ */
+.perm-row    { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border) }
+.perm-toggle { position:relative; display:inline-block; width:44px; height:25px }
+.perm-toggle input { opacity:0; width:0; height:0 }
+.perm-slider { position:absolute; cursor:pointer; inset:0; background:#cbd5e0; border-radius:25px; transition:.3s }
+.perm-slider::before { position:absolute; content:""; height:19px; width:19px; right:3px; bottom:3px; background:white; border-radius:50%; transition:.3s }
+.perm-toggle input:checked + .perm-slider { background:var(--primary) }
+.perm-toggle input:checked + .perm-slider::before { transform:translateX(-19px) }
+
+/* ══════════════════════════════════════════════════════
+   AUTO-LOCK
+══════════════════════════════════════════════════════ */
+#autoLockOverlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.85); z-index:99990; align-items:center; justify-content:center; flex-direction:column; gap:18px; padding:16px }
+#autoLockOverlay.show { display:flex }
+.lock-resume-card   { background:var(--card); border-radius:var(--r-lg); padding:clamp(22px,5vw,40px); text-align:center; max-width:330px; width:100% }
+.lock-resume-card h2{ margin-bottom:12px; color:var(--text) }
+
+/* ══════════════════════════════════════════════════════
+   MISC — SAVE / UNDO / SEARCH / DATE / CONVERTER / PIN
+══════════════════════════════════════════════════════ */
+.save-indicator { position:fixed; bottom:16px; right:16px; background:var(--green); color:white; padding:9px 15px; border-radius:var(--r); font-size:13px; font-weight:bold; box-shadow:var(--shadow); transition:opacity .4s; opacity:0; pointer-events:none; z-index:9999 }
+.save-indicator.show { opacity:1 }
+
+#undoToast { position:fixed; bottom:62px; left:50%; transform:translateX(-50%); background:#1e293b; color:white; padding:10px 16px; border-radius:var(--r); font-size:13px; display:none; align-items:center; gap:10px; z-index:9998; box-shadow:var(--shadow-lg); white-space:nowrap }
+#undoToast.show { display:flex }
+#undoToast button { background:var(--primary); border:none; color:white; padding:5px 11px; border-radius:var(--r-sm); font-size:12px; font-weight:bold }
+
+.search-wrap { position:relative }
+.search-bar  { width:100%; padding:10px 38px 10px 13px; font-size:14px; border:2px solid var(--border); border-radius:var(--r); background:var(--card); color:var(--text); transition:border-color .2s; margin-bottom:10px }
+.search-bar:focus { outline:none; border-color:var(--primary) }
+.search-icon { position:absolute; right:12px; top:13px; font-size:14px; pointer-events:none }
+
+.date-filter-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px }
+.date-filter-row input[type=date] { padding:8px 10px; border:2px solid var(--border); border-radius:var(--r-sm); font-size:13px; background:var(--card); color:var(--text) }
+.clear-filter-btn { padding:8px 11px; background:var(--border); border:none; border-radius:var(--r-sm); font-size:12px; color:var(--text2) }
+.clear-filter-btn:hover { background:#cbd5e0 }
+
+.converter-row    { display:flex; align-items:center; gap:10px; flex-wrap:wrap }
+.converter-input  { flex:1; min-width:85px; padding:10px; font-size:16px; border:2px solid var(--border); border-radius:var(--r-sm); text-align:center; background:var(--card); color:var(--text) }
+.converter-input:focus { outline:none; border-color:var(--primary) }
+.converter-result { flex:1; min-width:85px; padding:10px; font-size:17px; font-weight:bold; color:var(--primary); text-align:center; background:var(--bg); border-radius:var(--r-sm) }
+.swap-btn { padding:10px 12px; background:var(--primary); color:white; border:none; border-radius:var(--r-sm); font-size:17px; transition:transform .3s }
+.swap-btn:hover { transform:rotate(180deg) }
+
+.pin-display { display:flex; justify-content:center; gap:11px; margin:15px 0 }
+.pin-dot     { width:15px; height:15px; border-radius:50%; border:2px solid var(--primary); background:transparent; transition:background .2s }
+.pin-dot.filled { background:var(--primary) }
+.pin-pad  { display:grid; grid-template-columns:repeat(3,1fr); gap:9px; max-width:230px; margin:0 auto }
+.pin-btn  { padding:14px; font-size:21px; font-weight:bold; border:2px solid var(--border); border-radius:var(--r); background:var(--card); color:var(--text); transition:all .15s }
+.pin-btn:hover  { background:var(--primary); color:white; border-color:var(--primary); transform:scale(1.05) }
+.pin-btn:active { transform:scale(.95) }
+
+/* ══════════════════════════════════════════════════════
+   DARK MODE
+══════════════════════════════════════════════════════ */
+body.dark .login-screen,  body.dark .header,
+body.dark .stat-card,     body.dark .form-card,
+body.dark .history-card,  body.dark .admin-section,
+body.dark .modal-content, body.dark .bank-card,
+body.dark .dollar-rate-card, body.dark .charts-section,
+body.dark .converter-card { background:var(--card) }
+
+body.dark .bank-edit-form,
+body.dark .summary-card,
+body.dark .notification-item,
+body.dark .audit-item { background:#162032 }
+
+body.dark .audit-item       { border-right-color:#7c3aed }
+body.dark .rate-item        { background:#162032; border-color:var(--border) }
+body.dark .rate-item.sell   { background:#2d1f1f }
+
+body.dark .transaction-item.add      { background:#1a2e22; border-color:#166534 }
+body.dark .transaction-item.subtract { background:#2d1f1f; border-color:#7f1d1d }
+body.dark .transaction-item.shekel   { background:#2d2a1a; border-color:#78350f }
+
+body.dark .pin-btn { background:var(--card); border-color:var(--border) }
+body.dark .pin-btn:hover { background:var(--primary); color:white }
+body.dark .monthly-table th { background:#162032 }
+body.dark .monthly-table tr:nth-child(even) td { background:#162032 }
+
+body.dark .type-btn   { background:var(--card); color:#cbd5e0; border-color:var(--border) }
+body.dark .cancel-btn,
+body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
 
 
-/* ══ RESPONSIVE IMPROVEMENTS ══ */
+/* ══════════════════════════════════════════════════════
+   EXPENSES TRACKER
+══════════════════════════════════════════════════════ */
+.exp-tabs { display:flex; gap:6px; margin-bottom:16px; background:var(--bg); border-radius:var(--r); padding:5px; flex-wrap:wrap }
+.exp-tab  { flex:1; min-width:80px; padding:9px 6px; border:none; border-radius:var(--r-sm); background:transparent; font-size:13px; font-weight:bold; color:var(--text2); cursor:pointer; transition:all .2s; font-family:var(--font) }
+.exp-tab.active { background:var(--card); color:var(--primary); box-shadow:var(--shadow) }
+
+.exp-summary-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px }
+.exp-sum-card { background:var(--card); border-radius:var(--r); padding:14px; text-align:center; box-shadow:var(--shadow); border-top:3px solid var(--border) }
+.exp-sum-card.spent { border-top-color:var(--red) }
+.exp-sum-card.budget{ border-top-color:var(--blue) }
+.exp-sum-card.left  { border-top-color:var(--green) }
+.exp-sum-label { font-size:11px; color:var(--text2); margin-bottom:5px }
+.exp-sum-value { font-size:clamp(16px,4vw,22px); font-weight:bold }
+.exp-sum-value.red   { color:var(--red) }
+.exp-sum-value.blue  { color:var(--blue) }
+.exp-sum-value.green { color:var(--green) }
+.exp-sum-value.amber { color:var(--amber) }
+
+/* Progress bar */
+.budget-progress-wrap { background:var(--card); border-radius:var(--r); padding:16px; margin-bottom:14px; box-shadow:var(--shadow) }
+.budget-progress-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:6px }
+.budget-progress-label { font-size:13px; font-weight:bold; color:var(--text) }
+.budget-progress-pct   { font-size:13px; font-weight:bold }
+.progress-bar-bg { height:12px; background:var(--bg); border-radius:10px; overflow:hidden }
+.progress-bar-fill { height:100%; border-radius:10px; transition:width .5s ease }
+.progress-bar-fill.ok      { background:linear-gradient(90deg,var(--green),#34d399) }
+.progress-bar-fill.warning { background:linear-gradient(90deg,var(--amber),#fbbf24) }
+.progress-bar-fill.over    { background:linear-gradient(90deg,var(--red),#f87171) }
+
+/* Category chips */
+.cat-chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:14px }
+.cat-chip  { padding:6px 13px; border-radius:20px; font-size:12px; font-weight:bold; cursor:pointer; border:2px solid transparent; transition:all .2s; white-space:nowrap }
+.cat-chip.active { border-color:currentColor; box-shadow:0 2px 8px rgba(0,0,0,.12) }
+
+/* Expense item */
+.exp-item { display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:var(--r-sm); border:1px solid var(--border); margin-bottom:8px; background:var(--card); transition:all .2s }
+.exp-item:hover { box-shadow:var(--shadow) }
+.exp-cat-icon  { width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0 }
+.exp-info      { flex:1; min-width:0 }
+.exp-name      { font-size:14px; font-weight:bold; color:var(--text) }
+.exp-meta      { font-size:11px; color:var(--text2); margin-top:2px }
+.exp-amount    { font-size:16px; font-weight:bold; color:var(--red); white-space:nowrap }
+.exp-del-btn   { background:none; border:none; font-size:14px; color:var(--text3); padding:3px 6px; border-radius:6px; min-height:unset; transition:all .15s }
+.exp-del-btn:hover { color:var(--red); background:#fee2e2 }
+
+/* Category breakdown chart */
+.cat-breakdown { display:flex; flex-direction:column; gap:8px; margin-top:12px }
+.cat-row  { display:flex; align-items:center; gap:10px }
+.cat-row-icon  { width:28px; text-align:center; font-size:16px; flex-shrink:0 }
+.cat-row-name  { width:80px; font-size:12px; color:var(--text2); flex-shrink:0 }
+.cat-row-bar   { flex:1; height:8px; background:var(--bg); border-radius:10px; overflow:hidden }
+.cat-row-fill  { height:100%; border-radius:10px; transition:width .5s }
+.cat-row-amt   { width:60px; text-align:left; font-size:12px; font-weight:bold; color:var(--text); flex-shrink:0 }
+
+/* Budget modal */
+.budget-row    { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--border) }
+.budget-row:last-child { border-bottom:none }
+.budget-row-left { display:flex; align-items:center; gap:8px; font-size:14px }
+.budget-inp    { width:100px; padding:7px 10px; border:2px solid var(--border); border-radius:var(--r-sm); font-size:14px; text-align:center; background:var(--card); color:var(--text); font-family:var(--font) }
+.budget-inp:focus { outline:none; border-color:var(--primary) }
+
+/* Expense form */
+.exp-form-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px }
+@media(max-width:480px){ .exp-form-grid { grid-template-columns:1fr } }
+
+/* Alert badge */
+.budget-alert { display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:20px; font-size:12px; font-weight:bold; margin-right:8px }
+.budget-alert.warning { background:#fef9c3; color:#92400e }
+.budget-alert.over    { background:#fee2e2; color:#b91c1c }
+
 @media(max-width:600px){
-  body{padding:10px}
-  .header{padding:12px 14px;gap:8px}
-  .header h1{font-size:17px}
-  .btn{padding:7px 12px;font-size:12px}
-  .dark-toggle{font-size:18px}
-  .user-badge{padding:5px 10px;font-size:12px}
-  .stat-card{padding:14px}
-  .stat-value{font-size:22px}
-  .stat-icon{font-size:24px}
-  .form-card,.history-card,.admin-section,.dollar-rate-card{padding:16px 14px}
-  .modal-content{padding:22px 16px}
-  .login-screen{padding:28px 18px;margin:20px auto}
-  .login-screen h1{font-size:20px}
-  .user-select-btn{padding:14px;font-size:16px}
-  .transaction-item{padding:10px 12px}
-  .transaction-amount{font-size:16px}
-  .add-btn{padding:14px;font-size:16px}
-  .charts-grid{grid-template-columns:1fr}
-  .daily-summary{grid-template-columns:1fr 1fr}
-  .bank-view{flex-wrap:wrap}
-  .stats-grid,.stats-grid-4{grid-template-columns:1fr 1fr}
-  .sl-card{padding:28px 18px}
-  .sl-title{font-size:18px}
+  .exp-summary-grid { grid-template-columns:1fr 1fr }
 }
 @media(max-width:380px){
-  .stats-grid,.stats-grid-4{grid-template-columns:1fr}
-  .header{flex-direction:column;align-items:flex-start}
-  .user-info{width:100%;justify-content:flex-end}
+  .exp-summary-grid { grid-template-columns:1fr }
 }
-/* Smooth scrolling */
-html{scroll-behavior:smooth}
-/* Better touch targets */
-button{min-height:36px}
 
+/* ══════════════════════════════════════════════════════
+   RESPONSIVE BREAKPOINTS
+══════════════════════════════════════════════════════ */
 
-/* ══ EDIT TX MODAL ══ */
-.edit-tx-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:7px;transition:background 0.15s;color:#64748b}
-.edit-tx-btn:hover{background:#e2e8f0}
-body.dark .edit-tx-btn:hover{background:#2d3748}
-.del-tx-btn{background:none;border:none;cursor:pointer;font-size:15px;padding:4px 7px;border-radius:7px;color:#ef4444}
-.del-tx-btn:hover{background:#fee2e2}
+/* Tablet ≤ 900px */
+@media (max-width:900px) {
+  .stats-grid-4 { grid-template-columns:repeat(2,1fr) }
+  .daily-summary { grid-template-columns:repeat(2,1fr) }
+}
 
-/* ══ USER MANAGEMENT ══ */
-.user-mgmt-card{border:1px solid #e2e8f0;border-radius:14px;padding:16px 18px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;background:white;gap:12px;flex-wrap:wrap}
-body.dark .user-mgmt-card{background:#1e2a3a;border-color:#2d3748}
-.user-mgmt-name{font-size:16px;font-weight:bold;color:#2d3748}
-body.dark .user-mgmt-name{color:#e2e8f0}
-.user-mgmt-btns{display:flex;gap:8px}
+/* Tablet ≤ 720px */
+@media (max-width:720px) {
+  .stats-grid   { grid-template-columns:repeat(2,1fr) }
+  .charts-grid  { grid-template-columns:1fr }
+  .chart-wrap   { height:190px }
+  .monthly-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch }
+}
 
+/* Mobile ≤ 540px */
+@media (max-width:540px) {
+  .bank-edit-row  { grid-template-columns:1fr }
+  .type-buttons   { flex-direction:column }
+  .button-group   { flex-direction:column }
+  .cancel-btn     { padding:12px }
+  .user-mgmt-btns { flex-wrap:wrap }
+  .header         { gap:6px }
+}
 
-/* ══ DARK MODE ══ */
-body.dark{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%)}
-body.dark .login-screen,body.dark .header,body.dark .dollar-rate-card,
-body.dark .stat-card,body.dark .form-card,body.dark .history-card,
-body.dark .admin-section,body.dark .modal-content,body.dark .bank-card{
-  background:#1e2a3a;color:#e2e8f0;border-color:#2d3748}
-body.dark .stat-label,body.dark .transaction-details,body.dark .rate-label{color:#94a3b8}
-body.dark .form-group label{color:#cbd5e0}
-body.dark .form-group input,body.dark .form-group select,body.dark .form-group textarea,
-body.dark .bank-edit-inp,body.dark .bank-edit-notes,body.dark .password-input{
-  background:#2d3748;color:#e2e8f0;border-color:#4a5568}
-body.dark .type-btn{background:#2d3748;color:#cbd5e0;border-color:#4a5568}
-body.dark .cancel-btn,body.dark .back-btn{background:#2d3748;color:#cbd5e0}
-body.dark .bank-view{background:#1e2a3a}
-body.dark .bank-edit-form{background:#162032}
-body.dark .summary-card{background:#162032}
-body.dark .monthly-table th{background:#162032;color:#94a3b8}
-body.dark .monthly-table td{border-color:#2d3748}
-body.dark .monthly-table tr:nth-child(even) td{background:#162032}
-body.dark .notification-item{background:#162032}
-body.dark h1,body.dark h2,body.dark .header h1{color:#e2e8f0}
-body.dark .login-screen h1{color:#e2e8f0}
-body.dark select{background:#2d3748;color:#e2e8f0}
-body.dark .rate-item{background:#162032;border-color:#4a5568}
-body.dark .rate-item.sell{background:#2d1f1f}
-body.dark .transaction-item.add{background:#1a2e22;border-color:#166534}
-body.dark .transaction-item.subtract{background:#2d1f1f;border-color:#7f1d1d}
-body.dark .transaction-item.shekel{background:#2d2a1a;border-color:#78350f}
-
-/* ══ DARK MODE TOGGLE BTN ══ */
-.dark-toggle{background:none;border:none;cursor:pointer;font-size:22px;padding:4px 8px;border-radius:8px;transition:transform 0.2s}
-.dark-toggle:hover{transform:scale(1.2)}
-
-/* ══ CHARTS ══ */
-.charts-section{background:white;border-radius:16px;padding:24px;margin-bottom:18px;box-shadow:0 4px 20px rgba(0,0,0,0.1)}
-body.dark .charts-section{background:#1e2a3a}
-.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-@media(max-width:700px){.charts-grid{grid-template-columns:1fr}}
-.chart-wrap{position:relative;height:240px}
-
-/* ══ AUDIT LOG ══ */
-.audit-item{padding:10px 14px;border-radius:10px;background:#f8fafc;margin-bottom:7px;border-right:3px solid #8b5cf6;font-size:13px}
-body.dark .audit-item{background:#162032;border-right-color:#7c3aed}
-
-/* ══ AUTO LOCK OVERLAY ══ */
-#autoLockOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:99990;align-items:center;justify-content:center;flex-direction:column;gap:20px}
-#autoLockOverlay.show{display:flex}
-.lock-resume-card{background:white;border-radius:20px;padding:40px;text-align:center;max-width:340px;width:90%}
-body.dark .lock-resume-card{background:#1e2a3a;color:#e2e8f0}
-.lock-resume-card h2{margin-bottom:12px;color:#2d3748}
-body.dark .lock-resume-card h2{color:#e2e8f0}
-
-/* ══ PERMISSIONS ══ */
-.perm-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #e2e8f0}
-body.dark .perm-row{border-bottom-color:#2d3748}
-.perm-toggle{position:relative;display:inline-block;width:46px;height:26px}
-.perm-toggle input{opacity:0;width:0;height:0}
-.perm-slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e0;border-radius:26px;transition:0.3s}
-.perm-slider:before{position:absolute;content:"";height:20px;width:20px;right:3px;bottom:3px;background:white;border-radius:50%;transition:0.3s}
-.perm-toggle input:checked + .perm-slider{background:#667eea}
-.perm-toggle input:checked + .perm-slider:before{transform:translateX(-20px)}
-
+/* Small mobile ≤ 400px */
+@media (max-width:400px) {
+  .stats-grid,
+  .stats-grid-4    { grid-template-columns:1fr }
+  .daily-summary   { grid-template-columns:1fr 1fr }
+  .header          { flex-direction:column; align-items:flex-start }
+  .user-info       { width:100%; flex-wrap:wrap }
+  .bank-view       { flex-wrap:wrap }
+  .bank-view-btns  { width:100%; justify-content:flex-end }
+  .user-mgmt-card  { flex-direction:column; align-items:flex-start }
+  .user-mgmt-btns  { width:100%; justify-content:flex-end }
+}
 </style>
 </head>
 <body class="locked">
@@ -557,39 +860,7 @@ body.dark .perm-row{border-bottom-color:#2d3748}
   </div>
 </div>
 
-<style>
-/* ══ SITE LOCK STYLES ══ */
-#siteLock{position:fixed;inset:0;z-index:999999}
-.sl-bg{width:100%;height:100%;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
-.sl-circles{position:absolute;inset:0;pointer-events:none}
-.sl-circle{position:absolute;border-radius:50%;background:rgba(255,255,255,0.07)}
-.c1{width:400px;height:400px;top:-100px;right:-100px;animation:slFloat 8s ease-in-out infinite}
-.c2{width:300px;height:300px;bottom:-80px;left:-80px;animation:slFloat 10s ease-in-out infinite reverse}
-.c3{width:200px;height:200px;top:50%;left:50%;transform:translate(-50%,-50%);animation:slFloat 6s ease-in-out infinite}
-@keyframes slFloat{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-20px) scale(1.05)}}
-.sl-card{background:rgba(255,255,255,0.15);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.25);border-radius:28px;padding:44px 36px;width:92%;max-width:400px;text-align:center;box-shadow:0 25px 60px rgba(0,0,0,0.25);position:relative;z-index:1;animation:slSlideUp 0.6s cubic-bezier(0.16,1,0.3,1)}
-@keyframes slSlideUp{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:translateY(0)}}
-.sl-icon-wrap{position:relative;display:inline-block;margin-bottom:18px}
-.sl-icon-ring{position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(255,255,255,0.4);animation:slPulse 2s ease-in-out infinite}
-@keyframes slPulse{0%,100%{transform:scale(1);opacity:0.6}50%{transform:scale(1.15);opacity:1}}
-.sl-icon{font-size:52px;display:block;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.2))}
-.sl-title{color:white;font-size:22px;font-weight:bold;margin-bottom:8px;text-shadow:0 2px 8px rgba(0,0,0,0.15)}
-.sl-sub{color:rgba(255,255,255,0.8);font-size:14px;margin-bottom:28px}
-.sl-input-wrap{position:relative;margin-bottom:16px}
-.sl-input{width:100%;padding:16px 48px 16px 18px;font-size:20px;letter-spacing:6px;background:rgba(255,255,255,0.2);border:2px solid rgba(255,255,255,0.3);border-radius:14px;color:white;text-align:center;font-family:inherit;transition:all 0.2s;outline:none}
-.sl-input::placeholder{letter-spacing:4px;color:rgba(255,255,255,0.5);font-size:22px}
-.sl-input:focus{background:rgba(255,255,255,0.25);border-color:rgba(255,255,255,0.7);box-shadow:0 0 0 4px rgba(255,255,255,0.1)}
-.sl-input-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:18px;pointer-events:none}
-.sl-btn{width:100%;padding:16px;background:white;color:#667eea;border:none;border-radius:14px;font-size:17px;font-weight:bold;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.2s;box-shadow:0 4px 20px rgba(0,0,0,0.15)}
-.sl-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,0,0,0.2)}
-.sl-btn:active{transform:translateY(0)}
-.sl-arrow{font-size:20px;transition:transform 0.2s}
-.sl-btn:hover .sl-arrow{transform:translateX(-4px)}
-.sl-error{color:#fde68a;font-size:14px;margin-top:14px;display:none;background:rgba(239,68,68,0.2);border-radius:10px;padding:10px}
-.sl-attempts{color:rgba(255,255,255,0.7);font-size:13px;margin-top:10px}
-@keyframes shake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-8px)}40%,80%{transform:translateX(8px)}}
-.sl-input.shake{animation:shake 0.4s ease}
-</style>
+
 
 
 <!-- LOGIN -->
@@ -619,6 +890,10 @@ body.dark .perm-row{border-bottom-color:#2d3748}
     <h1>💰 حساباتي المالية</h1>
     <div class="user-info">
       <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
+      <button class="btn" style="background:var(--red);color:white;position:relative" onclick="showExpensesSection()" id="expBtn">
+        💸 مصاريفي
+        <span id="expAlertDot" style="display:none;position:absolute;top:-4px;right:-4px;width:10px;height:10px;background:#fbbf24;border-radius:50%;border:2px solid white"></span>
+      </button>
       <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
       <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="وضع ليلي">🌙</button>
       <div class="user-badge" id="userBadge"></div>
@@ -734,6 +1009,78 @@ body.dark .perm-row{border-bottom-color:#2d3748}
       <button type="button" class="submit-btn add" id="submitBtn" onclick="addTransaction()">✓ حفظ المعاملة</button>
       <button type="button" class="cancel-btn" onclick="hideForm()">✕ إلغاء</button>
     </div>
+  </div>
+
+
+  <!-- ══ EXPENSES TRACKER ══ -->
+  <div id="expensesSection" class="hidden">
+
+    <!-- Header row -->
+    <div class="admin-section" style="padding:16px 20px;margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 style="margin:0">💸 تتبع المصاريف</h2>
+          <span id="currentMonthLabel" style="font-size:13px;color:var(--text2)"></span>
+          <span id="budgetAlertBadge"></span>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" style="background:var(--blue);color:white;font-size:12px" onclick="showBudgetModal()">🎯 الميزانية</button>
+          <button class="btn" style="background:var(--green);color:white;font-size:12px" onclick="showAddExpenseModal()">➕ مصروف جديد</button>
+          <button class="btn" style="background:var(--bg);color:var(--text2);font-size:12px" onclick="hideExpensesSection()">✕ إغلاق</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Month tabs -->
+    <div class="admin-section" style="padding:14px 18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;gap:6px">
+          <button class="btn" style="background:var(--bg);color:var(--text2);font-size:12px;padding:6px 10px" onclick="expChangeMonth(-1)">◀ سابق</button>
+          <button class="btn" style="background:var(--bg);color:var(--text2);font-size:12px;padding:6px 10px" onclick="expChangeMonth(1)">التالي ▶</button>
+          <button class="btn" style="background:var(--primary);color:white;font-size:12px;padding:6px 10px" onclick="expGoToday()">اليوم</button>
+        </div>
+        <div id="expViewToggle" class="exp-tabs" style="margin:0;flex-wrap:nowrap;min-width:180px">
+          <button class="exp-tab active" id="expTabAll"    onclick="expSetView('all')">الكل</button>
+          <button class="exp-tab"        id="expTabDaily"  onclick="expSetView('daily')">يومي</button>
+          <button class="exp-tab"        id="expTabCat"    onclick="expSetView('cat')">تصنيف</button>
+        </div>
+      </div>
+
+      <!-- Summary cards -->
+      <div class="exp-summary-grid">
+        <div class="exp-sum-card spent">
+          <div class="exp-sum-label">💸 إجمالي المصاريف</div>
+          <div class="exp-sum-value red" id="expTotalSpent">0.00 ₪</div>
+        </div>
+        <div class="exp-sum-card budget">
+          <div class="exp-sum-label">🎯 الميزانية الشهرية</div>
+          <div class="exp-sum-value blue" id="expTotalBudget">-- ₪</div>
+        </div>
+        <div class="exp-sum-card left">
+          <div class="exp-sum-label">✅ المتبقي</div>
+          <div class="exp-sum-value" id="expTotalLeft" style="color:var(--green)">-- ₪</div>
+        </div>
+      </div>
+
+      <!-- Budget progress bar -->
+      <div class="budget-progress-wrap" id="budgetProgressWrap" style="display:none">
+        <div class="budget-progress-header">
+          <span class="budget-progress-label">📊 نسبة الإنفاق</span>
+          <span class="budget-progress-pct" id="expProgressPct">0%</span>
+        </div>
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill ok" id="expProgressBar" style="width:0%"></div>
+        </div>
+        <p id="expProgressMsg" style="font-size:11px;color:var(--text2);margin-top:6px;text-align:center"></p>
+      </div>
+
+      <!-- Category filter chips -->
+      <div class="cat-chips" id="catChips"></div>
+
+      <!-- Content: all / daily / category view -->
+      <div id="expContent"></div>
+    </div>
+
   </div>
 
   <div class="history-card">
@@ -1189,7 +1536,9 @@ function getDefaultData() {
     notifications: [],
     dollarBuyRate: 3.62,
     dollarSellRate: 3.68,
-    shekelRate: 3.65
+    shekelRate: 3.65,
+    expenses: {},   // { userName: { [id]: {id,date,amount,currency,cat,desc} } }
+    budgets: {}     // { userName: { total:0, cats:{} } }
   };
 }
 
@@ -1224,6 +1573,8 @@ function mergeData(remote) {
   remote.permissions = remote.permissions || null;
   remote.userColors = remote.userColors || {};
   remote.pins = remote.pins || {};
+  remote.expenses = remote.expenses || {};
+  remote.budgets  = remote.budgets  || {};
   if (remote.auditLog && !Array.isArray(remote.auditLog)) {
     remote.auditLog = Object.values(remote.auditLog);
   }
@@ -2953,6 +3304,369 @@ function proceedAfterAuth() {
   }
 }
 
+
+// ================================================
+// EXPENSES TRACKER
+// ================================================
+
+const EXP_CATS = [
+  { id:'food',      label:'أكل',        icon:'🍔', color:'#ef4444', bg:'#fee2e2' },
+  { id:'transport', label:'مواصلات',    icon:'🚗', color:'#3b82f6', bg:'#dbeafe' },
+  { id:'shopping',  label:'تسوق',       icon:'🛍️', color:'#8b5cf6', bg:'#ede9fe' },
+  { id:'bills',     label:'فواتير',     icon:'📄', color:'#f59e0b', bg:'#fef9c3' },
+  { id:'health',    label:'صحة',        icon:'💊', color:'#10b981', bg:'#d1fae5' },
+  { id:'education', label:'تعليم',      icon:'📚', color:'#06b6d4', bg:'#cffafe' },
+  { id:'entertain', label:'ترفيه',      icon:'🎮', color:'#ec4899', bg:'#fce7f3' },
+  { id:'home',      label:'منزل',       icon:'🏠', color:'#64748b', bg:'#f1f5f9' },
+  { id:'other',     label:'أخرى',       icon:'📦', color:'#94a3b8', bg:'#f8fafc' },
+];
+
+let expCurrentMonth = new Date();   // Date object
+let expSelectedCat  = 'all';
+let expCurrentView  = 'all';
+let expSelectedCatForm = '';
+
+function expMonthKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function expGetUserExpenses() {
+  const user = currentUser;
+  if (!appData.expenses) appData.expenses = {};
+  if (!appData.expenses[user]) appData.expenses[user] = {};
+  return appData.expenses[user];
+}
+
+function expGetBudget() {
+  const user = currentUser;
+  if (!appData.budgets) appData.budgets = {};
+  if (!appData.budgets[user]) appData.budgets[user] = { total:0, cats:{} };
+  return appData.budgets[user];
+}
+
+function expGetMonthItems() {
+  const all = expGetUserExpenses();
+  const mk  = expMonthKey(expCurrentMonth);
+  return Object.values(all).filter(e => e.date && e.date.startsWith(mk));
+}
+
+function showExpensesSection() {
+  expCurrentMonth = new Date();
+  expSelectedCat  = 'all';
+  expCurrentView  = 'all';
+  document.getElementById('expensesSection').classList.remove('hidden');
+  document.getElementById('expensesSection').scrollIntoView({behavior:'smooth',block:'start'});
+  renderExpenses();
+}
+
+function hideExpensesSection() {
+  document.getElementById('expensesSection').classList.add('hidden');
+}
+
+function expChangeMonth(dir) {
+  expCurrentMonth = new Date(expCurrentMonth.getFullYear(), expCurrentMonth.getMonth() + dir, 1);
+  expSelectedCat = 'all';
+  renderExpenses();
+}
+
+function expGoToday() {
+  expCurrentMonth = new Date();
+  expSelectedCat = 'all';
+  renderExpenses();
+}
+
+function expSetView(v) {
+  expCurrentView = v;
+  ['all','daily','cat'].forEach(x => {
+    const btn = document.getElementById('expTab' + x.charAt(0).toUpperCase() + x.slice(1));
+    if(btn) btn.classList.toggle('active', x===v);
+  });
+  renderExpContent();
+}
+
+// ─── RENDER ───────────────────────────────────
+
+function renderExpenses() {
+  // Month label
+  const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const lbl = document.getElementById('currentMonthLabel');
+  if(lbl) lbl.textContent = months[expCurrentMonth.getMonth()] + ' ' + expCurrentMonth.getFullYear();
+
+  const items = expGetMonthItems();
+  const budget = expGetBudget();
+  const totalShekel = items.reduce((s,e) => s + expToShekel(e), 0);
+  const bTotal = budget.total || 0;
+  const left   = bTotal - totalShekel;
+
+  // Summary cards
+  const el = id => document.getElementById(id);
+  if(el('expTotalSpent'))  el('expTotalSpent').textContent  = totalShekel.toFixed(2) + ' ₪';
+  if(el('expTotalBudget')) el('expTotalBudget').textContent = bTotal ? bTotal.toFixed(0)+' ₪' : '-- ₪';
+  if(el('expTotalLeft'))   {
+    el('expTotalLeft').textContent = bTotal ? left.toFixed(2)+' ₪' : '-- ₪';
+    el('expTotalLeft').style.color = bTotal ? (left<0?'var(--red)':left/bTotal<0.15?'var(--amber)':'var(--green)') : 'var(--green)';
+  }
+
+  // Progress bar
+  const wrap = el('budgetProgressWrap');
+  if(wrap) {
+    if(bTotal > 0) {
+      wrap.style.display = 'block';
+      const pct = Math.min((totalShekel/bTotal)*100, 100);
+      const bar = el('expProgressBar');
+      const pctEl = el('expProgressPct');
+      const msg   = el('expProgressMsg');
+      if(bar) {
+        bar.style.width = pct+'%';
+        bar.className = 'progress-bar-fill ' + (pct>=100?'over':pct>=80?'warning':'ok');
+      }
+      if(pctEl) pctEl.textContent = Math.round((totalShekel/bTotal)*100)+'%';
+      if(msg) {
+        if(totalShekel>bTotal) msg.textContent = `⚠️ تجاوزت الميزانية بـ ${(totalShekel-bTotal).toFixed(2)} ₪`;
+        else if(pct>=80) msg.textContent = `⚠️ اقتربت من الحد — متبقي ${left.toFixed(2)} ₪ فقط`;
+        else msg.textContent = `✅ أنت بخير — استهلكت ${pct.toFixed(0)}% من ميزانيتك`;
+      }
+    } else { wrap.style.display = 'none'; }
+  }
+
+  // Alert badge + dot
+  const badge = el('budgetAlertBadge');
+  const dot   = el('expAlertDot');
+  if(badge) {
+    if(bTotal>0 && totalShekel/bTotal>=1) {
+      badge.innerHTML='<span class="budget-alert over">🔴 تجاوزت الميزانية!</span>';
+      if(dot) dot.style.display='block';
+    } else if(bTotal>0 && totalShekel/bTotal>=0.8) {
+      badge.innerHTML='<span class="budget-alert warning">🟡 قرب الحد</span>';
+      if(dot) dot.style.display='block';
+    } else {
+      badge.innerHTML='';
+      if(dot) dot.style.display='none';
+    }
+  }
+
+  // Category chips
+  renderCatChips(items);
+  renderExpContent();
+}
+
+function renderCatChips(items) {
+  const el = document.getElementById('catChips');
+  if(!el) return;
+  const counts = {};
+  items.forEach(e => { counts[e.cat] = (counts[e.cat]||0)+1; });
+  let h = `<span class="cat-chip active" id="chip-all" onclick="expFilterCat('all')"
+    style="background:${expSelectedCat==='all'?'var(--primary)':'var(--bg)'};color:${expSelectedCat==='all'?'white':'var(--text2)'};border-color:transparent">
+    الكل (${items.length})</span>`;
+  EXP_CATS.forEach(c => {
+    if(!counts[c.id]) return;
+    const active = expSelectedCat===c.id;
+    h += `<span class="cat-chip" onclick="expFilterCat('${c.id}')"
+      style="background:${active?c.color:c.bg};color:${active?'white':c.color};border-color:${active?c.color:'transparent'}">
+      ${c.icon} ${c.label} (${counts[c.id]})</span>`;
+  });
+  el.innerHTML = h;
+}
+
+function expFilterCat(cat) {
+  expSelectedCat = cat;
+  renderExpenses();
+}
+
+function renderExpContent() {
+  const cont = document.getElementById('expContent');
+  if(!cont) return;
+  let items = expGetMonthItems();
+  if(expSelectedCat!=='all') items = items.filter(e=>e.cat===expSelectedCat);
+  items.sort((a,b)=>b.date.localeCompare(a.date));
+
+  if(expCurrentView==='daily') {
+    cont.innerHTML = renderDailyView(items);
+  } else if(expCurrentView==='cat') {
+    cont.innerHTML = renderCatView(items);
+  } else {
+    cont.innerHTML = renderAllView(items);
+  }
+}
+
+function renderAllView(items) {
+  if(!items.length) return '<div class="empty-state">لا توجد مصاريف لهذا الشهر 🎉</div>';
+  return items.map(e => expItemHTML(e)).join('');
+}
+
+function renderDailyView(items) {
+  if(!items.length) return '<div class="empty-state">لا توجد مصاريف لهذا الشهر 🎉</div>';
+  const days = {};
+  items.forEach(e => { if(!days[e.date]) days[e.date]=[]; days[e.date].push(e); });
+  const sorted = Object.keys(days).sort((a,b)=>b.localeCompare(a));
+  const dayNames = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  return sorted.map(d => {
+    const dt = new Date(d);
+    const dn = dayNames[dt.getDay()];
+    const tot = days[d].reduce((s,e)=>s+expToShekel(e),0);
+    return `<div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:2px solid var(--border);margin-bottom:8px">
+        <span style="font-weight:bold;color:var(--text);font-size:14px">📅 ${dn} — ${d}</span>
+        <span style="font-weight:bold;color:var(--red);font-size:14px">${tot.toFixed(2)} ₪</span>
+      </div>
+      ${days[d].map(e=>expItemHTML(e)).join('')}
+    </div>`;
+  }).join('');
+}
+
+function renderCatView(items) {
+  if(!items.length) return '<div class="empty-state">لا توجد مصاريف لهذا الشهر 🎉</div>';
+  const totals = {};
+  items.forEach(e => { totals[e.cat] = (totals[e.cat]||0) + expToShekel(e); });
+  const grandTotal = Object.values(totals).reduce((s,v)=>s+v,0);
+  const sorted = Object.entries(totals).sort((a,b)=>b[1]-a[1]);
+  const budget = expGetBudget();
+  let h = '<div class="cat-breakdown">';
+  sorted.forEach(([catId, total]) => {
+    const cat = EXP_CATS.find(c=>c.id===catId) || EXP_CATS[EXP_CATS.length-1];
+    const pct = grandTotal ? (total/grandTotal*100) : 0;
+    const catBudget = budget.cats && budget.cats[catId] ? budget.cats[catId] : 0;
+    const overBudget = catBudget && total > catBudget;
+    h += `<div class="cat-row" onclick="expFilterCat('${catId}')" style="cursor:pointer;padding:6px 0">
+      <div class="cat-row-icon">${cat.icon}</div>
+      <div class="cat-row-name" style="color:var(--text)">${cat.label}</div>
+      <div class="cat-row-bar"><div class="cat-row-fill" style="width:${pct}%;background:${cat.color}"></div></div>
+      <div class="cat-row-amt">${total.toFixed(0)} ₪ ${overBudget?'⚠️':''}</div>
+    </div>`;
+  });
+  h += '</div>';
+  return h;
+}
+
+function expItemHTML(e) {
+  const cat = EXP_CATS.find(c=>c.id===e.cat) || EXP_CATS[EXP_CATS.length-1];
+  const amtShekel = expToShekel(e);
+  const amtDisplay = e.currency==='USD' ? `$${Number(e.amount).toFixed(2)} (${amtShekel.toFixed(2)}₪)` : `${Number(e.amount).toFixed(2)} ₪`;
+  return `<div class="exp-item">
+    <div class="exp-cat-icon" style="background:${cat.bg}">${cat.icon}</div>
+    <div class="exp-info">
+      <div class="exp-name">${e.desc||cat.label}</div>
+      <div class="exp-meta">${cat.label} • ${e.date}</div>
+    </div>
+    <div class="exp-amount">${amtDisplay}</div>
+    <button class="exp-del-btn" onclick="deleteExpense('${e.id}')">🗑️</button>
+  </div>`;
+}
+
+function expToShekel(e) {
+  const amt = Number(e.amount) || 0;
+  if(e.currency==='USD') return amt * (appData.shekelRate||3.65);
+  return amt;
+}
+
+// ─── ADD EXPENSE ───────────────────────────────
+
+function showAddExpenseModal() {
+  // Build category selector
+  const el = document.getElementById('expCatSelect');
+  expSelectedCatForm = EXP_CATS[0].id;
+  el.innerHTML = EXP_CATS.map(c => `
+    <span class="cat-chip" id="expCatChip-${c.id}" onclick="expSelectCatForm('${c.id}')"
+      style="background:${c.id===expSelectedCatForm?c.color:c.bg};color:${c.id===expSelectedCatForm?'white':c.color};border-color:${c.id===expSelectedCatForm?c.color:'transparent'}">
+      ${c.icon} ${c.label}
+    </span>`).join('');
+
+  // Set today as default date
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+  document.getElementById('expDate').value = todayStr;
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expFormError').style.display = 'none';
+  document.getElementById('addExpenseModal').classList.add('active');
+  setTimeout(()=>document.getElementById('expAmount').focus(),100);
+}
+
+function expSelectCatForm(catId) {
+  expSelectedCatForm = catId;
+  EXP_CATS.forEach(c => {
+    const chip = document.getElementById('expCatChip-'+c.id);
+    if(!chip) return;
+    chip.style.background = c.id===catId ? c.color : c.bg;
+    chip.style.color       = c.id===catId ? 'white' : c.color;
+    chip.style.borderColor = c.id===catId ? c.color : 'transparent';
+  });
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const currency = document.getElementById('expCurrency').value;
+  const desc   = document.getElementById('expDesc').value.trim();
+  const date   = document.getElementById('expDate').value;
+  const errEl  = document.getElementById('expFormError');
+
+  if(!amount || amount<=0) { errEl.textContent='أدخل مبلغاً صحيحاً'; errEl.style.display='block'; return; }
+  if(!date)                { errEl.textContent='اختر التاريخ'; errEl.style.display='block'; return; }
+  if(!expSelectedCatForm)  { errEl.textContent='اختر التصنيف'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
+
+  const id = 'exp_' + Date.now();
+  const expense = { id, date, amount, currency, cat:expSelectedCatForm, desc };
+
+  if(!appData.expenses) appData.expenses = {};
+  if(!appData.expenses[currentUser]) appData.expenses[currentUser] = {};
+  appData.expenses[currentUser][id] = expense;
+
+  saveData('expenses/' + currentUser + '/' + id, expense);
+  closeModal('addExpenseModal');
+  renderExpenses();
+}
+
+function deleteExpense(id) {
+  if(!confirm('حذف هذا المصروف؟')) return;
+  if(appData.expenses && appData.expenses[currentUser]) {
+    delete appData.expenses[currentUser][id];
+    db.ref(DB_PATH + '/expenses/' + currentUser + '/' + id).remove();
+    localStorage.setItem('fin_cache', JSON.stringify(appData));
+    renderExpenses();
+  }
+}
+
+// ─── BUDGET ────────────────────────────────────
+
+function showBudgetModal() {
+  const budget = expGetBudget();
+  const totalEl = document.getElementById('budgetTotal');
+  if(totalEl) totalEl.value = budget.total || '';
+
+  const rowsEl = document.getElementById('budgetCatRows');
+  if(rowsEl) {
+    rowsEl.innerHTML = EXP_CATS.map(c => `
+      <div class="budget-row">
+        <div class="budget-row-left">${c.icon} <span style="color:var(--text)">${c.label}</span></div>
+        <input class="budget-inp" type="number" id="budgetCat-${c.id}" placeholder="-- ₪"
+          value="${budget.cats && budget.cats[c.id] ? budget.cats[c.id] : ''}">
+      </div>`).join('');
+  }
+  document.getElementById('budgetModal').classList.add('active');
+}
+
+function saveBudget() {
+  const total = parseFloat(document.getElementById('budgetTotal').value) || 0;
+  const cats  = {};
+  EXP_CATS.forEach(c => {
+    const v = parseFloat(document.getElementById('budgetCat-'+c.id).value);
+    if(v>0) cats[c.id] = v;
+  });
+
+  if(!appData.budgets) appData.budgets = {};
+  appData.budgets[currentUser] = { total, cats };
+  saveData('budgets/' + currentUser, appData.budgets[currentUser]);
+  closeModal('budgetModal');
+  renderExpenses();
+  alert('✅ تم حفظ الميزانية');
+}
+
+// ─── CALL renderExpenses after updateUI ─────────
+
+const _origUpdateUI = typeof updateUI === 'function' ? updateUI : null;
+
+
 // =============================================
 // UTILS
 // =============================================
@@ -3159,6 +3873,63 @@ function escHtml(str) {
     <div class="button-group" style="margin-top:16px">
       <button class="submit-btn add" onclick="saveSecretQuestion()">✓ حفظ</button>
       <button class="cancel-btn" onclick="closeModal('secretSetupModal')">✕ لاحقاً</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ADD EXPENSE MODAL -->
+<div class="modal" id="addExpenseModal">
+  <div class="modal-content" style="max-width:420px">
+    <h2 style="margin-bottom:18px">➕ مصروف جديد</h2>
+    <div class="exp-form-grid">
+      <div class="form-group">
+        <label>المبلغ *</label>
+        <input type="number" id="expAmount" placeholder="0.00" step="0.01" style="border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:15px;width:100%;background:var(--card);color:var(--text)">
+      </div>
+      <div class="form-group">
+        <label>العملة</label>
+        <select id="expCurrency" style="border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:15px;width:100%;background:var(--card);color:var(--text)">
+          <option value="ILS">₪ شيكل</option>
+          <option value="USD">$ دولار</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>التصنيف *</label>
+      <div id="expCatSelect" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px"></div>
+    </div>
+    <div class="form-group">
+      <label>الوصف (اختياري)</label>
+      <input type="text" id="expDesc" placeholder="مثال: غداء في المطعم" style="border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:15px;width:100%;background:var(--card);color:var(--text)">
+    </div>
+    <div class="form-group">
+      <label>التاريخ</label>
+      <input type="date" id="expDate" style="border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:15px;width:100%;background:var(--card);color:var(--text)">
+    </div>
+    <div id="expFormError" style="color:var(--red);font-size:13px;margin-bottom:10px;display:none"></div>
+    <div class="button-group">
+      <button class="submit-btn subtract" onclick="saveExpense()">💾 حفظ</button>
+      <button class="cancel-btn" onclick="closeModal('addExpenseModal')">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div class="modal" id="budgetModal">
+  <div class="modal-content" style="max-width:420px">
+    <h2 style="margin-bottom:6px">🎯 إعداد الميزانية الشهرية</h2>
+    <p style="color:var(--text2);font-size:13px;margin-bottom:18px">حدد ميزانية لكل تصنيف أو ميزانية إجمالية</p>
+    <div class="form-group">
+      <label>الميزانية الإجمالية (₪)</label>
+      <input type="number" id="budgetTotal" placeholder="مثال: 2000" step="1"
+        style="border:2px solid var(--border);border-radius:var(--r-sm);padding:11px;font-size:15px;width:100%;background:var(--card);color:var(--text)">
+    </div>
+    <h3 style="font-size:14px;color:var(--text2);margin-bottom:10px">ميزانية كل تصنيف (اختياري)</h3>
+    <div id="budgetCatRows"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveBudget()">✓ حفظ الميزانية</button>
+      <button class="cancel-btn" onclick="closeModal('budgetModal')">إلغاء</button>
     </div>
   </div>
 </div>
