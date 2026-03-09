@@ -747,6 +747,167 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
   .user-mgmt-card  { flex-direction:column; align-items:flex-start }
   .user-mgmt-btns  { width:100%; justify-content:flex-end }
 }
+
+/* ══════════════════════════════════════════════════════
+   EXPENSES TRACKER
+══════════════════════════════════════════════════════ */
+.exp-nav-tabs {
+  display:flex; gap:0; background:var(--card);
+  border-radius:var(--r); margin-bottom:14px;
+  box-shadow:var(--shadow); overflow:hidden;
+}
+.exp-nav-tab {
+  flex:1; padding:13px 8px; border:none;
+  font-size:clamp(12px,3vw,14px); font-weight:bold;
+  cursor:pointer; font-family:var(--font);
+  background:var(--card); color:var(--text2);
+  transition:all .2s; position:relative;
+}
+.exp-nav-tab.active { background:var(--primary); color:white; }
+.exp-alert-dot {
+  display:none; position:absolute; top:8px; right:8px;
+  width:8px; height:8px; background:#f59e0b; border-radius:50%;
+}
+
+/* Month nav */
+.exp-month-nav {
+  display:flex; align-items:center; justify-content:space-between;
+  background:var(--card); border-radius:var(--r);
+  padding:11px 16px; margin-bottom:12px; box-shadow:var(--shadow);
+}
+.exp-month-nav button {
+  background:var(--bg); border:none; border-radius:var(--r-sm);
+  padding:7px 13px; font-size:15px; color:var(--text); cursor:pointer;
+}
+.exp-month-nav button:hover { background:var(--border); }
+.exp-month-label { font-weight:bold; color:var(--text); font-size:15px; }
+
+/* Summary */
+.exp-sum-grid {
+  display:grid; grid-template-columns:repeat(3,1fr);
+  gap:10px; margin-bottom:12px;
+}
+.exp-sum-card {
+  background:var(--card); border-radius:var(--r);
+  padding:13px; text-align:center; box-shadow:var(--shadow);
+  border-top:3px solid var(--border);
+}
+.exp-sum-card.spent  { border-top-color:var(--red) }
+.exp-sum-card.budget { border-top-color:var(--blue) }
+.exp-sum-card.left   { border-top-color:var(--green) }
+.exp-sum-label { font-size:11px; color:var(--text2); margin-bottom:5px }
+.exp-sum-value { font-size:clamp(15px,4vw,21px); font-weight:bold }
+
+/* Progress bar */
+.exp-progress-wrap {
+  background:var(--card); border-radius:var(--r);
+  padding:14px 16px; margin-bottom:12px; box-shadow:var(--shadow);
+}
+.exp-progress-header {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:8px; flex-wrap:wrap; gap:5px;
+}
+.exp-progress-bar-bg  { height:12px; background:var(--bg); border-radius:10px; overflow:hidden }
+.exp-progress-bar-fill { height:100%; border-radius:10px; transition:width .5s }
+.exp-progress-bar-fill.ok      { background:linear-gradient(90deg,var(--green),#34d399) }
+.exp-progress-bar-fill.warning { background:linear-gradient(90deg,var(--amber),#fbbf24) }
+.exp-progress-bar-fill.over    { background:linear-gradient(90deg,var(--red),#f87171) }
+
+/* View tabs */
+.exp-view-tabs {
+  display:flex; gap:6px; margin-bottom:12px;
+  background:var(--bg); border-radius:var(--r); padding:4px; flex-wrap:wrap;
+}
+.exp-view-tab {
+  flex:1; min-width:70px; padding:8px 6px; border:none;
+  border-radius:var(--r-sm); background:transparent;
+  font-size:12px; font-weight:bold; color:var(--text2);
+  cursor:pointer; transition:all .2s; font-family:var(--font);
+}
+.exp-view-tab.active { background:var(--card); color:var(--primary); box-shadow:var(--shadow) }
+
+/* Cat chips */
+.exp-cat-chips { display:flex; gap:7px; flex-wrap:wrap; margin-bottom:12px }
+.exp-cat-chip {
+  padding:6px 12px; border-radius:20px; font-size:12px;
+  font-weight:bold; cursor:pointer; border:2px solid transparent;
+  transition:all .2s; white-space:nowrap;
+}
+.exp-cat-chip.active { border-color:currentColor; box-shadow:0 2px 8px rgba(0,0,0,.12) }
+
+/* Expense items */
+.exp-item {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 13px; border-radius:var(--r-sm);
+  border:1px solid var(--border); margin-bottom:8px;
+  background:var(--card); transition:box-shadow .2s;
+}
+.exp-item:hover { box-shadow:var(--shadow) }
+.exp-cat-icon {
+  width:38px; height:38px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0;
+}
+.exp-info      { flex:1; min-width:0 }
+.exp-item-name { font-size:14px; font-weight:bold; color:var(--text) }
+.exp-item-meta { font-size:11px; color:var(--text2); margin-top:2px }
+.exp-item-amount { font-size:16px; font-weight:bold; color:var(--red); white-space:nowrap }
+.exp-del-btn {
+  background:none; border:none; font-size:14px; color:var(--text3);
+  padding:3px 6px; border-radius:6px; min-height:unset; transition:all .15s;
+}
+.exp-del-btn:hover { color:var(--red); background:#fee2e2 }
+
+/* Day group header */
+.exp-day-header {
+  padding:6px 10px; background:var(--bg); border-radius:var(--r-sm);
+  font-size:12px; font-weight:bold; color:var(--text2);
+  margin-bottom:6px; margin-top:10px; display:flex;
+  justify-content:space-between; align-items:center;
+}
+
+/* Category bar chart */
+.exp-cat-rows { display:flex; flex-direction:column; gap:10px; margin-top:10px }
+.exp-cat-row  { display:flex; align-items:center; gap:10px }
+.exp-cat-row-icon { width:26px; text-align:center; font-size:15px; flex-shrink:0 }
+.exp-cat-row-name { width:75px; font-size:12px; color:var(--text2); flex-shrink:0 }
+.exp-cat-row-bar  { flex:1; height:9px; background:var(--bg); border-radius:10px; overflow:hidden }
+.exp-cat-row-fill { height:100%; border-radius:10px; transition:width .5s }
+.exp-cat-row-amt  { width:60px; text-align:left; font-size:12px; font-weight:bold; color:var(--text); flex-shrink:0 }
+
+/* Alert badge */
+.exp-budget-alert {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:20px; font-size:12px; font-weight:bold;
+}
+.exp-budget-alert.warning { background:#fef9c3; color:#92400e }
+.exp-budget-alert.over    { background:#fee2e2; color:#b91c1c }
+
+/* Budget modal */
+.exp-budget-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:10px 0; border-bottom:1px solid var(--border);
+}
+.exp-budget-row:last-child { border-bottom:none }
+.exp-budget-inp {
+  width:95px; padding:7px 10px; border:2px solid var(--border);
+  border-radius:var(--r-sm); font-size:14px; text-align:center;
+  background:var(--card); color:var(--text); font-family:var(--font);
+}
+.exp-budget-inp:focus { outline:none; border-color:var(--primary) }
+
+/* Category form chips */
+.exp-form-cats { display:flex; gap:7px; flex-wrap:wrap; margin-top:6px }
+.exp-form-cat {
+  padding:7px 13px; border-radius:20px; font-size:13px; font-weight:bold;
+  cursor:pointer; border:2px solid transparent; transition:all .2s;
+  background:var(--bg); color:var(--text2);
+}
+.exp-form-cat.selected { border-color:var(--primary); color:var(--primary); background:#eff6ff }
+
+@media(max-width:600px) { .exp-sum-grid { grid-template-columns:1fr 1fr } }
+@media(max-width:380px) { .exp-sum-grid { grid-template-columns:1fr } }
+
 </style>
 </head>
 <body>
@@ -788,6 +949,15 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
     </div>
   </div>
 
+
+  <!-- MAIN NAV TABS -->
+  <div class="exp-nav-tabs" style="margin-bottom:14px">
+    <button class="exp-nav-tab active" id="mainTabTx"  onclick="switchMainTab('tx')">💰 المعاملات</button>
+    <button class="exp-nav-tab"        id="mainTabExp" onclick="switchMainTab('exp')">💸 المصاريف<span class="exp-alert-dot" id="expNavDot"></span></button>
+  </div>
+
+  <!-- TRANSACTIONS SECTION -->
+  <div id="mainTxSection">
 
   <!-- Shekel Rate only -->
   <div class="dollar-rate-card" style="padding:14px 20px">
@@ -917,6 +1087,74 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
     </div>
     <div id="transactionList"><div class="empty-state">لا توجد معاملات بعد</div></div>
   </div>
+  </div><!-- /mainTxSection -->
+
+  <!-- ══ EXPENSES TRACKER TAB ══ -->
+  <div id="expensesSection" class="hidden">
+
+    <!-- Month Navigation -->
+    <div class="exp-month-nav">
+      <button onclick="expChangeMonth(-1)">◀</button>
+      <div>
+        <span class="exp-month-label" id="expMonthLabel">—</span>
+        <span id="expBudgetAlert"></span>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="expGoToday()" style="font-size:12px;padding:6px 10px">اليوم</button>
+        <button onclick="expChangeMonth(1)">▶</button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="exp-sum-grid">
+      <div class="exp-sum-card spent">
+        <div class="exp-sum-label">💸 المصاريف</div>
+        <div class="exp-sum-value" id="expTotalSpent" style="color:var(--red)">0.00 ₪</div>
+      </div>
+      <div class="exp-sum-card budget">
+        <div class="exp-sum-label">🎯 الميزانية</div>
+        <div class="exp-sum-value" id="expMonthBudget" style="color:var(--blue)">— ₪</div>
+      </div>
+      <div class="exp-sum-card left">
+        <div class="exp-sum-label">✅ المتبقي</div>
+        <div class="exp-sum-value" id="expRemaining" style="color:var(--green)">— ₪</div>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="exp-progress-wrap" id="expProgressWrap" style="display:none">
+      <div class="exp-progress-header">
+        <span style="font-size:13px;font-weight:bold;color:var(--text)">الميزانية الشهرية</span>
+        <span id="expProgressPct" style="font-size:13px;font-weight:bold"></span>
+      </div>
+      <div class="exp-progress-bar-bg">
+        <div class="exp-progress-bar-fill ok" id="expProgressBar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Add Expense + Budget Buttons -->
+    <div style="display:flex;gap:10px;margin-bottom:12px">
+      <button class="add-btn" style="margin:0;flex:1;padding:13px" onclick="showAddExpModal()">➕ إضافة مصروف</button>
+      <button class="btn settings-btn" style="padding:13px 16px" onclick="showExpBudgetModal()">🎯 الميزانية</button>
+    </div>
+
+    <!-- View Tabs -->
+    <div class="exp-view-tabs">
+      <button class="exp-view-tab active" id="expTabAll"   onclick="expSetView('all')">📋 الكل</button>
+      <button class="exp-view-tab"        id="expTabDay"   onclick="expSetView('day')">📅 يومي</button>
+      <button class="exp-view-tab"        id="expTabCat"   onclick="expSetView('cat')">📊 تصنيف</button>
+    </div>
+
+    <!-- Category Filter Chips -->
+    <div class="exp-cat-chips" id="expCatChips"></div>
+
+    <!-- Content Area -->
+    <div class="history-card" style="margin-bottom:14px">
+      <div id="expContent"><div class="empty-state">لا توجد مصاريف هذا الشهر</div></div>
+    </div>
+
+  </div><!-- end expensesSection -->
+
 </div>
 
 <!-- ADMIN PANEL -->
@@ -1306,6 +1544,8 @@ function mergeData(remote) {
     remote.auditLog = Object.values(remote.auditLog);
   }
   remote.auditLog = remote.auditLog || [];
+  remote.expenses = remote.expenses || {};
+  remote.budgets  = remote.budgets  || {};
   return remote;
 }
 
@@ -3054,6 +3294,348 @@ function proceedAfterAuth() {
 }
 
 
+
+// =============================================
+// EXPENSES TRACKER
+// =============================================
+
+const EXP_CATS = [
+  { id:'food',      label:'أكل',       icon:'🍔', color:'#ef4444', bg:'#fee2e2' },
+  { id:'transport', label:'مواصلات',   icon:'🚗', color:'#3b82f6', bg:'#dbeafe' },
+  { id:'shopping',  label:'تسوق',      icon:'🛍️', color:'#ec4899', bg:'#fce7f3' },
+  { id:'bills',     label:'فواتير',    icon:'📄', color:'#f59e0b', bg:'#fef9c3' },
+  { id:'health',    label:'صحة',       icon:'💊', color:'#10b981', bg:'#d1fae5' },
+  { id:'education', label:'تعليم',     icon:'📚', color:'#8b5cf6', bg:'#ede9fe' },
+  { id:'entertain', label:'ترفيه',     icon:'🎮', color:'#06b6d4', bg:'#cffafe' },
+  { id:'home',      label:'منزل',      icon:'🏠', color:'#64748b', bg:'#f1f5f9' },
+  { id:'other',     label:'أخرى',      icon:'📦', color:'#94a3b8', bg:'#f8fafc' },
+];
+
+let expCurrentYear  = new Date().getFullYear();
+let expCurrentMonth = new Date().getMonth(); // 0-indexed
+let expCurrentView  = 'all';
+let expSelectedCat  = 'all';
+let expSelectedFormCat = EXP_CATS[0].id;
+
+// ─── Helpers ─────────────────────────────────
+function expGetUserData() {
+  if (!appData.expenses) appData.expenses = {};
+  if (!appData.expenses[currentUser]) appData.expenses[currentUser] = {};
+  return appData.expenses[currentUser];
+}
+function expGetBudget() {
+  if (!appData.budgets) appData.budgets = {};
+  return appData.budgets[currentUser] || { total: 0, cats: {} };
+}
+function expMonthKey() {
+  return expCurrentYear + '-' + String(expCurrentMonth + 1).padStart(2, '0');
+}
+function expGetMonthExpenses() {
+  const all = expGetUserData();
+  const mk  = expMonthKey();
+  return Object.values(all).filter(e => e.date && e.date.startsWith(mk));
+}
+function expFilterByCat(list) {
+  if (expSelectedCat === 'all') return list;
+  return list.filter(e => e.cat === expSelectedCat);
+}
+function expCatObj(id) {
+  return EXP_CATS.find(c => c.id === id) || EXP_CATS[EXP_CATS.length - 1];
+}
+
+// ─── Navigation ──────────────────────────────
+function expChangeMonth(dir) {
+  expCurrentMonth += dir;
+  if (expCurrentMonth < 0)  { expCurrentMonth = 11; expCurrentYear--; }
+  if (expCurrentMonth > 11) { expCurrentMonth = 0;  expCurrentYear++; }
+  renderExpenses();
+}
+function expGoToday() {
+  expCurrentYear  = new Date().getFullYear();
+  expCurrentMonth = new Date().getMonth();
+  renderExpenses();
+}
+
+// ─── Tab switch ──────────────────────────────
+function switchMainTab(tab) {
+  const isTx = tab === 'tx';
+  document.getElementById('mainTxSection').style.display  = isTx ? '' : 'none';
+  document.getElementById('expensesSection').classList.toggle('hidden', isTx);
+  document.getElementById('mainTabTx').classList.toggle('active', isTx);
+  document.getElementById('mainTabExp').classList.toggle('active', !isTx);
+  if (!isTx) renderExpenses();
+}
+function expSetView(v) {
+  expCurrentView = v;
+  ['all','day','cat'].forEach(id => {
+    document.getElementById('expTab' + id.charAt(0).toUpperCase() + id.slice(1))
+      .classList.toggle('active', id === v);
+  });
+  renderExpContent();
+}
+
+// ─── Main Render ─────────────────────────────
+function renderExpenses() {
+  const now = new Date(expCurrentYear, expCurrentMonth, 1);
+  const monthNames = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                      'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('expMonthLabel').textContent =
+    monthNames[expCurrentMonth] + ' ' + expCurrentYear;
+
+  const exps    = expGetMonthExpenses();
+  const budget  = expGetBudget();
+  const total   = exps.reduce((s, e) => s + (e.amount || 0), 0);
+  const budgetT = parseFloat(budget.total) || 0;
+  const remain  = budgetT - total;
+
+  document.getElementById('expTotalSpent').textContent  = total.toFixed(2) + ' ₪';
+  document.getElementById('expMonthBudget').textContent = budgetT > 0 ? budgetT.toFixed(0) + ' ₪' : '— ₪';
+  document.getElementById('expRemaining').textContent   = budgetT > 0 ? remain.toFixed(2) + ' ₪' : '— ₪';
+  document.getElementById('expRemaining').style.color   =
+    budgetT <= 0 ? 'var(--text2)' : remain >= 0 ? 'var(--green)' : 'var(--red)';
+
+  // Progress bar
+  const wrap = document.getElementById('expProgressWrap');
+  if (budgetT > 0) {
+    wrap.style.display = '';
+    const pct = Math.min(100, Math.round((total / budgetT) * 100));
+    const bar  = document.getElementById('expProgressBar');
+    const pctEl = document.getElementById('expProgressPct');
+    bar.style.width = pct + '%';
+    bar.className = 'exp-progress-bar-fill ' + (pct >= 100 ? 'over' : pct >= 80 ? 'warning' : 'ok');
+    pctEl.textContent = pct + '%';
+    pctEl.style.color = pct >= 100 ? 'var(--red)' : pct >= 80 ? 'var(--amber)' : 'var(--green)';
+  } else {
+    wrap.style.display = 'none';
+  }
+
+  // Alert badge
+  const alertEl = document.getElementById('expBudgetAlert');
+  const navDot  = document.getElementById('expNavDot');
+  if (budgetT > 0) {
+    const pct = (total / budgetT) * 100;
+    if (pct >= 100) {
+      alertEl.innerHTML = '<span class="exp-budget-alert over">🔴 تجاوزت الميزانية!</span>';
+      navDot.style.display = 'block';
+    } else if (pct >= 80) {
+      alertEl.innerHTML = '<span class="exp-budget-alert warning">🟡 قرب الحد</span>';
+      navDot.style.display = 'block';
+    } else {
+      alertEl.innerHTML = '';
+      navDot.style.display = 'none';
+    }
+  } else {
+    alertEl.innerHTML = '';
+    navDot.style.display = 'none';
+  }
+
+  // Category chips
+  renderExpCatChips(exps);
+  renderExpContent();
+}
+
+function renderExpCatChips(exps) {
+  const el = document.getElementById('expCatChips');
+  const counts = {};
+  exps.forEach(e => { counts[e.cat] = (counts[e.cat] || 0) + 1; });
+  const totalCount = exps.length;
+  let html = `<span class="exp-cat-chip ${expSelectedCat === 'all' ? 'active' : ''}"
+    style="background:#f1f5f9;color:var(--text)"
+    onclick="expSetCat('all')">الكل (${totalCount})</span>`;
+  EXP_CATS.forEach(c => {
+    if (!counts[c.id]) return;
+    html += `<span class="exp-cat-chip ${expSelectedCat === c.id ? 'active' : ''}"
+      style="background:${c.bg};color:${c.color}"
+      onclick="expSetCat('${c.id}')">${c.icon} ${c.label} (${counts[c.id]})</span>`;
+  });
+  el.innerHTML = html;
+}
+
+function expSetCat(cat) {
+  expSelectedCat = cat;
+  const exps = expGetMonthExpenses();
+  renderExpCatChips(exps);
+  renderExpContent();
+}
+
+function renderExpContent() {
+  const exps = expFilterByCat(expGetMonthExpenses());
+  const el = document.getElementById('expContent');
+  if (!exps.length) {
+    el.innerHTML = '<div class="empty-state">لا توجد مصاريف' + (expSelectedCat !== 'all' ? ' في هذا التصنيف' : ' هذا الشهر') + '</div>';
+    return;
+  }
+  if (expCurrentView === 'all') renderExpAll(exps, el);
+  else if (expCurrentView === 'day') renderExpDay(exps, el);
+  else renderExpCatChart(el);
+}
+
+function renderExpAll(exps, el) {
+  const sorted = [...exps].sort((a, b) => b.date.localeCompare(a.date) || b.id - a.id);
+  el.innerHTML = sorted.map(e => expItemHtml(e)).join('');
+}
+
+function renderExpDay(exps, el) {
+  const byDay = {};
+  exps.forEach(e => {
+    const d = e.date || expMonthKey() + '-01';
+    if (!byDay[d]) byDay[d] = [];
+    byDay[d].push(e);
+  });
+  const days = Object.keys(byDay).sort((a, b) => b.localeCompare(a));
+  let html = '';
+  days.forEach(d => {
+    const dayExps = byDay[d];
+    const dayTotal = dayExps.reduce((s, e) => s + e.amount, 0);
+    const parts = d.split('-');
+    const label = parts[2] + '/' + parts[1] + '/' + parts[0];
+    html += `<div class="exp-day-header">
+      <span>📅 ${label}</span>
+      <span style="color:var(--red);font-weight:bold">${dayTotal.toFixed(2)} ₪</span>
+    </div>`;
+    html += dayExps.sort((a, b) => b.id - a.id).map(e => expItemHtml(e)).join('');
+  });
+  el.innerHTML = html;
+}
+
+function renderExpCatChart(el) {
+  const allExps = expFilterByCat(expGetMonthExpenses());
+  const totals = {};
+  allExps.forEach(e => { totals[e.cat] = (totals[e.cat] || 0) + e.amount; });
+  const max = Math.max(...Object.values(totals), 1);
+  let html = '<div class="exp-cat-rows">';
+  EXP_CATS.forEach(c => {
+    const amt = totals[c.id] || 0;
+    if (!amt) return;
+    const pct = (amt / max) * 100;
+    html += `<div class="exp-cat-row">
+      <div class="exp-cat-row-icon">${c.icon}</div>
+      <div class="exp-cat-row-name">${c.label}</div>
+      <div class="exp-cat-row-bar">
+        <div class="exp-cat-row-fill" style="width:${pct}%;background:${c.color}"></div>
+      </div>
+      <div class="exp-cat-row-amt">${amt.toFixed(0)} ₪</div>
+    </div>`;
+  });
+  html += '</div>';
+  el.innerHTML = html || '<div class="empty-state">لا توجد بيانات</div>';
+}
+
+function expItemHtml(e) {
+  const cat = expCatObj(e.cat);
+  return `<div class="exp-item">
+    <div class="exp-cat-icon" style="background:${cat.bg}">${cat.icon}</div>
+    <div class="exp-info">
+      <div class="exp-item-name">${escHtml(e.desc || cat.label)}</div>
+      <div class="exp-item-meta">${cat.label} • ${e.date || ''}</div>
+    </div>
+    <div class="exp-item-amount">${e.amount.toFixed(2)} ₪</div>
+    <button class="exp-del-btn" onclick="deleteExpense('${e.id}')">🗑️</button>
+  </div>`;
+}
+
+// ─── Add Expense ─────────────────────────────
+function showAddExpModal() {
+  expSelectedFormCat = EXP_CATS[0].id;
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('expAddError').style.display = 'none';
+  renderExpFormCats();
+  document.getElementById('addExpModal').classList.add('active');
+  setTimeout(() => document.getElementById('expAmount').focus(), 100);
+}
+
+function renderExpFormCats() {
+  const el = document.getElementById('expFormCats');
+  el.innerHTML = EXP_CATS.map(c => `
+    <span class="exp-form-cat ${c.id === expSelectedFormCat ? 'selected' : ''}"
+      style="${c.id === expSelectedFormCat ? 'border-color:'+c.color+';color:'+c.color+';background:'+c.bg : ''}"
+      onclick="expSelectFormCat('${c.id}')">${c.icon} ${c.label}</span>
+  `).join('');
+}
+
+function expSelectFormCat(id) {
+  expSelectedFormCat = id;
+  renderExpFormCats();
+}
+
+function saveExpense() {
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const desc   = document.getElementById('expDesc').value.trim();
+  const date   = document.getElementById('expDate').value;
+  const err    = document.getElementById('expAddError');
+
+  if (!amount || amount <= 0) {
+    err.textContent = '❌ أدخل مبلغاً صحيحاً'; err.style.display = 'block'; return;
+  }
+  if (!date) {
+    err.textContent = '❌ اختر التاريخ'; err.style.display = 'block'; return;
+  }
+
+  if (!appData.expenses) appData.expenses = {};
+  if (!appData.expenses[currentUser]) appData.expenses[currentUser] = {};
+
+  const id = 'exp_' + Date.now();
+  appData.expenses[currentUser][id] = { id, date, amount, cat: expSelectedFormCat, desc };
+
+  saveData('expenses/' + currentUser + '/' + id, appData.expenses[currentUser][id]);
+  closeModal('addExpModal');
+  renderExpenses();
+}
+
+function deleteExpense(id) {
+  if (!confirm('حذف هذا المصروف؟')) return;
+  if (appData.expenses && appData.expenses[currentUser]) {
+    delete appData.expenses[currentUser][id];
+    db.ref(DB_PATH + '/expenses/' + currentUser + '/' + id).remove();
+    saveData('expenses/' + currentUser, appData.expenses[currentUser]);
+  }
+  renderExpenses();
+}
+
+// ─── Budget ──────────────────────────────────
+function showExpBudgetModal() {
+  const b = expGetBudget();
+  document.getElementById('expTotalBudgetInp').value = b.total || '';
+  const rows = document.getElementById('expBudgetCatRows');
+  rows.innerHTML = EXP_CATS.map(c => `
+    <div class="exp-budget-row">
+      <div style="display:flex;align-items:center;gap:8px;font-size:14px">
+        ${c.icon} <span>${c.label}</span>
+      </div>
+      <input class="exp-budget-inp" type="number" id="expBCat_${c.id}"
+        placeholder="—" value="${(b.cats && b.cats[c.id]) || ''}">
+    </div>`).join('');
+  document.getElementById('expBudgetModal').classList.add('active');
+}
+
+function saveExpBudget() {
+  const total = parseFloat(document.getElementById('expTotalBudgetInp').value) || 0;
+  const cats  = {};
+  EXP_CATS.forEach(c => {
+    const v = parseFloat(document.getElementById('expBCat_' + c.id).value) || 0;
+    if (v > 0) cats[c.id] = v;
+  });
+  if (!appData.budgets) appData.budgets = {};
+  appData.budgets[currentUser] = { total, cats };
+  saveData('budgets/' + currentUser, appData.budgets[currentUser]);
+  closeModal('expBudgetModal');
+  renderExpenses();
+}
+
+// ─── Merge data support ──────────────────────
+const _origMergeData = mergeData;
+// Patch mergeData to include expenses/budgets
+const _patchedMerge = function(remote) {
+  remote = _origMergeData(remote);
+  remote.expenses = remote.expenses || {};
+  remote.budgets  = remote.budgets  || {};
+  return remote;
+};
+// Override
+window.mergeData = _patchedMerge;
+
 // =============================================
 // UTILS
 // =============================================
@@ -3265,6 +3847,52 @@ function escHtml(str) {
 </div>
 
 
+
+
+<!-- ADD EXPENSE MODAL -->
+<div id="addExpModal" class="modal">
+  <div class="modal-content" style="max-width:460px">
+    <h2 style="text-align:center;margin-bottom:18px">➕ إضافة مصروف</h2>
+    <div class="form-group">
+      <label>المبلغ (₪) *</label>
+      <input type="number" id="expAmount" class="password-input" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>التصنيف *</label>
+      <div class="exp-form-cats" id="expFormCats"></div>
+    </div>
+    <div class="form-group">
+      <label>وصف (اختياري)</label>
+      <input type="text" id="expDesc" class="password-input" placeholder="مثال: فطور، تاكسي...">
+    </div>
+    <div class="form-group">
+      <label>التاريخ</label>
+      <input type="date" id="expDate" class="password-input">
+    </div>
+    <div id="expAddError" class="error-msg" style="text-align:center"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveExpense()">✓ حفظ</button>
+      <button class="cancel-btn" onclick="closeModal('addExpModal')">✕ إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- BUDGET MODAL -->
+<div id="expBudgetModal" class="modal">
+  <div class="modal-content" style="max-width:460px">
+    <h2 style="text-align:center;margin-bottom:18px">🎯 إعداد الميزانية الشهرية</h2>
+    <div class="form-group">
+      <label>الميزانية الكلية (₪)</label>
+      <input type="number" id="expTotalBudgetInp" class="password-input" step="1" placeholder="مثال: 2000">
+    </div>
+    <h3 style="font-size:14px;color:var(--text2);margin-bottom:10px">ميزانية لكل تصنيف (اختياري)</h3>
+    <div id="expBudgetCatRows"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveExpBudget()">✓ حفظ</button>
+      <button class="cancel-btn" onclick="closeModal('expBudgetModal')">✕ إلغاء</button>
+    </div>
+  </div>
+</div>
 
 </body>
 </html>
