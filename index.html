@@ -536,8 +536,6 @@ select    { background:var(--card); color:var(--text) }
 /* ══════════════════════════════════════════════════════
    CHARTS
 ══════════════════════════════════════════════════════ */
-.charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px }
-.chart-wrap  { position:relative; height:210px }
 
 /* ══════════════════════════════════════════════════════
    AUDIT LOG
@@ -720,8 +718,6 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
 /* Tablet ≤ 720px */
 @media (max-width:720px) {
   .stats-grid   { grid-template-columns:repeat(2,1fr) }
-  .charts-grid  { grid-template-columns:1fr }
-  .chart-wrap   { height:190px }
   .monthly-table{ display:block; overflow-x:auto; -webkit-overflow-scrolling:touch }
 }
 
@@ -908,6 +904,48 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
 @media(max-width:600px) { .exp-sum-grid { grid-template-columns:1fr 1fr } }
 @media(max-width:380px) { .exp-sum-grid { grid-template-columns:1fr } }
 
+
+/* ══════════════════════════════════════════════════════
+   BOTTOM NAVIGATION BAR
+══════════════════════════════════════════════════════ */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  display: flex;
+  z-index: 9990;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.12);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.bottom-nav-btn {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 10px 4px 8px;
+  border: none; background: transparent;
+  color: var(--text2); font-family: var(--font);
+  cursor: pointer; transition: all .2s;
+  font-size: 11px; font-weight: bold;
+  position: relative; gap: 4px;
+  -webkit-tap-highlight-color: transparent;
+}
+.bottom-nav-btn .nav-icon { font-size: 22px; line-height: 1; transition: transform .2s }
+.bottom-nav-btn.active { color: var(--primary) }
+.bottom-nav-btn.active .nav-icon { transform: scale(1.15) }
+.bottom-nav-btn:hover { color: var(--primary) }
+.nav-badge {
+  position: absolute; top: 6px; right: calc(50% - 16px);
+  background: var(--red); color: white;
+  border-radius: 10px; font-size: 10px; font-weight: bold;
+  padding: 1px 5px; min-width: 16px; text-align: center;
+  display: none;
+}
+/* Push main content up so bottom nav doesn't overlap */
+#mainApp .container-inner,
+#mainApp > .container > *,
+#mainApp > * { padding-bottom: 0 }
+body { padding-bottom: 70px !important }
+
 </style>
 </head>
 <body>
@@ -940,31 +978,43 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
   <div class="header">
     <h1>💰 حساباتي المالية</h1>
     <div class="user-info">
-      <button class="btn export-btn" onclick="exportToExcel()">📥 تصدير Excel</button>
-
-      <button class="btn settings-btn" onclick="showSettings()">⚙️ الإعدادات</button>
+      <button class="btn export-btn" onclick="exportToExcel()">📥 Excel</button>
       <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="وضع ليلي">🌙</button>
       <div class="user-badge" id="userBadge"></div>
-      <button class="btn logout-btn" onclick="logout()">خروج 🚪</button>
     </div>
   </div>
 
-
-  <!-- MAIN NAV TABS -->
-  <div class="exp-nav-tabs" style="margin-bottom:14px">
-    <button class="exp-nav-tab active" id="mainTabTx"  onclick="switchMainTab('tx')">💰 المعاملات</button>
-    <button class="exp-nav-tab"        id="mainTabExp" onclick="switchMainTab('exp')">💸 المصاريف<span class="exp-alert-dot" id="expNavDot"></span></button>
-  </div>
 
   <!-- TRANSACTIONS SECTION -->
   <div id="mainTxSection">
 
   <!-- Shekel Rate only -->
-  <div class="dollar-rate-card" style="padding:14px 20px">
-    <div class="rates-container">
-      <div class="rate-item" style="background:#fef9c3;border-color:#f59e0b;min-width:160px">
-        <div class="rate-label">🪙 سعر صرف الشيكل</div>
-        <div class="rate-value" style="color:#b45309" id="shekelRateDisplay">3.65</div>
+  <div class="dollar-rate-card" style="padding:10px 14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:16px">🪙</span>
+        <span style="font-size:12px;color:var(--text2)">سعر الشيكل:</span>
+        <span style="font-size:16px;font-weight:bold;color:#b45309" id="shekelRateDisplay">3.65</span>
+        <span style="font-size:12px;color:var(--text2)">₪ / $</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font-size:11px;color:var(--text3)" id="shekelRateTime"></span>
+        <button onclick="toggleSection('rateDetails','rateArrow')"
+          style="background:var(--bg);border:none;border-radius:var(--r-sm);padding:4px 8px;font-size:11px;color:var(--text2);cursor:pointer">
+          تفاصيل <span id="rateArrow">▼</span>
+        </button>
+      </div>
+    </div>
+    <div id="rateDetails" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--text2)">1$ يساوي</div>
+          <div style="font-size:18px;font-weight:bold;color:#b45309"><span id="shekelRateInline">3.65</span> ₪</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:11px;color:var(--text2)">آخر تحديث</div>
+          <div style="font-size:12px;color:var(--text2)" id="shekelRateTimeFull"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -976,7 +1026,6 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
       <div class="stat-label">الرصيد الأساسي ($)</div>
       <div class="inline-edit-row">
         <div class="stat-value blue" id="initialBalance">0.00</div>
-        <button class="edit-mini-btn" onclick="editInitialBalance()">✏️ تعديل</button>
       </div>
     </div>
     <div class="stat-card">
@@ -998,7 +1047,6 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
       <div class="stat-label">الرصيد الأساسي (₪)</div>
       <div class="inline-edit-row">
         <div class="stat-value purple" id="initialShekelBalance">0.00</div>
-        <button class="edit-mini-btn" onclick="editInitialShekelBalance()">✏️ تعديل</button>
       </div>
     </div>
     <div class="stat-card">
@@ -1231,27 +1279,19 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
     </div>
   </div>
 
-  <!-- Charts -->
-  <div class="charts-section">
-    <h2 style="color:#2d3748;margin-bottom:18px">📊 الرسوم البيانية</h2>
-    <div class="charts-grid">
-      <div>
-        <p style="text-align:center;font-size:13px;color:#64748b;margin-bottom:10px">توزيع المعاملات</p>
-        <div class="chart-wrap"><canvas id="txPieChart"></canvas></div>
-      </div>
-      <div>
-        <p style="text-align:center;font-size:13px;color:#64748b;margin-bottom:10px">إضافات vs خصومات (آخر 7 أيام)</p>
-        <div class="chart-wrap"><canvas id="txBarChart"></canvas></div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Permissions -->
+
+  <!-- Permissions - collapsible -->
   <div class="admin-section">
-    <h2>🔐 صلاحيات المستخدمين</h2>
-    <p style="color:#64748b;font-size:13px;margin-bottom:16px">تحكم بما يستطيع كل مستخدم رؤيته أو فعله</p>
-    <div id="permissionsPanel"></div>
-    <button class="btn" style="background:#667eea;color:white;margin-top:14px" onclick="savePermissions()">💾 حفظ الصلاحيات</button>
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleSection('permsBody','permsArrow')">
+      <h2 style="margin-bottom:0">🔐 صلاحيات المستخدمين</h2>
+      <span id="permsArrow" style="font-size:18px;color:var(--text2)">▼</span>
+    </div>
+    <div id="permsBody" style="display:none;margin-top:14px">
+      <p style="color:#64748b;font-size:13px;margin-bottom:16px">تحكم بما يستطيع كل مستخدم رؤيته أو فعله</p>
+      <div id="permissionsPanel"></div>
+      <button class="btn" style="background:#667eea;color:white;margin-top:14px" onclick="savePermissions()">💾 حفظ الصلاحيات</button>
+    </div>
   </div>
 
   <!-- Audit Log -->
@@ -1639,9 +1679,13 @@ function updateDollarRateDisplay() {
   const now = new Date().toLocaleString('ar-EG');
   ['buyRate','adminBuyRate'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(buy).toFixed(2);});
   ['sellRate','adminSellRate'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(sell).toFixed(2);});
-  ['shekelRateDisplay','adminShekelRateDisplay'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(shekel).toFixed(2);});
+  ['shekelRateDisplay','adminShekelRateDisplay','shekelRateInline','convRate'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=parseFloat(shekel).toFixed(2);});
   ['rateUpdateTime','adminRateUpdateTime'].forEach(id=>{const e=document.getElementById(id);if(e)e.textContent=now;});
+  const rt=document.getElementById('shekelRateTime'); if(rt) rt.textContent=now;
+  const rtf=document.getElementById('shekelRateTimeFull'); if(rtf) rtf.textContent=now;
   const si=document.getElementById('editShekelRateInput'); if(si) si.value=shekel;
+  // Also update amount display if form open
+  updateAmountDisplay();
 }
 
 function saveCustomRates(){}       // no-op: dollar rate is display only
@@ -1697,6 +1741,7 @@ function login() {
       loadAdminPanel();
     } else {
       document.getElementById('mainApp').classList.remove('hidden');
+      document.getElementById('bottomNav').classList.remove('hidden');
       const badge = document.getElementById('userBadge');
       badge.textContent = `👤 ${currentUser}`;
       badge.style.background = (appData.userColors&&appData.userColors[currentUser]) || '#3b82f6';
@@ -1706,6 +1751,11 @@ function login() {
       badge.style.fontSize = '13px';
       badge.style.fontWeight = 'bold';
       badge.className = 'user-badge';
+      // Reset to transactions tab on login
+      document.getElementById('mainTxSection').style.display = '';
+      document.getElementById('expensesSection').classList.add('hidden');
+      document.getElementById('bnTx')?.classList.add('active');
+      document.getElementById('bnExp')?.classList.remove('active');
       updateUI();
     }
   } else {
@@ -1719,6 +1769,7 @@ function logout() {
   document.getElementById('loginScreen').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('adminPanel').classList.add('hidden');
+  document.getElementById('bottomNav').classList.add('hidden');
   document.getElementById('userSelection').classList.remove('hidden');
   document.getElementById('passwordScreen').classList.add('hidden');
   hideForm();
@@ -2028,7 +2079,6 @@ function loadAdminPanel() {
   loadNotifications();
   loadDailySummary();
   filterTransactions();
-  loadCharts();
   loadPermissionsPanel();
   loadAuditLog();
   loadUserMgmt();
@@ -2662,85 +2712,7 @@ function toggleAuditMore() {
   btn.textContent = isHidden ? `▼ عرض المزيد` : '▲ إخفاء';
 }
 
-// =============================================
-// CHARTS
-// =============================================
-let pieChart = null, barChart = null;
-
-function loadCharts() {
-  loadPieChart();
-  loadBarChart();
-}
-
-function loadPieChart() {
-  const ctx = document.getElementById('txPieChart');
-  if (!ctx) return;
-  let adds = 0, subs = 0, shekels = 0;
-  ['حمزة','جنى','محمد'].forEach(u => {
-    (appData.users[u]?.transactions || []).forEach(t => {
-      if (t.currency === 'shekel') shekels++;
-      else if (t.type === 'add') adds++;
-      else subs++;
-    });
-  });
-  if (pieChart) pieChart.destroy();
-  pieChart = new Chart(ctx, {
-    type: 'doughnut',
-    data: {
-      labels: ['إضافات $', 'خصومات $', 'صرف ₪'],
-      datasets: [{
-        data: [adds, subs, shekels],
-        backgroundColor: ['#10b981','#ef4444','#f59e0b'],
-        borderWidth: 0
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { font: { family: 'Segoe UI' } } } }
-    }
-  });
-}
-
-function loadBarChart() {
-  const ctx = document.getElementById('txBarChart');
-  if (!ctx) return;
-  const days = [];
-  const adds = [], subs = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const label = d.toLocaleDateString('ar-EG', {day:'numeric', month:'numeric'});
-    const dateStr = d.toLocaleDateString('ar-EG');
-    days.push(label);
-    let a = 0, s = 0;
-    ['حمزة','جنى','محمد'].forEach(u => {
-      (appData.users[u]?.transactions || []).forEach(t => {
-        if (t.date === dateStr && t.currency !== 'shekel') {
-          if (t.type === 'add') a += t.amount;
-          else s += t.amount;
-        }
-      });
-    });
-    adds.push(parseFloat(a.toFixed(2)));
-    subs.push(parseFloat(s.toFixed(2)));
-  }
-  if (barChart) barChart.destroy();
-  barChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: days,
-      datasets: [
-        { label: 'إضافات $', data: adds, backgroundColor: '#10b981', borderRadius: 6 },
-        { label: 'خصومات $', data: subs, backgroundColor: '#ef4444', borderRadius: 6 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom' } },
-      scales: { y: { beginAtZero: true } }
-    }
-  });
-}
+// Charts removed
 
 // =============================================
 // PERMISSIONS
@@ -2836,6 +2808,20 @@ function openEditTx(userName, txId) {
   } else {
     document.getElementById('editTxAmount').value = tx.amount;
   }
+  // Show existing image if any
+  const curWrap = document.getElementById('editImgCurrentWrap');
+  const curImg  = document.getElementById('editImgCurrent');
+  const newPrev = document.getElementById('editImagePreview');
+  const newInp  = document.getElementById('editTxImage');
+  if (tx.image) {
+    curImg.src = tx.image;
+    curWrap.style.display = 'block';
+  } else {
+    curWrap.style.display = 'none';
+  }
+  if (newPrev) newPrev.classList.add('hidden');
+  if (newInp)  newInp.value = '';
+  document.getElementById('editImageSizeInfo').textContent = '';
   document.getElementById('editTxModal').classList.add('active');
 }
 
@@ -2858,6 +2844,21 @@ function saveEditTx() {
   tx.accountType = document.getElementById('editTxAccount').value;
   tx.notes = document.getElementById('editTxNotes').value;
   if (!isShekel) tx.amountShekel = (newAmount * (appData.shekelRate||3.65)).toFixed(2);
+  // Handle image: new upload > keep existing > cleared
+  const newImgFile = document.getElementById('editTxImage').files[0];
+  const curWrap = document.getElementById('editImgCurrentWrap');
+  if (newImgFile) {
+    // Will save after compression
+    addAuditLog(userName, 'تعديل معاملة', `المبلغ: ${newAmount}`);
+    compressImage(newImgFile, 800, 0.6).then(compressed => {
+      tx.image = compressed;
+      saveData('users/' + userName, ud);
+      saveData('auditLog', appData.auditLog);
+    });
+  } else if (curWrap.style.display === 'none') {
+    tx.image = null; // explicitly cleared
+  }
+  // else keep existing tx.image
   addAuditLog(userName, 'تعديل معاملة', `المبلغ: ${newAmount}`);
   saveData('users/' + userName, ud);
   saveData('auditLog', appData.auditLog);
@@ -3187,7 +3188,23 @@ function showPinSetup() {
   pinSetupFirst = '';
   updatePinDisplay('pinSetupDisplay', '');
   document.getElementById('pinSetupMsg').textContent = 'أدخل الرمز الجديد (4 أرقام)';
+  // Show delete button only if PIN already set
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
+  const hasPin = appData.pins && appData.pins[ukey];
+  const delWrap = document.getElementById('pinDeleteWrap');
+  if (delWrap) delWrap.style.display = hasPin ? 'block' : 'none';
   document.getElementById('pinSetupModal').classList.add('active');
+}
+
+function deleteMyPin() {
+  if (!confirm('إلغاء الدخول السريع بـ PIN؟ ستحتاج كلمة المرور للدخول.')) return;
+  const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
+  if (appData.pins) {
+    delete appData.pins[ukey];
+    saveData('pins', appData.pins);
+  }
+  closeModal('pinSetupModal');
+  showToast('✅ تم حذف رمز PIN');
 }
 
 function pinSetupPress(val) {
@@ -3285,10 +3302,14 @@ function proceedAfterAuth() {
     loadAdminPanel();
   } else {
     document.getElementById('mainApp').classList.remove('hidden');
+    document.getElementById('bottomNav').classList.remove('hidden');
     const badge = document.getElementById('userBadge');
     badge.textContent = '👤 ' + ukey;
     badge.className = 'user-badge';
     badge.style.background = (appData.userColors&&appData.userColors[ukey])||'#3b82f6';
+    document.getElementById('mainTxSection').style.display = '';
+    document.getElementById('expensesSection').classList.add('hidden');
+    document.getElementById('bnTx')?.classList.add('active');
     updateUI();
   }
 }
@@ -3361,8 +3382,11 @@ function switchMainTab(tab) {
   const isTx = tab === 'tx';
   document.getElementById('mainTxSection').style.display  = isTx ? '' : 'none';
   document.getElementById('expensesSection').classList.toggle('hidden', isTx);
-  document.getElementById('mainTabTx').classList.toggle('active', isTx);
-  document.getElementById('mainTabExp').classList.toggle('active', !isTx);
+  // Update bottom nav active state
+  ['bnTx','bnExp','bnSettings','bnLogout'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  document.getElementById(isTx ? 'bnTx' : 'bnExp')?.classList.add('active');
   if (!isTx) renderExpenses();
 }
 function expSetView(v) {
@@ -3537,10 +3561,13 @@ function expItemHtml(e) {
 // ─── Add Expense ─────────────────────────────
 function showAddExpModal() {
   expSelectedFormCat = EXP_CATS[0].id;
+  expSelectedCurrency = 'ILS';
+  expSetCurrency('ILS');
   document.getElementById('expAmount').value = '';
   document.getElementById('expDesc').value = '';
   document.getElementById('expDate').value = new Date().toISOString().split('T')[0];
   document.getElementById('expAddError').style.display = 'none';
+  const hint = document.getElementById('expCurrencyHint'); if(hint) hint.textContent='';
   renderExpFormCats();
   document.getElementById('addExpModal').classList.add('active');
   setTimeout(() => document.getElementById('expAmount').focus(), 100);
@@ -3560,24 +3587,58 @@ function expSelectFormCat(id) {
   renderExpFormCats();
 }
 
-function saveExpense() {
-  const amount = parseFloat(document.getElementById('expAmount').value);
-  const desc   = document.getElementById('expDesc').value.trim();
-  const date   = document.getElementById('expDate').value;
-  const err    = document.getElementById('expAddError');
+let expSelectedCurrency = 'ILS';
 
-  if (!amount || amount <= 0) {
+function expSetCurrency(cur) {
+  expSelectedCurrency = cur;
+  document.getElementById('expCurILS').style.background = cur === 'ILS' ? 'var(--amber)' : 'var(--card)';
+  document.getElementById('expCurILS').style.color      = cur === 'ILS' ? 'white' : 'var(--text2)';
+  document.getElementById('expCurUSD').style.background = cur === 'USD' ? 'var(--blue)' : 'var(--card)';
+  document.getElementById('expCurUSD').style.color      = cur === 'USD' ? 'white' : 'var(--text2)';
+  expUpdateCurrencyHint();
+}
+
+function expUpdateCurrencyHint() {
+  const amt = parseFloat(document.getElementById('expAmount').value) || 0;
+  const rate = parseFloat(appData.shekelRate) || 3.65;
+  const hint = document.getElementById('expCurrencyHint');
+  if (!hint) return;
+  if (expSelectedCurrency === 'USD' && amt > 0) {
+    hint.textContent = `= ${(amt * rate).toFixed(2)} ₪ (بسعر ${rate.toFixed(2)})`;
+    hint.style.color = 'var(--blue)';
+  } else if (expSelectedCurrency === 'ILS' && amt > 0) {
+    hint.textContent = `= ${(amt / rate).toFixed(2)} $ `;
+    hint.style.color = 'var(--amber)';
+  } else {
+    hint.textContent = '';
+  }
+}
+
+function saveExpense() {
+  const rawAmount = parseFloat(document.getElementById('expAmount').value);
+  const desc      = document.getElementById('expDesc').value.trim();
+  const date      = document.getElementById('expDate').value;
+  const err       = document.getElementById('expAddError');
+
+  if (!rawAmount || rawAmount <= 0) {
     err.textContent = '❌ أدخل مبلغاً صحيحاً'; err.style.display = 'block'; return;
   }
   if (!date) {
     err.textContent = '❌ اختر التاريخ'; err.style.display = 'block'; return;
   }
 
+  const rate = parseFloat(appData.shekelRate) || 3.65;
+  // Always store in ILS
+  const amountILS = expSelectedCurrency === 'USD' ? parseFloat((rawAmount * rate).toFixed(2)) : rawAmount;
+
   if (!appData.expenses) appData.expenses = {};
   if (!appData.expenses[currentUser]) appData.expenses[currentUser] = {};
 
   const id = 'exp_' + Date.now();
-  appData.expenses[currentUser][id] = { id, date, amount, cat: expSelectedFormCat, desc };
+  appData.expenses[currentUser][id] = {
+    id, date, amount: amountILS, cat: expSelectedFormCat, desc,
+    origAmount: rawAmount, origCurrency: expSelectedCurrency
+  };
 
   saveData('expenses/' + currentUser + '/' + id, appData.expenses[currentUser][id]);
   closeModal('addExpModal');
@@ -3636,6 +3697,33 @@ const _patchedMerge = function(remote) {
 // Override
 window.mergeData = _patchedMerge;
 
+
+function previewEditImage(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  compressImage(file, 800, 0.6).then(compressed => {
+    const p = document.getElementById('editImagePreview');
+    p.src = compressed; p.classList.remove('hidden');
+    const originalKB = Math.round(file.size / 1024);
+    const compressedKB = Math.round((compressed.length * 0.75) / 1024);
+    document.getElementById('editImageSizeInfo').textContent = `📦 ${originalKB}KB → ${compressedKB}KB`;
+  });
+}
+function clearEditTxImage() {
+  document.getElementById('editImgCurrentWrap').style.display = 'none';
+  document.getElementById('editTxImage').value = '';
+  const p = document.getElementById('editImagePreview');
+  p.classList.add('hidden'); p.src = '';
+}
+
+function toggleSection(bodyId, arrowId) {
+  const body  = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  if (!body) return;
+  const isHidden = body.style.display === 'none' || body.style.display === '';
+  body.style.display = isHidden ? 'block' : 'none';
+  if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
+}
 // =============================================
 // UTILS
 // =============================================
@@ -3677,6 +3765,16 @@ function escHtml(str) {
     <div class="form-group">
       <label>ملاحظات</label>
       <textarea id="editTxNotes" style="width:100%;padding:13px;font-size:15px;border:2px solid #e2e8f0;border-radius:10px;font-family:inherit;height:80px;resize:vertical"></textarea>
+    </div>
+    <div class="form-group">
+      <label>صورة المعاملة (اختياري)</label>
+      <div id="editImgCurrentWrap" style="margin-bottom:8px;display:none">
+        <img id="editImgCurrent" style="max-width:100%;max-height:120px;border-radius:10px;display:block">
+        <button type="button" onclick="clearEditTxImage()" style="margin-top:5px;background:#fee2e2;border:none;color:#ef4444;padding:5px 12px;border-radius:8px;font-size:12px;cursor:pointer">🗑️ حذف الصورة</button>
+      </div>
+      <input type="file" id="editTxImage" accept="image/*" onchange="previewEditImage(event)">
+      <small id="editImageSizeInfo" style="color:#10b981;display:block;margin-top:4px"></small>
+      <img id="editImagePreview" class="image-preview hidden" style="max-height:120px">
     </div>
     <div class="button-group">
       <button class="submit-btn add" onclick="saveEditTx()">✓ حفظ التعديل</button>
@@ -3748,6 +3846,11 @@ function escHtml(str) {
       <button class="pin-btn" onclick="pinSetupPress('del')" style="font-size:16px">⌫</button>
       <button class="pin-btn" onclick="pinSetupPress('0')">0</button>
       <button class="pin-btn" onclick="closeModal('pinSetupModal')" style="font-size:13px;color:#ef4444">✕</button>
+    </div>
+    <div id="pinDeleteWrap" style="margin-top:14px;text-align:center;display:none">
+      <button onclick="deleteMyPin()" style="background:#fee2e2;border:none;color:#ef4444;padding:9px 20px;border-radius:var(--r-sm);font-size:13px;font-weight:bold;cursor:pointer;font-family:var(--font)">
+        🗑️ حذف رمز PIN (إلغاء الدخول السريع)
+      </button>
     </div>
   </div>
 </div>
@@ -3854,8 +3957,17 @@ function escHtml(str) {
   <div class="modal-content" style="max-width:460px">
     <h2 style="text-align:center;margin-bottom:18px">➕ إضافة مصروف</h2>
     <div class="form-group">
-      <label>المبلغ (₪) *</label>
-      <input type="number" id="expAmount" class="password-input" step="0.01" placeholder="0.00">
+      <label>المبلغ *</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" id="expAmount" class="password-input" step="0.01" placeholder="0.00" style="flex:1;margin:0" oninput="expUpdateCurrencyHint()">
+        <div style="display:flex;border:2px solid var(--border);border-radius:var(--r-sm);overflow:hidden;flex-shrink:0">
+          <button type="button" id="expCurILS" onclick="expSetCurrency('ILS')"
+            style="padding:10px 12px;border:none;font-weight:bold;font-size:13px;cursor:pointer;background:var(--amber);color:white;font-family:var(--font)">₪</button>
+          <button type="button" id="expCurUSD" onclick="expSetCurrency('USD')"
+            style="padding:10px 12px;border:none;font-weight:bold;font-size:13px;cursor:pointer;background:var(--card);color:var(--text2);font-family:var(--font)">$</button>
+        </div>
+      </div>
+      <small id="expCurrencyHint" style="color:var(--text2);display:block;margin-top:5px"></small>
     </div>
     <div class="form-group">
       <label>التصنيف *</label>
@@ -3893,6 +4005,28 @@ function escHtml(str) {
     </div>
   </div>
 </div>
+
+
+<!-- BOTTOM NAV BAR (shown when logged in as user) -->
+<nav class="bottom-nav hidden" id="bottomNav">
+  <button class="bottom-nav-btn active" id="bnTx" onclick="switchMainTab('tx')">
+    <span class="nav-icon">💰</span>
+    <span>معاملات</span>
+  </button>
+  <button class="bottom-nav-btn" id="bnExp" onclick="switchMainTab('exp')">
+    <span class="nav-icon">💸</span>
+    <span>مصاريف</span>
+    <span class="nav-badge" id="expNavDot"></span>
+  </button>
+  <button class="bottom-nav-btn" id="bnSettings" onclick="showSettings()">
+    <span class="nav-icon">⚙️</span>
+    <span>إعدادات</span>
+  </button>
+  <button class="bottom-nav-btn" id="bnLogout" onclick="logout()">
+    <span class="nav-icon">🚪</span>
+    <span>خروج</span>
+  </button>
+</nav>
 
 </body>
 </html>
