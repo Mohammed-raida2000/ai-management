@@ -946,6 +946,65 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
 #mainApp > * { padding-bottom: 0 }
 body { padding-bottom: 70px !important }
 
+
+/* ══════════════════════════════════════════════════════
+   ADMIN NOTES SYSTEM
+══════════════════════════════════════════════════════ */
+.note-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.6);
+  z-index: 99995;
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px;
+  animation: noteIn .3s ease;
+}
+@keyframes noteIn {
+  from { opacity:0; transform:scale(.9) }
+  to   { opacity:1; transform:scale(1) }
+}
+.note-card {
+  background: var(--card);
+  border-radius: var(--r-lg);
+  padding: clamp(20px,5vw,36px);
+  max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  border-top: 5px solid var(--primary);
+}
+.note-card.urgent  { border-top-color: var(--red) }
+.note-card.info    { border-top-color: var(--blue) }
+.note-card.warning { border-top-color: var(--amber) }
+.note-card.success { border-top-color: var(--green) }
+.note-header {
+  display: flex; align-items: center; gap:10px; margin-bottom:14px;
+}
+.note-icon   { font-size: 28px }
+.note-title  { font-size: 16px; font-weight: bold; color: var(--text) }
+.note-from   { font-size: 12px; color: var(--text2); margin-top:2px }
+.note-body   { font-size: 15px; color: var(--text); line-height: 1.7; margin-bottom:16px; white-space: pre-wrap }
+.note-timer-bar-bg   { height: 4px; background: var(--border); border-radius:4px; overflow:hidden; margin-bottom:14px }
+.note-timer-bar-fill { height: 100%; border-radius:4px; transition: width 1s linear }
+.note-close-btn {
+  width:100%; padding:12px; border:none; border-radius:var(--r-sm);
+  background: var(--primary); color:white; font-size:14px;
+  font-weight:bold; cursor:pointer; font-family:var(--font);
+}
+
+/* Admin notes list */
+.admin-note-item {
+  border:1px solid var(--border); border-radius:var(--r);
+  padding:13px 15px; margin-bottom:10px; background:var(--card);
+  border-right: 4px solid var(--primary);
+}
+.admin-note-item.urgent  { border-right-color: var(--red) }
+.admin-note-item.info    { border-right-color: var(--blue) }
+.admin-note-item.warning { border-right-color: var(--amber) }
+.admin-note-item.success { border-right-color: var(--green) }
+.admin-note-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:8px; flex-wrap:wrap }
+.admin-note-meta   { font-size:11px; color:var(--text2); margin-top:4px }
+.admin-note-target { display:inline-flex; gap:5px; flex-wrap:wrap; margin-top:6px }
+.admin-note-tag    { padding:3px 9px; border-radius:12px; font-size:11px; font-weight:bold; background:var(--bg); color:var(--text2) }
+
 </style>
 </head>
 <body>
@@ -1326,6 +1385,15 @@ body { padding-bottom: 70px !important }
     <div id="userMgmtList"></div>
   </div>
 
+  <!-- Admin Notes -->
+  <div class="admin-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">📝 الملاحظات للمستخدمين</h2>
+      <button class="btn" style="background:var(--primary);color:white" onclick="showAddNoteModal()">➕ ملاحظة جديدة</button>
+    </div>
+    <div id="adminNotesList"><div class="empty-state">لا توجد ملاحظات</div></div>
+  </div>
+
   <!-- Reset Zone -->
   <div class="admin-section" style="border:2px solid #fecaca">
     <h2 style="color:#dc2626">⚠️ منطقة الإدارة الحساسة</h2>
@@ -1584,8 +1652,9 @@ function mergeData(remote) {
     remote.auditLog = Object.values(remote.auditLog);
   }
   remote.auditLog = remote.auditLog || [];
-  remote.expenses = remote.expenses || {};
-  remote.budgets  = remote.budgets  || {};
+  remote.expenses   = remote.expenses   || {};
+  remote.budgets    = remote.budgets    || {};
+  remote.adminNotes = remote.adminNotes || {};
   return remote;
 }
 
@@ -1757,6 +1826,7 @@ function login() {
       document.getElementById('bnTx')?.classList.add('active');
       document.getElementById('bnExp')?.classList.remove('active');
       updateUI();
+      setTimeout(() => checkAndShowUserNotes(currentUser), 400);
     }
   } else {
     document.getElementById('errorMsg').style.display = 'block';
@@ -2083,6 +2153,7 @@ function loadAdminPanel() {
   loadAuditLog();
   loadUserMgmt();
   updateUserFilters();
+  loadAdminNotes();
   // Monthly stats removed
 }
 
@@ -2937,6 +3008,7 @@ function addNewUser() {
   closeModal('addUserModal');
   loadUserMgmt();
   updateUserFilters();
+  loadAdminNotes();
   renderUserButtons();
   alert('✅ تم إضافة المستخدم ' + name);
 }
@@ -2952,6 +3024,7 @@ function deleteUser(name) {
   saveData('auditLog', appData.auditLog);
   loadUserMgmt();
   updateUserFilters();
+  loadAdminNotes();
   renderUserButtons();
   filterTransactions();
   alert('✅ تم حذف المستخدم ' + name);
@@ -3311,6 +3384,7 @@ function proceedAfterAuth() {
     document.getElementById('expensesSection').classList.add('hidden');
     document.getElementById('bnTx')?.classList.add('active');
     updateUI();
+    setTimeout(() => checkAndShowUserNotes(ukey), 400);
   }
 }
 
@@ -3690,8 +3764,9 @@ const _origMergeData = mergeData;
 // Patch mergeData to include expenses/budgets
 const _patchedMerge = function(remote) {
   remote = _origMergeData(remote);
-  remote.expenses = remote.expenses || {};
-  remote.budgets  = remote.budgets  || {};
+  remote.expenses   = remote.expenses   || {};
+  remote.budgets    = remote.budgets    || {};
+  remote.adminNotes = remote.adminNotes || {};
   return remote;
 };
 // Override
@@ -3724,6 +3799,327 @@ function toggleSection(bodyId, arrowId) {
   body.style.display = isHidden ? 'block' : 'none';
   if (arrow) arrow.textContent = isHidden ? '▲' : '▼';
 }
+
+// =============================================
+// ADMIN NOTES SYSTEM
+// =============================================
+
+let selectedNoteType    = 'normal';
+let selectedNoteDur     = 5;
+let selectedNoteTargets = [];
+let noteQueue           = [];
+let noteQueueIdx        = 0;
+let noteTimerInterval   = null;
+
+const NOTE_ICONS = {
+  normal:  '💬',
+  info:    'ℹ️',
+  warning: '⚠️',
+  urgent:  '🔴',
+  success: '✅'
+};
+const NOTE_COLORS = {
+  normal:  'var(--primary)',
+  info:    'var(--blue)',
+  warning: 'var(--amber)',
+  urgent:  'var(--red)',
+  success: 'var(--green)'
+};
+
+// ─── Admin: open modal ───────────────────────
+function showAddNoteModal() {
+  selectedNoteType    = 'normal';
+  selectedNoteDur     = 5;
+  selectedNoteTargets = [];
+  document.getElementById('noteTitle').value  = '';
+  document.getElementById('noteBody').value   = '';
+  document.getElementById('noteAddError').style.display = 'none';
+
+  // Render target user buttons
+  const users = Object.keys(appData.users || {});
+  const wrap  = document.getElementById('noteTargetBtns');
+  // "All" button
+  wrap.innerHTML = `<button type="button"
+    id="noteTarget_all"
+    onclick="toggleNoteTarget('all')"
+    style="padding:8px 14px;border:2px solid var(--border);border-radius:20px;font-size:13px;font-weight:bold;cursor:pointer;background:var(--card);color:var(--text2);font-family:var(--font);transition:all .2s">
+    👥 الكل
+  </button>` + users.map(u => {
+    const color = (appData.userColors && appData.userColors[u]) || '#667eea';
+    return `<button type="button"
+      id="noteTarget_${u}"
+      onclick="toggleNoteTarget('${u}')"
+      style="padding:8px 14px;border:2px solid var(--border);border-radius:20px;font-size:13px;font-weight:bold;cursor:pointer;background:var(--card);color:var(--text2);font-family:var(--font);transition:all .2s">
+      👤 ${u}
+    </button>`;
+  }).join('');
+
+  // Reset type buttons style
+  document.querySelectorAll('.note-type-btn').forEach(b => {
+    b.style.background  = 'var(--card)';
+    b.style.color       = 'var(--text2)';
+    b.style.borderColor = 'var(--border)';
+  });
+  const activeTypeBtn = document.querySelector('.note-type-btn[data-type="normal"]');
+  if (activeTypeBtn) {
+    activeTypeBtn.style.background  = 'var(--primary)';
+    activeTypeBtn.style.color       = 'white';
+    activeTypeBtn.style.borderColor = 'var(--primary)';
+  }
+  // Reset duration buttons
+  document.querySelectorAll('.note-dur-btn').forEach(b => {
+    b.style.background  = 'var(--card)';
+    b.style.color       = 'var(--text2)';
+    b.style.borderColor = 'var(--border)';
+  });
+  const activeDurBtn = document.querySelector('.note-dur-btn[data-dur="5"]');
+  if (activeDurBtn) {
+    activeDurBtn.style.background  = 'var(--primary)';
+    activeDurBtn.style.color       = 'white';
+    activeDurBtn.style.borderColor = 'var(--primary)';
+  }
+
+  document.getElementById('addNoteModal').classList.add('active');
+  setTimeout(() => document.getElementById('noteTitle').focus(), 100);
+}
+
+function selectNoteType(type) {
+  selectedNoteType = type;
+  const color = NOTE_COLORS[type];
+  document.querySelectorAll('.note-type-btn').forEach(b => {
+    const isActive = b.dataset.type === type;
+    b.style.background  = isActive ? color : 'var(--card)';
+    b.style.color       = isActive ? 'white' : 'var(--text2)';
+    b.style.borderColor = isActive ? color : 'var(--border)';
+  });
+}
+
+function selectNoteDur(dur) {
+  selectedNoteDur = dur;
+  document.querySelectorAll('.note-dur-btn').forEach(b => {
+    const isActive = parseInt(b.dataset.dur) === dur;
+    b.style.background  = isActive ? 'var(--primary)' : 'var(--card)';
+    b.style.color       = isActive ? 'white' : 'var(--text2)';
+    b.style.borderColor = isActive ? 'var(--primary)' : 'var(--border)';
+  });
+}
+
+function toggleNoteTarget(target) {
+  // If "all" clicked — toggle all users
+  const users = Object.keys(appData.users || {});
+  if (target === 'all') {
+    const allSelected = users.every(u => selectedNoteTargets.includes(u));
+    if (allSelected) {
+      selectedNoteTargets = [];
+    } else {
+      selectedNoteTargets = [...users];
+    }
+  } else {
+    if (selectedNoteTargets.includes(target)) {
+      selectedNoteTargets = selectedNoteTargets.filter(t => t !== target);
+    } else {
+      selectedNoteTargets.push(target);
+    }
+  }
+  // Update button styles
+  const users2 = ['all', ...users];
+  users2.forEach(u => {
+    const btn = document.getElementById('noteTarget_' + u);
+    if (!btn) return;
+    const isActive = u === 'all'
+      ? users.every(x => selectedNoteTargets.includes(x))
+      : selectedNoteTargets.includes(u);
+    const color = u === 'all' ? 'var(--primary)' :
+      (appData.userColors && appData.userColors[u]) || '#667eea';
+    btn.style.background  = isActive ? color : 'var(--card)';
+    btn.style.color       = isActive ? 'white' : 'var(--text2)';
+    btn.style.borderColor = isActive ? color : 'var(--border)';
+  });
+}
+
+function saveAdminNote() {
+  const title = document.getElementById('noteTitle').value.trim();
+  const body  = document.getElementById('noteBody').value.trim();
+  const err   = document.getElementById('noteAddError');
+
+  if (!title) { err.textContent = '❌ أدخل عنوان الملاحظة'; err.style.display='block'; return; }
+  if (!body)  { err.textContent = '❌ أدخل نص الملاحظة'; err.style.display='block'; return; }
+  if (!selectedNoteTargets.length) { err.textContent = '❌ اختر المستخدمين المستهدفين'; err.style.display='block'; return; }
+
+  if (!appData.adminNotes) appData.adminNotes = {};
+  const id = 'note_' + Date.now();
+  const note = {
+    id, title, body,
+    type:     selectedNoteType,
+    duration: selectedNoteDur,
+    targets:  [...selectedNoteTargets],
+    createdAt: new Date().toLocaleString('ar-EG'),
+    active:   true  // admin can deactivate
+  };
+  appData.adminNotes[id] = note;
+  saveData('adminNotes/' + id, note);
+  closeModal('addNoteModal');
+  loadAdminNotes();
+  showToast('✅ تم إرسال الملاحظة');
+}
+
+// ─── Admin: list notes ───────────────────────
+function loadAdminNotes() {
+  const el = document.getElementById('adminNotesList');
+  if (!el) return;
+  const notes = Object.values(appData.adminNotes || {})
+    .sort((a,b) => b.id.localeCompare(a.id));
+  if (!notes.length) {
+    el.innerHTML = '<div class="empty-state">لا توجد ملاحظات مرسلة</div>';
+    return;
+  }
+  el.innerHTML = notes.map(n => {
+    const targetsHtml = (n.targets||[]).map(t =>
+      `<span class="admin-note-tag">👤 ${t}</span>`
+    ).join('');
+    const durLabel = n.duration === 0 ? 'يدوي' : n.duration + ' ث';
+    const statusLabel = n.active
+      ? '<span style="color:var(--green);font-weight:bold">● نشطة</span>'
+      : '<span style="color:var(--text3)">○ معطلة</span>';
+    return `<div class="admin-note-item ${n.type}">
+      <div class="admin-note-header">
+        <div style="flex:1">
+          <div style="font-weight:bold;font-size:14px">${NOTE_ICONS[n.type]||'💬'} ${escHtml(n.title)}</div>
+          <div class="admin-note-meta">${n.createdAt} · مدة: ${durLabel} · ${statusLabel}</div>
+          <div class="admin-note-target">${targetsHtml}</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button onclick="toggleNoteActive('${n.id}')"
+            style="background:${n.active?'#fef9c3':'#f0fdf4'};border:none;border-radius:var(--r-sm);padding:6px 10px;font-size:12px;cursor:pointer;color:${n.active?'#92400e':'#065f46'};font-weight:bold">
+            ${n.active ? '⏸ تعطيل' : '▶ تفعيل'}
+          </button>
+          <button onclick="deleteAdminNote('${n.id}')"
+            style="background:#fee2e2;border:none;border-radius:var(--r-sm);padding:6px 10px;font-size:12px;cursor:pointer;color:var(--red)">🗑️</button>
+        </div>
+      </div>
+      <div style="font-size:13px;color:var(--text2);margin-top:6px;line-height:1.6">${escHtml(n.body).substring(0,120)}${n.body.length>120?'...':''}</div>
+    </div>`;
+  }).join('');
+}
+
+function toggleNoteActive(id) {
+  if (!appData.adminNotes || !appData.adminNotes[id]) return;
+  appData.adminNotes[id].active = !appData.adminNotes[id].active;
+  saveData('adminNotes/' + id + '/active', appData.adminNotes[id].active);
+  loadAdminNotes();
+}
+
+function deleteAdminNote(id) {
+  if (!confirm('حذف هذه الملاحظة نهائياً؟')) return;
+  if (appData.adminNotes) {
+    delete appData.adminNotes[id];
+    db.ref(DB_PATH + '/adminNotes/' + id).remove();
+    localStorage.setItem('fin_cache', JSON.stringify(appData));
+  }
+  loadAdminNotes();
+}
+
+// ─── User: show notes on login ───────────────
+function checkAndShowUserNotes(userName) {
+  if (!appData.adminNotes) return;
+  const seen = JSON.parse(localStorage.getItem('seenNotes_' + userName) || '[]');
+  const pending = Object.values(appData.adminNotes).filter(n =>
+    n.active &&
+    n.targets.includes(userName) &&
+    !seen.includes(n.id)
+  ).sort((a,b) => a.id.localeCompare(b.id));
+
+  if (!pending.length) return;
+  noteQueue    = pending;
+  noteQueueIdx = 0;
+  showNoteFromQueue();
+}
+
+function showNoteFromQueue() {
+  if (noteQueueIdx >= noteQueue.length) {
+    document.getElementById('noteOverlay').style.display = 'none';
+    return;
+  }
+  const note = noteQueue[noteQueueIdx];
+
+  // Set content
+  const card = document.getElementById('noteCard');
+  card.className = 'note-card ' + note.type;
+  document.getElementById('noteDisplayIcon').textContent  = NOTE_ICONS[note.type] || '💬';
+  document.getElementById('noteDisplayTitle').textContent = note.title;
+  document.getElementById('noteDisplayBody').textContent  = note.body;
+
+  // Counter
+  const counterRow = document.getElementById('noteCounterRow');
+  if (noteQueue.length > 1) {
+    counterRow.style.display = 'flex';
+    document.getElementById('noteCounter').textContent = noteQueueIdx + 1;
+    document.getElementById('noteTotal').textContent   = noteQueue.length;
+  } else {
+    counterRow.style.display = 'none';
+  }
+
+  // Timer bar
+  clearInterval(noteTimerInterval);
+  const timerBg  = document.getElementById('noteTimerBarBg');
+  const timerBar = document.getElementById('noteTimerBar');
+  const closeBtn = document.getElementById('noteCloseBtn');
+  const dur      = note.duration;
+  timerBar.style.background = NOTE_COLORS[note.type] || 'var(--primary)';
+
+  if (dur > 0) {
+    timerBg.style.display  = 'block';
+    closeBtn.textContent   = `✓ فهمت (${dur})`;
+    timerBar.style.width   = '100%';
+    timerBar.style.transition = `width ${dur}s linear`;
+    let remaining = dur;
+    // Start animation after brief delay so transition works
+    setTimeout(() => { timerBar.style.width = '0%'; }, 50);
+    noteTimerInterval = setInterval(() => {
+      remaining--;
+      closeBtn.textContent = remaining > 0 ? `✓ فهمت (${remaining})` : '✓ فهمت';
+      if (remaining <= 0) {
+        clearInterval(noteTimerInterval);
+        closeCurrentNote();
+      }
+    }, 1000);
+  } else {
+    timerBg.style.display = 'none';
+    closeBtn.textContent  = '✓ فهمت';
+  }
+
+  // Show overlay
+  const overlay = document.getElementById('noteOverlay');
+  overlay.style.display = 'flex';
+  overlay.style.animation = 'noteIn .3s ease';
+}
+
+function closeCurrentNote() {
+  clearInterval(noteTimerInterval);
+  const note    = noteQueue[noteQueueIdx];
+  const userName = currentUser;
+  // Mark as seen
+  const seenKey = 'seenNotes_' + userName;
+  const seen    = JSON.parse(localStorage.getItem(seenKey) || '[]');
+  if (!seen.includes(note.id)) seen.push(note.id);
+  localStorage.setItem(seenKey, JSON.stringify(seen));
+
+  noteQueueIdx++;
+  if (noteQueueIdx < noteQueue.length) {
+    // Brief pause then show next
+    const overlay = document.getElementById('noteOverlay');
+    overlay.style.opacity = '0';
+    overlay.style.transition = 'opacity .2s';
+    setTimeout(() => {
+      overlay.style.opacity = '1';
+      showNoteFromQueue();
+    }, 250);
+  } else {
+    document.getElementById('noteOverlay').style.display = 'none';
+  }
+}
+
+// Patch mergeData to include adminNotes
 // =============================================
 // UTILS
 // =============================================
@@ -4027,6 +4423,80 @@ function escHtml(str) {
     <span>خروج</span>
   </button>
 </nav>
+
+
+<!-- ADD NOTE MODAL -->
+<div id="addNoteModal" class="modal">
+  <div class="modal-content" style="max-width:480px">
+    <h2 style="text-align:center;margin-bottom:18px">📝 إضافة ملاحظة للمستخدمين</h2>
+
+    <div class="form-group">
+      <label>عنوان الملاحظة *</label>
+      <input type="text" id="noteTitle" class="password-input" placeholder="مثال: تذكير بالجرد الشهري">
+    </div>
+
+    <div class="form-group">
+      <label>نص الملاحظة *</label>
+      <textarea id="noteBody" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:15px;font-family:var(--font);height:100px;resize:vertical;background:var(--card);color:var(--text)" placeholder="اكتب الملاحظة هنا..."></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>نوع الملاحظة</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="note-type-btn active" data-type="normal"  onclick="selectNoteType('normal')"  style="flex:1;padding:9px;border:2px solid var(--primary);border-radius:var(--r-sm);background:var(--primary);color:white;font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">💬 عادية</button>
+        <button type="button" class="note-type-btn"        data-type="info"    onclick="selectNoteType('info')"    style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">ℹ️ معلومة</button>
+        <button type="button" class="note-type-btn"        data-type="warning" onclick="selectNoteType('warning')" style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">⚠️ تحذير</button>
+        <button type="button" class="note-type-btn"        data-type="urgent"  onclick="selectNoteType('urgent')"  style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">🔴 عاجل</button>
+        <button type="button" class="note-type-btn"        data-type="success" onclick="selectNoteType('success')" style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">✅ نجاح</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>يظهر عند</label>
+      <div id="noteTargetBtns" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div>
+    </div>
+
+    <div class="form-group">
+      <label>مدة الظهور</label>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" class="note-dur-btn active" data-dur="5"   onclick="selectNoteDur(5)"   style="flex:1;padding:9px;border:2px solid var(--primary);border-radius:var(--r-sm);background:var(--primary);color:white;font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">5 ث</button>
+        <button type="button" class="note-dur-btn"        data-dur="10"  onclick="selectNoteDur(10)"  style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">10 ث</button>
+        <button type="button" class="note-dur-btn"        data-dur="30"  onclick="selectNoteDur(30)"  style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">30 ث</button>
+        <button type="button" class="note-dur-btn"        data-dur="0"   onclick="selectNoteDur(0)"   style="flex:1;padding:9px;border:2px solid var(--border);border-radius:var(--r-sm);background:var(--card);color:var(--text2);font-family:var(--font);cursor:pointer;font-size:13px;font-weight:bold">يدوي</button>
+      </div>
+      <small style="color:var(--text2);display:block;margin-top:5px">"يدوي" = لا يختفي حتى يضغط المستخدم إغلاق</small>
+    </div>
+
+    <div id="noteAddError" class="error-msg" style="text-align:center"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveAdminNote()">✓ إرسال</button>
+      <button class="cancel-btn" onclick="closeModal('addNoteModal')">✕ إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- NOTE DISPLAY OVERLAY (shown to user on login) -->
+<div id="noteOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:99995;align-items:center;justify-content:center;padding:20px">
+  <div class="note-card" id="noteCard">
+    <div class="note-header">
+      <div class="note-icon" id="noteDisplayIcon">📝</div>
+      <div>
+        <div class="note-title" id="noteDisplayTitle"></div>
+        <div class="note-from">من: الأدمن</div>
+      </div>
+    </div>
+    <div class="note-body" id="noteDisplayBody"></div>
+    <div class="note-timer-bar-bg" id="noteTimerBarBg" style="display:none">
+      <div class="note-timer-bar-fill" id="noteTimerBar" style="width:100%;background:var(--primary)"></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px" id="noteCounterRow" style="display:none">
+      <span style="font-size:12px;color:var(--text2)">
+        <span id="noteCounter">1</span> / <span id="noteTotal">1</span>
+      </span>
+    </div>
+    <button class="note-close-btn" id="noteCloseBtn" onclick="closeCurrentNote()">✓ فهمت</button>
+  </div>
+</div>
 
 </body>
 </html>
