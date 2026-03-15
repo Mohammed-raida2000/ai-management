@@ -1468,6 +1468,47 @@ body.dark .quran-ref { color: #4ade80 }
 .ls-shuffle-hint{ color:rgba(255,255,255,.2);font-size:10px;margin-top:4px;cursor:pointer;transition:color .2s }
 .ls-shuffle-hint:hover { color:rgba(255,215,0,.5) }
 
+
+/* ══════════════════════════════════════════════════════
+   MINI LANTERNS IN USER HEADER
+══════════════════════════════════════════════════════ */
+.user-fanoos-row {
+  display:flex; justify-content:center; gap:16px;
+  padding: 10px 0 6px;
+  background: linear-gradient(135deg,#0a0e27,#111638,#0a0e27);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.user-fanoos-row::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,215,0,.3),rgba(255,215,0,.6),rgba(255,215,0,.3),transparent);
+}
+.uf-lights { position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-around;padding:0 6px }
+.uf-dot { width:5px;height:5px;border-radius:50%;margin-top:0px;animation:ufBlink var(--d,1.5s) ease-in-out infinite var(--dl,0s) }
+@keyframes ufBlink{0%,100%{opacity:.2}50%{opacity:1}}
+.uf-wrap {
+  display:flex;flex-direction:column;align-items:center;
+  animation:ufSwing var(--sw,3s) ease-in-out infinite var(--sd,0s);
+  transform-origin:top center;
+}
+@keyframes ufSwing{0%,100%{transform:rotate(var(--ra,-6deg))}50%{transform:rotate(var(--rb,6deg))}}
+.uf-cord { width:1px; }
+.uf-body {
+  border-radius:4px 4px 10px 10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+}
+.uf-top    { border-radius:3px 3px 0 0 }
+.uf-bottom { border-radius:0 0 3px 3px }
+.uf-fringe { display:flex;gap:1px;margin-top:2px }
+.uf-fl     { width:1px;border-radius:1px }
+.uf-greeting {
+  color:rgba(255,215,0,.75); font-size:11px; font-weight:bold;
+  text-align:center; margin-top:4px; letter-spacing:.5px;
+}
+
 </style>
 </head>
 <body>
@@ -1567,6 +1608,12 @@ body.dark .quran-ref { color: #4ade80 }
 
   <!-- TRANSACTIONS SECTION -->
   <div id="mainTxSection">
+
+  <!-- Mini Fanoos Row -->
+  <div class="user-fanoos-row" id="userFanoosRow">
+    <div class="uf-lights" id="ufLights"></div>
+    <!-- lanterns injected by JS -->
+  </div>
 
   <!-- Shekel Rate only -->
   <div class="dollar-rate-card" style="padding:10px 14px">
@@ -2405,7 +2452,10 @@ window.onload = function() {
   initFirebase(() => {
     updateDollarRateDisplay();
     renderUserButtons();
-    document.getElementById('loginScreen').classList.remove('hidden');
+    // Only show login screen if not already logged in
+    if (!currentUser) {
+      document.getElementById('loginScreen').classList.remove('hidden');
+    }
   });
 };
 
@@ -2494,6 +2544,7 @@ function login() {
       setTimeout(() => checkAndShowUserNotes(currentUser), 400);
       setTimeout(() => initRemainingWidget(), 200);
       startIslamicReminders();
+      setTimeout(() => { buildUserFanoos(); startUserFanoosTimer(); }, 100);
     }
   } else {
     document.getElementById('errorMsg').style.display = 'block';
@@ -2508,6 +2559,7 @@ function logout() {
   document.getElementById('adminPanel').classList.add('hidden');
   document.getElementById('bottomNav').classList.add('hidden');
   stopIslamicReminders();
+  if(window._ufTimer) clearInterval(window._ufTimer);
   document.getElementById('userSelection').classList.remove('hidden');
   document.getElementById('passwordScreen').classList.add('hidden');
   hideForm();
@@ -3890,7 +3942,6 @@ function renderUserButtons() {
 
   el.innerHTML = users.map((u, idx) => {
     const color = colors[u] || fixedColors[u] || '#667eea';
-    // Darken color slightly for gradient end
     return `<button class="ls-user-btn" onclick="selectUserByIndex(${idx})"
       style="background:linear-gradient(135deg,${color},${color}cc)">
       <span class="ls-user-arrow">←</span>
@@ -3898,6 +3949,7 @@ function renderUserButtons() {
       <span class="ls-user-avatar">👤</span>
     </button>`;
   }).join('');
+  // Don't touch loginScreen visibility here — handled by login/logout only
 }
 
 function selectUserByIndex(idx) {
@@ -4194,6 +4246,7 @@ function proceedAfterAuth() {
     setTimeout(() => checkAndShowUserNotes(ukey), 400);
     setTimeout(() => initRemainingWidget(), 200);
     startIslamicReminders();
+    setTimeout(() => { buildUserFanoos(); startUserFanoosTimer(); }, 100);
   }
 }
 
@@ -5944,6 +5997,84 @@ function buildLoginScreen() {
   if(!window._lsShuffleTimer) {
     window._lsShuffleTimer = setInterval(lsShuffleLanterns, 8000);
   }
+}
+
+// ─── Mini Fanoos Row (inside user app) ───────
+const UF_PALETTES = [
+  { bg:'#b91c1c', glow:'#ef444433', top:'#991b1b', fr:['#f87171','#ef4444'] },
+  { bg:'#d97706', glow:'#f59e0b33', top:'#b45309', fr:['#fbbf24','#f59e0b'] },
+  { bg:'#1d4ed8', glow:'#3b82f633', top:'#1e40af', fr:['#93c5fd','#60a5fa'] },
+  { bg:'#7c3aed', glow:'#8b5cf633', top:'#6d28d9', fr:['#c4b5fd','#a78bfa'] },
+  { bg:'#059669', glow:'#10b98133', top:'#047857', fr:['#6ee7b7','#34d399'] },
+  { bg:'#db2777', glow:'#ec489933', top:'#9d174d', fr:['#f9a8d4','#f472b6'] },
+  { bg:'#0891b2', glow:'#06b6d433', top:'#0e7490', fr:['#a5f3fc','#67e8f9'] },
+];
+const UF_ICONS = ['🏮','🪔','🌙','⭐','✨','🎇'];
+
+function buildUserFanoos() {
+  const row = document.getElementById('userFanoosRow');
+  if (!row) return;
+
+  // Build lights
+  const lts = document.getElementById('ufLights');
+  if (lts && !lts.children.length) {
+    const cls=['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#ec4899','#ffd700','#06b6d4'];
+    let dh='';
+    for(let i=0;i<22;i++){
+      const c=cls[i%cls.length];
+      const dl=(Math.random()*2).toFixed(1), d=(1+Math.random()*1.5).toFixed(1);
+      dh+=`<div class="uf-dot" style="background:${c};box-shadow:0 0 4px ${c};--d:${d}s;--dl:${dl}s"></div>`;
+    }
+    lts.innerHTML = dh;
+  }
+
+  // Remove old lanterns
+  row.querySelectorAll('.uf-wrap').forEach(el=>el.remove());
+
+  // Build 5 mini lanterns
+  const count = 5;
+  const usedP = [];
+  let lh = '';
+  for(let i=0;i<count;i++){
+    let p; do { p = UF_PALETTES[Math.floor(Math.random()*UF_PALETTES.length)]; } while(usedP.includes(p)&&usedP.length<UF_PALETTES.length);
+    usedP.push(p);
+    const icon  = UF_ICONS[Math.floor(Math.random()*UF_ICONS.length)];
+    const cord  = 6 + Math.round(Math.random()*8);
+    const sw    = (2.2+Math.random()*1.2).toFixed(1);
+    const sd    = (i*0.18).toFixed(2);
+    const angle = 5 + Math.round(Math.random()*4);
+    const scale = i===2 ? 1.1 : (i===0||i===4) ? 0.85 : 1.0;
+    // Mini sizes
+    const w=Math.round(22*scale), h=Math.round(32*scale);
+    const tw=Math.round(9*scale), bw=Math.round(7*scale);
+    const fringe=p.fr.map((c,fi)=>{
+      const hs=[6,4,7,4,6][fi%5];
+      return `<div class="uf-fl" style="background:${c};height:${Math.round(hs*scale)}px"></div>`;
+    }).join('');
+    lh+=`<div class="uf-wrap" style="--sw:${sw}s;--sd:${sd}s;--ra:-${angle}deg;--rb:${angle}deg">
+      <div class="uf-cord" style="height:${cord}px;background:linear-gradient(${p.top}66,${p.top}aa)"></div>
+      <div style="display:flex;flex-direction:column;align-items:center">
+        <div class="uf-top" style="width:${tw}px;height:${Math.round(5*scale)}px;background:${p.top}"></div>
+        <div class="uf-body" style="width:${w}px;height:${h}px;background:${p.bg};box-shadow:0 0 10px ${p.glow}">${icon}</div>
+        <div class="uf-bottom" style="width:${bw}px;height:${Math.round(4*scale)}px;background:${p.top}"></div>
+        <div class="uf-fringe">${fringe}</div>
+      </div>
+    </div>`;
+  }
+  // Add greeting text
+  lh+=`<div class="uf-greeting" style="position:absolute;bottom:6px;right:0;left:0">رمضان كريم 🌙</div>`;
+  row.insertAdjacentHTML('beforeend', lh);
+}
+
+// Auto-shuffle user fanoos every 10 seconds
+function startUserFanoosTimer() {
+  if (window._ufTimer) clearInterval(window._ufTimer);
+  window._ufTimer = setInterval(()=>{
+    const row=document.getElementById('userFanoosRow');
+    if(!row) return;
+    row.style.opacity='0'; row.style.transition='opacity .2s';
+    setTimeout(()=>{ buildUserFanoos(); row.style.opacity='1'; }, 200);
+  }, 10000);
 }
 // =============================================
 // UTILS
