@@ -910,41 +910,64 @@ body.dark .back-btn   { background:var(--border); color:#cbd5e0 }
 ══════════════════════════════════════════════════════ */
 .bottom-nav {
   position: fixed;
-  bottom: 0; left: 0; right: 0;
+  bottom: 16px; left: 50%; transform: translateX(-50%);
+  width: calc(100% - 32px); max-width: 420px;
   background: var(--card);
-  border-top: 1px solid var(--border);
-  display: flex;
+  border-radius: 28px;
+  display: flex; align-items: center;
   z-index: 9990;
-  box-shadow: 0 -4px 20px rgba(0,0,0,.12);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 8px 32px rgba(0,0,0,.18), 0 2px 8px rgba(0,0,0,.10);
+  padding: 8px 6px;
+  gap: 2px;
+}
+body.dark .bottom-nav {
+  background: #1e2a3a;
+  box-shadow: 0 8px 32px rgba(0,0,0,.4);
 }
 .bottom-nav-btn {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  padding: 10px 4px 8px;
+  padding: 8px 4px 6px;
   border: none; background: transparent;
   color: var(--text2); font-family: var(--font);
-  cursor: pointer; transition: all .2s;
-  font-size: 11px; font-weight: bold;
-  position: relative; gap: 4px;
+  cursor: pointer; transition: all .25s cubic-bezier(.34,1.56,.64,1);
+  font-size: 10px; font-weight: bold;
+  position: relative; gap: 3px; border-radius: 20px;
   -webkit-tap-highlight-color: transparent;
+  min-width: 0;
 }
-.bottom-nav-btn .nav-icon { font-size: 22px; line-height: 1; transition: transform .2s }
-.bottom-nav-btn.active { color: var(--primary) }
-.bottom-nav-btn.active .nav-icon { transform: scale(1.15) }
-.bottom-nav-btn:hover { color: var(--primary) }
+.bottom-nav-btn .nav-icon {
+  font-size: 20px; line-height: 1;
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+  display: flex; align-items: center; justify-content: center;
+  width: 40px; height: 34px; border-radius: 16px;
+  transition: all .25s cubic-bezier(.34,1.56,.64,1);
+}
+.bottom-nav-btn .nav-label {
+  font-size: 10px; font-weight: 700; transition: all .2s;
+  white-space: nowrap; overflow: hidden; max-width: 60px;
+}
+.bottom-nav-btn.active .nav-icon {
+  background: var(--primary);
+  color: white;
+  transform: scale(1.08);
+  box-shadow: 0 4px 12px rgba(102,126,234,.4);
+}
+.bottom-nav-btn.active .nav-label { color: var(--primary) }
+.bottom-nav-btn.active.logout-nav .nav-icon {
+  background: var(--red);
+  box-shadow: 0 4px 12px rgba(239,68,68,.35);
+}
+.bottom-nav-btn.active.logout-nav .nav-label { color: var(--red) }
+.bottom-nav-btn:not(.active):hover .nav-icon { background: var(--bg); transform: scale(1.04) }
 .nav-badge {
-  position: absolute; top: 6px; right: calc(50% - 16px);
+  position: absolute; top: 4px; right: calc(50% - 20px);
   background: var(--red); color: white;
-  border-radius: 10px; font-size: 10px; font-weight: bold;
-  padding: 1px 5px; min-width: 16px; text-align: center;
-  display: none;
+  border-radius: 10px; font-size: 9px; font-weight: bold;
+  padding: 1px 5px; min-width: 15px; text-align: center;
+  display: none; border: 2px solid var(--card);
 }
-/* Push main content up so bottom nav doesn't overlap */
-#mainApp .container-inner,
-#mainApp > .container > *,
-#mainApp > * { padding-bottom: 0 }
-body { padding-bottom: 70px !important }
+body { padding-bottom: 90px !important }
 
 
 /* ══════════════════════════════════════════════════════
@@ -1004,6 +1027,84 @@ body { padding-bottom: 70px !important }
 .admin-note-meta   { font-size:11px; color:var(--text2); margin-top:4px }
 .admin-note-target { display:inline-flex; gap:5px; flex-wrap:wrap; margin-top:6px }
 .admin-note-tag    { padding:3px 9px; border-radius:12px; font-size:11px; font-weight:bold; background:var(--bg); color:var(--text2) }
+
+
+/* ══════════════════════════════════════════════════════
+   REMAINING BALANCE WIDGET
+══════════════════════════════════════════════════════ */
+.remaining-card {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 16px;
+  margin-bottom: 14px;
+  box-shadow: var(--shadow);
+  border: 1.5px solid var(--border);
+}
+.remaining-title {
+  font-size: 13px; font-weight: bold; color: var(--text2);
+  margin-bottom: 12px; display: flex; align-items: center;
+  justify-content: space-between; gap: 8px;
+}
+.remaining-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 8px; flex-wrap: wrap;
+}
+.remaining-inp {
+  flex: 1; min-width: 80px; padding: 9px 12px;
+  font-size: 15px; border: 2px solid var(--border);
+  border-radius: var(--r-sm); background: var(--card);
+  color: var(--text); font-family: var(--font);
+  transition: border-color .2s;
+}
+.remaining-inp:focus { outline: none; border-color: var(--primary) }
+.rem-cur-btn {
+  padding: 9px 13px; border: 2px solid var(--border);
+  border-radius: var(--r-sm); font-weight: bold;
+  font-size: 13px; cursor: pointer; font-family: var(--font);
+  background: var(--card); color: var(--text2);
+  transition: all .2s; white-space: nowrap;
+}
+.rem-cur-btn.active-ils {
+  background: #fef9c3; border-color: #f59e0b; color: #92400e;
+}
+.rem-cur-btn.active-usd {
+  background: #dbeafe; border-color: var(--blue); color: var(--blue);
+}
+.rem-result-box {
+  border-radius: var(--r); padding: 14px 16px;
+  margin-top: 10px; text-align: center;
+  transition: all .3s;
+}
+.rem-result-box.positive { background: #f0fdf4; border: 1.5px solid #bbf7d0 }
+.rem-result-box.negative { background: #fef2f2; border: 1.5px solid #fecaca }
+.rem-result-box.neutral  { background: var(--bg);  border: 1.5px solid var(--border) }
+.rem-result-label { font-size: 11px; color: var(--text2); margin-bottom: 4px }
+.rem-result-value { font-size: clamp(22px,6vw,32px); font-weight: bold }
+.rem-result-value.positive { color: var(--green) }
+.rem-result-value.negative { color: var(--red) }
+.rem-breakdown {
+  margin-top: 10px; padding-top: 10px;
+  border-top: 1px solid var(--border);
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap;
+}
+.rem-breakdown-item {
+  flex: 1; min-width: 90px; text-align: center;
+  background: var(--bg); border-radius: var(--r-sm); padding: 8px;
+}
+.rem-breakdown-label { font-size: 10px; color: var(--text2); margin-bottom: 3px }
+.rem-breakdown-val   { font-size: 14px; font-weight: bold; color: var(--text) }
+.rem-exp-source {
+  font-size: 11px; color: var(--text2); margin-top: 4px;
+  display: flex; align-items: center; gap: 4px; flex-wrap: wrap;
+}
+.rem-exp-source span {
+  background: var(--bg); padding: 2px 8px;
+  border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--border); transition: all .15s;
+}
+.rem-exp-source span:hover  { background: var(--primary); color: white; border-color: var(--primary) }
+.rem-exp-source span.active { background: var(--primary); color: white; border-color: var(--primary) }
 
 </style>
 </head>
@@ -1101,8 +1202,70 @@ body { padding-bottom: 70px !important }
 
 
 
-  <!-- Currency Converter -->
+  <!-- Remaining Balance Widget -->
+  <div class="remaining-card" id="remainingWidget">
+    <div class="remaining-title">
+      <span>🧮 حاسبة الرصيد المتبقي</span>
+      <button onclick="toggleSection('remBody','remArrow')"
+        style="background:none;border:none;font-size:14px;color:var(--text2);cursor:pointer;padding:2px 6px">
+        <span id="remArrow">▼</span>
+      </button>
+    </div>
+    <div id="remBody">
+      <!-- Initial balance input -->
+      <div class="remaining-row">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap;min-width:70px">الرصيد الأساسي:</span>
+        <input class="remaining-inp" type="number" id="remInitial" step="0.01"
+          placeholder="أدخل أو من الحساب ←"
+          oninput="calcRemaining()">
+        <button class="rem-cur-btn active-usd" id="remInitialCur" onclick="toggleRemInitialCur()">$</button>
+        <button onclick="remFillFromBalance()"
+          style="padding:9px 10px;background:var(--primary);color:white;border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap">
+          ← رصيدي
+        </button>
+      </div>
 
+      <!-- Expenses deduction -->
+      <div class="remaining-row">
+        <span style="font-size:12px;color:var(--text2);white-space:nowrap;min-width:70px">اطرح مصاريف:</span>
+        <input class="remaining-inp" type="number" id="remExpenses" step="0.01"
+          placeholder="0.00" oninput="calcRemaining()">
+        <button class="rem-cur-btn active-ils" id="remExpCur" onclick="toggleRemExpCur()">₪</button>
+        <button onclick="remFillFromExpenses()"
+          style="padding:9px 10px;background:var(--amber);color:white;border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:var(--font);white-space:nowrap">
+          ← مصاريفي
+        </button>
+      </div>
+
+      <!-- Month selector for expenses -->
+      <div class="rem-exp-source" id="remExpSource">
+        <span>الشهر:</span>
+      </div>
+
+      <!-- Result -->
+      <div class="rem-result-box neutral" id="remResultBox">
+        <div class="rem-result-label">الرصيد المتبقي</div>
+        <div class="rem-result-value" id="remResultVal" style="color:var(--text2)">—</div>
+        <div id="remResultSub" style="font-size:11px;color:var(--text2);margin-top:4px"></div>
+      </div>
+
+      <!-- Breakdown -->
+      <div class="rem-breakdown" id="remBreakdown" style="display:none">
+        <div class="rem-breakdown-item">
+          <div class="rem-breakdown-label">الأساسي</div>
+          <div class="rem-breakdown-val" id="remBrkInit">—</div>
+        </div>
+        <div class="rem-breakdown-item">
+          <div class="rem-breakdown-label">المصاريف (₪→$)</div>
+          <div class="rem-breakdown-val" id="remBrkExp" style="color:var(--red)">—</div>
+        </div>
+        <div class="rem-breakdown-item">
+          <div class="rem-breakdown-label">سعر الصرف</div>
+          <div class="rem-breakdown-val" id="remBrkRate" style="color:#b45309">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <button class="add-btn" id="showFormBtn" onclick="showForm()">➕ إضافة معاملة جديدة</button>
 
@@ -1265,11 +1428,11 @@ body { padding-bottom: 70px !important }
 
   <!-- Admin Stats Row 1 -->
   <div class="stats-grid" style="grid-template-columns:repeat(3,1fr)">
-    <div class="stat-card">
-      <button class="top-right-btn" onclick="editThaerBalance()">✏️ تعديل</button>
+    <div class="stat-card" style="cursor:pointer" onclick="showThaerModal()">
       <div class="stat-icon">👤</div>
       <div class="stat-label">رصيد ثائر ($)</div>
       <div class="stat-value blue" id="thaerBalance">0.00</div>
+      <div style="font-size:11px;color:var(--primary);margin-top:4px">✏️ تعديل + ملاحظات</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">🏦</div>
@@ -1647,6 +1810,7 @@ function mergeData(remote) {
   remote.expenses   = remote.expenses   || {};
   remote.budgets    = remote.budgets    || {};
   remote.adminNotes = remote.adminNotes || {};
+  remote.thaerNotes = remote.thaerNotes || '';
   return remote;
 }
 
@@ -1819,6 +1983,7 @@ function login() {
       document.getElementById('bnExp')?.classList.remove('active');
       updateUI();
       setTimeout(() => checkAndShowUserNotes(currentUser), 400);
+      setTimeout(() => initRemainingWidget(), 200);
     }
   } else {
     document.getElementById('errorMsg').style.display = 'block';
@@ -1900,16 +2065,40 @@ function editInitialShekelBalance() {
   }
 }
 
-function editThaerBalance() {
-  const cur = appData.thaerBalance||0;
-  const val = prompt(`رصيد ثائر الحالي: $${parseFloat(cur).toFixed(2)}\nأدخل الرصيد الجديد:`, cur);
-  if (val !== null) {
-    const p = parseFloat(val);
-    if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
-    appData.thaerBalance = p;
-    saveData('thaerBalance', p);
-    updateAdminStats();
-  }
+function editThaerBalance() { showThaerModal(); }
+
+function showThaerModal() {
+  document.getElementById('thaerAmountInp').value = appData.thaerBalance || 0;
+  document.getElementById('thaerNotesInp').value  = appData.thaerNotes  || '';
+  document.getElementById('thaerNotesFile').value = '';
+  document.getElementById('thaerModal').classList.add('active');
+}
+
+function saveThaerModal() {
+  const p = parseFloat(document.getElementById('thaerAmountInp').value);
+  if (isNaN(p)) { alert('❌ أدخل قيمة صحيحة'); return; }
+  const notes = document.getElementById('thaerNotesInp').value;
+  appData.thaerBalance = p;
+  appData.thaerNotes   = notes;
+  saveData('thaerBalance', p);
+  saveData('thaerNotes',   notes);
+  closeModal('thaerModal');
+  updateAdminStats();
+  showToast('✅ تم حفظ رصيد ثائر والملاحظات');
+}
+
+function importThaerNotes(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const existing = document.getElementById('thaerNotesInp').value;
+    const imported = e.target.result;
+    const separator = existing ? '\n\n------- ملف مستورد -------\n' : '';
+    document.getElementById('thaerNotesInp').value = existing + separator + imported;
+    showToast('✅ تم استيراد الملف (' + file.name + ')');
+  };
+  reader.readAsText(file, 'UTF-8');
 }
 
 // =============================================
@@ -2443,7 +2632,55 @@ function filterTransactions() {
   }
   const listEl = document.getElementById('adminTransactionList');
   if (!all.length) { listEl.innerHTML = '<div class="empty-state">لا توجد معاملات</div>'; return; }
-  listEl.innerHTML = all.slice(0,40).map(t => renderTxItem(t, true)).join('');
+
+  // Group by day — show only last tx per day, rest collapsible
+  const byDay = {};
+  all.forEach(t => {
+    if (!byDay[t.date]) byDay[t.date] = [];
+    byDay[t.date].push(t);
+  });
+  const days = Object.keys(byDay).sort((a,b) => {
+    // parse ar-EG date d/m/yyyy
+    const p = s => { const x=s.split('/'); return new Date(x[2],x[1]-1,x[0]); };
+    return p(b) - p(a);
+  });
+
+  let html2 = '';
+  days.forEach(day => {
+    const txs = byDay[day]; // already sorted newest first
+    const first = txs[0];
+    const rest  = txs.slice(1);
+    const dayTotal = txs.reduce((s,t) => {
+      if (t.currency==='shekel') return s;
+      return t.type==='add' ? s+t.amount : s-t.amount;
+    }, 0);
+    const dayId = 'dayGroup_' + day.replace(/\//g,'_');
+    html2 += `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 10px;background:var(--bg);border-radius:var(--r-sm);margin-bottom:6px;cursor:${rest.length?'pointer':'default'}" ${rest.length?`onclick="toggleDayGroup('${dayId}')"`:''}">
+        <span style="font-size:12px;font-weight:bold;color:var(--text2)">📅 ${day}</span>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="font-size:12px;font-weight:bold;color:${dayTotal>=0?'var(--green)':'var(--red)'}">
+            ${dayTotal>=0?'+':''}$${dayTotal.toFixed(2)}
+          </span>
+          ${rest.length ? `<span id="arr_${dayId}" style="font-size:12px;color:var(--text2)">▼ ${rest.length} أخرى</span>` : ''}
+        </div>
+      </div>
+      ${renderTxItem(first, true)}
+      <div id="${dayId}" style="display:none">
+        ${rest.map(t => renderTxItem(t, true)).join('')}
+      </div>
+    </div>`;
+  });
+  listEl.innerHTML = html2;
+}
+
+function toggleDayGroup(id) {
+  const el  = document.getElementById(id);
+  const arr = document.getElementById('arr_' + id);
+  if (!el) return;
+  const isHidden = el.style.display === 'none';
+  el.style.display = isHidden ? 'block' : 'none';
+  if (arr) arr.textContent = isHidden ? '▲ إخفاء' : ('▼ ' + el.children.length + ' أخرى');
 }
 
 // =============================================
@@ -2461,7 +2698,7 @@ function closeModal(id) {
   el.classList.remove('active');
   if (id === 'converterModal') {
     // Restore correct nav active based on current tab
-    ['bnTx','bnExp','bnConv','bnSettings'].forEach(id2 => {
+    ['bnTx','bnExp','bnConv','bnSettings','bnLogout'].forEach(id2 => {
       const el=document.getElementById(id2); if(el) el.classList.remove('active');
     });
     const expHidden = document.getElementById('expensesSection')?.classList.contains('hidden');
@@ -3441,6 +3678,7 @@ function proceedAfterAuth() {
     document.getElementById('bnTx')?.classList.add('active');
     updateUI();
     setTimeout(() => checkAndShowUserNotes(ukey), 400);
+    setTimeout(() => initRemainingWidget(), 200);
   }
 }
 
@@ -3823,6 +4061,7 @@ const _patchedMerge = function(remote) {
   remote.expenses   = remote.expenses   || {};
   remote.budgets    = remote.budgets    || {};
   remote.adminNotes = remote.adminNotes || {};
+  remote.thaerNotes = remote.thaerNotes || '';
   return remote;
 };
 // Override
@@ -4185,7 +4424,7 @@ function showConverterModal() {
   document.getElementById('convQuick100').textContent  = (100*rate).toFixed(2) + ' ₪';
   document.getElementById('convQuick100s').textContent = (100/rate).toFixed(2) + ' $';
   // Update bottom nav active
-  ['bnTx','bnExp','bnConv','bnSettings'].forEach(id => {
+  ['bnTx','bnExp','bnConv','bnSettings','bnLogout'].forEach(id => {
     const el=document.getElementById(id); if(el) el.classList.remove('active');
   });
   document.getElementById('bnConv')?.classList.add('active');
@@ -4401,6 +4640,140 @@ function updateSplitPreview() {
   });
   html += '</div></div>';
   preview.innerHTML = html;
+}
+
+// =============================================
+// REMAINING BALANCE WIDGET
+// =============================================
+let remInitialCur = 'USD';  // currency of the initial input
+let remExpCur     = 'ILS';  // currency of the expenses input
+let remSelMonth   = null;   // selected month for auto-fill
+
+function toggleRemInitialCur() {
+  remInitialCur = remInitialCur === 'USD' ? 'ILS' : 'USD';
+  const btn = document.getElementById('remInitialCur');
+  if (remInitialCur === 'USD') {
+    btn.textContent = '$'; btn.className = 'rem-cur-btn active-usd';
+  } else {
+    btn.textContent = '₪'; btn.className = 'rem-cur-btn active-ils';
+  }
+  calcRemaining();
+}
+
+function toggleRemExpCur() {
+  remExpCur = remExpCur === 'ILS' ? 'USD' : 'ILS';
+  const btn = document.getElementById('remExpCur');
+  if (remExpCur === 'ILS') {
+    btn.textContent = '₪'; btn.className = 'rem-cur-btn active-ils';
+  } else {
+    btn.textContent = '$'; btn.className = 'rem-cur-btn active-usd';
+  }
+  calcRemaining();
+}
+
+function remFillFromBalance() {
+  // Fill initial from current dollar balance
+  const bal = getCurrentBalance(currentUser);
+  document.getElementById('remInitial').value = bal.toFixed(2);
+  remInitialCur = 'USD';
+  const btn = document.getElementById('remInitialCur');
+  btn.textContent = '$'; btn.className = 'rem-cur-btn active-usd';
+  calcRemaining();
+}
+
+function remFillFromExpenses() {
+  // Fill expenses from current month's expenses tracker
+  const now   = new Date();
+  const mk    = remSelMonth || (now.getFullYear() + '-' + String(now.getMonth()+1).padStart(2,'0'));
+  const exps  = Object.values(appData.expenses?.[currentUser] || {})
+    .filter(e => e.date?.startsWith(mk));
+  const total = exps.reduce((s,e) => s + (e.amount||0), 0); // already in ILS
+  document.getElementById('remExpenses').value = total.toFixed(2);
+  remExpCur = 'ILS';
+  const btn = document.getElementById('remExpCur');
+  btn.textContent = '₪'; btn.className = 'rem-cur-btn active-ils';
+  calcRemaining();
+  showToast('✅ مصاريف ' + mk + ': ' + total.toFixed(2) + ' ₪');
+}
+
+function remInitMonthButtons() {
+  // Build month buttons in the expense source row
+  const wrap = document.getElementById('remExpSource');
+  if (!wrap) return;
+  const now = new Date();
+  const names = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                 'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  const months = [];
+  for (let i = 0; i < 4; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    months.push({
+      val: d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'),
+      label: names[d.getMonth()]
+    });
+  }
+  if (!remSelMonth) remSelMonth = months[0].val;
+  wrap.innerHTML = '<span style="font-size:11px;color:var(--text2)">الشهر:</span>' +
+    months.map(m =>
+      `<span class="${m.val === remSelMonth ? 'active' : ''}"
+        onclick="remSelectMonth('${m.val}')">${m.label}</span>`
+    ).join('');
+}
+
+function remSelectMonth(mk) {
+  remSelMonth = mk;
+  remInitMonthButtons();
+}
+
+function calcRemaining() {
+  const rate    = parseFloat(appData.shekelRate) || 3.65;
+  const initRaw = parseFloat(document.getElementById('remInitial').value)   || 0;
+  const expRaw  = parseFloat(document.getElementById('remExpenses').value)  || 0;
+
+  // Convert everything to USD
+  const initUSD = remInitialCur === 'USD' ? initRaw : initRaw / rate;
+  const expUSD  = remExpCur     === 'USD' ? expRaw  : expRaw  / rate;
+
+  const remaining    = initUSD - expUSD;
+  const remainingILS = remaining * rate;
+
+  const box  = document.getElementById('remResultBox');
+  const val  = document.getElementById('remResultVal');
+  const sub  = document.getElementById('remResultSub');
+  const brkd = document.getElementById('remBreakdown');
+
+  if (!initRaw && !expRaw) {
+    box.className = 'rem-result-box neutral';
+    val.textContent = '—'; val.style.color = 'var(--text2)';
+    sub.textContent = ''; brkd.style.display = 'none';
+    return;
+  }
+
+  box.className = 'rem-result-box ' + (remaining >= 0 ? 'positive' : 'negative');
+  val.style.color = remaining >= 0 ? 'var(--green)' : 'var(--red)';
+  val.textContent = (remaining >= 0 ? '' : '-') + '$' + Math.abs(remaining).toFixed(2);
+  sub.textContent = '= ' + Math.abs(remainingILS).toFixed(2) + ' ₪' +
+    (remaining < 0 ? ' (عجز)' : '');
+
+  brkd.style.display = 'flex';
+  document.getElementById('remBrkInit').textContent =
+    remInitialCur === 'USD' ? '$' + initRaw.toFixed(2) : initRaw.toFixed(2) + ' ₪';
+  document.getElementById('remBrkExp').textContent =
+    '-' + (remExpCur === 'ILS' ? expRaw.toFixed(2) + ' ₪' : '$' + expRaw.toFixed(2));
+  document.getElementById('remBrkRate').textContent = rate.toFixed(2) + ' ₪/$';
+}
+
+// Init widget when user logs in
+function initRemainingWidget() {
+  remInitMonthButtons();
+  document.getElementById('remInitial').value  = '';
+  document.getElementById('remExpenses').value = '';
+  remInitialCur = 'USD';
+  remExpCur     = 'ILS';
+  document.getElementById('remInitialCur').textContent = '$';
+  document.getElementById('remInitialCur').className   = 'rem-cur-btn active-usd';
+  document.getElementById('remExpCur').textContent     = '₪';
+  document.getElementById('remExpCur').className       = 'rem-cur-btn active-ils';
+  calcRemaining();
 }
 // =============================================
 // UTILS
@@ -4689,20 +5062,24 @@ function escHtml(str) {
 <nav class="bottom-nav hidden" id="bottomNav">
   <button class="bottom-nav-btn active" id="bnTx" onclick="switchMainTab('tx')">
     <span class="nav-icon">💰</span>
-    <span>معاملات</span>
+    <span class="nav-label">معاملات</span>
   </button>
   <button class="bottom-nav-btn" id="bnExp" onclick="switchMainTab('exp')">
     <span class="nav-icon">💸</span>
-    <span>مصاريف</span>
+    <span class="nav-label">مصاريف</span>
     <span class="nav-badge" id="expNavDot"></span>
   </button>
   <button class="bottom-nav-btn" id="bnConv" onclick="showConverterModal()">
     <span class="nav-icon">💱</span>
-    <span>تحويل</span>
+    <span class="nav-label">تحويل</span>
   </button>
   <button class="bottom-nav-btn" id="bnSettings" onclick="showSettings()">
     <span class="nav-icon">⚙️</span>
-    <span>إعدادات</span>
+    <span class="nav-label">إعدادات</span>
+  </button>
+  <button class="bottom-nav-btn logout-nav" id="bnLogout" onclick="logout()">
+    <span class="nav-icon">🚪</span>
+    <span class="nav-label">خروج</span>
   </button>
 </nav>
 
@@ -4836,6 +5213,32 @@ function escHtml(str) {
     </div>
     <div id="splitPreview" style="margin-top:14px"></div>
     <button class="cancel-btn" style="width:100%;margin-top:14px" onclick="closeModal('expSplitModal')">✕ إغلاق</button>
+  </div>
+</div>
+
+
+<!-- THAER MODAL -->
+<div id="thaerModal" class="modal">
+  <div class="modal-content" style="max-width:480px">
+    <h2 style="text-align:center;margin-bottom:18px">👤 رصيد ثائر وملاحظاته</h2>
+    <div class="form-group">
+      <label>الرصيد ($)</label>
+      <input type="number" id="thaerAmountInp" class="password-input" step="0.01" placeholder="0.00">
+    </div>
+    <div class="form-group">
+      <label>الملاحظات</label>
+      <textarea id="thaerNotesInp" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;font-family:var(--font);height:180px;resize:vertical;background:var(--card);color:var(--text)" placeholder="اكتب ملاحظاتك هنا...&#10;أو استورد ملف نصي من الأسفل"></textarea>
+    </div>
+    <div class="form-group">
+      <label>📂 استيراد من ملف (txt / نص سامسنج نوتس)</label>
+      <input type="file" id="thaerNotesFile" accept=".txt,.text,text/plain" onchange="importThaerNotes(event)"
+        style="width:100%;padding:8px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text)">
+      <small style="color:var(--text2);display:block;margin-top:4px">اختر ملف .txt — سيضاف المحتوى للملاحظات</small>
+    </div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveThaerModal()">✓ حفظ</button>
+      <button class="cancel-btn" onclick="closeModal('thaerModal')">✕ إلغاء</button>
+    </div>
   </div>
 </div>
 
