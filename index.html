@@ -5961,8 +5961,8 @@ function lsBuildInfoBar() {
   }
   // Ramadan 1448: ~Feb 28 - Mar 29, 2026; Eid ~Mar 30
   const now=new Date(), msDay=86400000;
-  const eid=new Date('2026-03-30');
-  const ramStart=new Date('2026-02-28');
+  const eid=new Date('2026-03-20');
+  const ramStart=new Date('2026-02-18');
   const daysToEid=Math.max(0,Math.ceil((eid-now)/msDay));
   const dayOfRam =Math.max(1,Math.min(30,Math.round((now-ramStart)/msDay)+1));
   const nights   =Math.max(0,30-dayOfRam+1);
@@ -6043,8 +6043,8 @@ function buildUserFanoos() {
     if(el) el.textContent = 'رمضان المبارك ✨';
   }
   const now=new Date(), msDay=86400000;
-  const eid=new Date('2026-03-30');
-  const ramStart=new Date('2026-02-28');
+  const eid=new Date('2026-03-20');
+  const ramStart=new Date('2026-02-18');
   const daysToEid=Math.max(0,Math.ceil((eid-now)/msDay));
   const dayOfRam=Math.max(1,Math.min(30,Math.round((now-ramStart)/msDay)+1));
   const dEl=document.getElementById('userDaysEid'); if(dEl) dEl.textContent=daysToEid;
