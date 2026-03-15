@@ -1099,37 +1099,10 @@ body { padding-bottom: 70px !important }
     </div>
   </div>
 
-  <!-- Stats: Shekel -->
-  <div class="stats-grid">
-    <div class="stat-card">
-      <div class="stat-icon">🪙</div>
-      <div class="stat-label">الرصيد الأساسي (₪)</div>
-      <div class="inline-edit-row">
-        <div class="stat-value purple" id="initialShekelBalance">0.00</div>
-      </div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🪙</div>
-      <div class="stat-label">الرصيد الحالي (₪)</div>
-      <div style="display:flex;align-items:center;justify-content:center;gap:6px"><div class="stat-value green" id="currentShekelBalance">0.00</div><button class="copy-bal-btn" onclick="copyBalance('currentShekelBalance','₪')">📋</button></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">📋</div>
-      <div class="stat-label">معاملات الشيكل</div>
-      <div class="stat-value amber" id="shekelTxCount">0</div>
-    </div>
-  </div>
+
 
   <!-- Currency Converter -->
-  <div class="converter-card">
-    <h3 style="margin-bottom:14px;color:#2d3748;font-size:15px">💱 حاسبة التحويل السريعة</h3>
-    <div class="converter-row">
-      <input class="converter-input" id="convDollar" type="number" placeholder="دولار $" oninput="convertFromDollar()" step="0.01">
-      <button class="swap-btn" onclick="swapConverter()">⇄</button>
-      <input class="converter-input" id="convShekel" type="number" placeholder="شيكل ₪" oninput="convertFromShekel()" step="0.01">
-    </div>
-    <p style="text-align:center;color:#94a3b8;font-size:12px;margin-top:8px">سعر الصرف: <span id="convRate">3.65</span> ₪ للدولار</p>
-  </div>
+
 
   <button class="add-btn" id="showFormBtn" onclick="showForm()">➕ إضافة معاملة جديدة</button>
 
@@ -1311,30 +1284,16 @@ body { padding-bottom: 70px !important }
   </div>
 
   <!-- Admin Stats Row 2 - Total initial balances (display only) -->
-  <div class="stats-grid-4">
-    <div class="stat-card">
-      <div class="stat-icon">💼</div>
-      <div class="stat-label">رصيد حمزة الأساسي</div>
-      <div class="stat-value blue" id="adminHamzaInitial">0.00</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+  <!-- Admin: Edit All Users' Initial Balances -->
+  <div class="admin-section" style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">💼 الأرصدة الأساسية</h2>
+      <span style="font-size:12px;color:var(--text2)">الأدمن فقط يقدر يعدل</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">💼</div>
-      <div class="stat-label">رصيد جنى الأساسي</div>
-      <div class="stat-value blue" id="adminJanaInitial">0.00</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">💼</div>
-      <div class="stat-label">رصيد محمد الأساسي</div>
-      <div class="stat-value blue" id="adminMohammadInitial">0.00</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon">🏆</div>
-      <div class="stat-label">مجموع الأرصدة الأساسية</div>
-      <div class="stat-value purple" id="adminTotalInitial">0.00</div>
-      <div style="font-size:11px;color:#94a3b8;margin-top:4px">للعرض فقط</div>
+    <div id="adminInitialBalancesList"></div>
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border);display:flex;justify-content:space-between">
+      <span style="font-weight:bold;color:var(--text)">المجموع الكلي ($):</span>
+      <span class="stat-value purple" id="adminTotalInitial" style="font-size:16px">0.00</span>
     </div>
   </div>
 
@@ -1378,11 +1337,20 @@ body { padding-bottom: 70px !important }
     <div class="daily-summary" id="dailySummary"></div>
   </div>
 
-  <!-- User Management -->
+  <!-- User Management - collapsible -->
   <div class="admin-section">
-    <h2>👥 إدارة المستخدمين</h2>
-    <button class="btn" style="background:#667eea;color:white;margin-bottom:14px" onclick="showAddUserModal()">➕ إضافة مستخدم جديد</button>
-    <div id="userMgmtList"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer;margin-bottom:0" onclick="toggleSection('userMgmtBody','userMgmtArrow')">
+      <h2 style="margin:0">👥 إدارة المستخدمين</h2>
+      <span id="userMgmtArrow" style="font-size:18px;color:var(--text2)">▼</span>
+    </div>
+    <div id="userMgmtBody" style="display:none;margin-top:14px">
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn" style="background:var(--primary);color:white" onclick="showAddUserModal()">➕ إضافة مستخدم</button>
+        <input type="text" id="userMgmtSearch" placeholder="🔍 بحث..." oninput="loadUserMgmt()"
+          style="flex:1;min-width:120px;padding:9px 12px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:var(--card);color:var(--text);font-family:var(--font)">
+      </div>
+      <div id="userMgmtList"></div>
+    </div>
   </div>
 
   <!-- Admin Notes -->
@@ -1394,15 +1362,36 @@ body { padding-bottom: 70px !important }
     <div id="adminNotesList"><div class="empty-state">لا توجد ملاحظات</div></div>
   </div>
 
+
+  <!-- Admin: All Users Expenses -->
+  <div class="admin-section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <h2 style="margin:0">💸 مصاريف المستخدمين</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <select id="adminExpMonth" onchange="loadAdminExpenses()"
+          style="padding:8px 12px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text);font-family:var(--font)"></select>
+        <button class="btn" style="background:var(--primary);color:white;font-size:13px;padding:8px 14px" onclick="showExpSplitModal()">🔀 تقسيم التكلفة</button>
+      </div>
+    </div>
+    <div id="adminExpSummary" style="margin-bottom:14px"></div>
+    <div id="adminExpList"></div>
+  </div>
+
   <!-- Reset Zone -->
   <div class="admin-section" style="border:2px solid #fecaca">
     <h2 style="color:#dc2626">⚠️ منطقة الإدارة الحساسة</h2>
-    <p style="color:#64748b;font-size:13px;margin-bottom:16px">تحذير: هذه العمليات لا يمكن التراجع عنها</p>
+    <p style="color:#64748b;font-size:13px;margin-bottom:14px">تحذير: هذه العمليات لا يمكن التراجع عنها</p>
+
+    <div style="margin-bottom:14px">
+      <p style="font-size:13px;font-weight:bold;color:var(--text);margin-bottom:8px">🧹 حذف بيانات مستخدم واحد:</p>
+      <div id="resetPerUserBtns" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+    </div>
+
     <div style="display:flex;gap:12px;flex-wrap:wrap">
-      <button class="btn" style="background:#f59e0b;color:white;font-size:15px;padding:12px 20px" onclick="resetBalances()">
-        🔄 ريسيت الأرصدة والمعاملات
+      <button class="btn" style="background:#f59e0b;color:white;font-size:14px;padding:11px 18px" onclick="resetBalances()">
+        🔄 ريسيت الكل
       </button>
-      <button class="btn" style="background:#ef4444;color:white;font-size:15px;padding:12px 20px" onclick="resetAll()">
+      <button class="btn" style="background:#ef4444;color:white;font-size:14px;padding:11px 18px" onclick="resetAll()">
         💣 حذف كل البيانات
       </button>
     </div>
@@ -1629,15 +1618,18 @@ function mergeData(remote) {
   remote.dollarBuyRate = remote.dollarBuyRate ?? 3.62;
   remote.dollarSellRate = remote.dollarSellRate ?? 3.68;
   remote.shekelRate = remote.shekelRate ?? 3.65;
-  ['حمزة','جنى','محمد'].forEach(u => {
-    if (!remote.users[u]) remote.users[u] = def.users[u];
+  // Handle ALL users dynamically (not just hardcoded 3)
+  Object.keys(remote.users).forEach(u => {
     remote.users[u].initialBalance = remote.users[u].initialBalance ?? 0;
     remote.users[u].initialShekelBalance = remote.users[u].initialShekelBalance ?? 0;
-    // Firebase stores arrays as objects — convert back
     if (remote.users[u].transactions && !Array.isArray(remote.users[u].transactions)) {
       remote.users[u].transactions = Object.values(remote.users[u].transactions);
     }
     remote.users[u].transactions = remote.users[u].transactions || [];
+  });
+  // Ensure default users exist
+  ['حمزة','جنى','محمد'].forEach(u => {
+    if (!remote.users[u]) remote.users[u] = def.users[u] || { initialBalance:0, initialShekelBalance:0, transactions:[] };
   });
   if (remote.banks && !Array.isArray(remote.banks)) {
     remote.banks = Object.values(remote.banks);
@@ -1939,11 +1931,7 @@ function updateUI() {
   cel.className = 'stat-value ' + (cur >= init ? 'green' : 'red');
   document.getElementById('transactionCount').textContent = dollarTxs.length;
 
-  document.getElementById('initialShekelBalance').textContent = initS.toFixed(2);
-  const scel = document.getElementById('currentShekelBalance');
-  scel.textContent = curS.toFixed(2);
-  scel.className = 'stat-value ' + (curS >= 0 ? 'green' : 'red');
-  document.getElementById('shekelTxCount').textContent = shekelTxs.length;
+
 
   updateTransactionList();
 }
@@ -1965,9 +1953,9 @@ function renderTxItem(t, showUser) {
   const amtDisplay = isShekel
     ? `${sign}${t.amount.toFixed(2)} ₪`
     : `${sign}$${t.amount.toFixed(2)}`;
-  const imgHtml = t.image ? `<img src="${t.image}" class="transaction-image" onclick="this.requestFullscreen?this.requestFullscreen():window.open(this.src,'_blank')">` : '';
+  const imgHtml = t.image ? `<img src="${t.image}" class="transaction-image" onclick="openImageModal(this.src)">` : '';
   const userHtml = showUser ? `<strong style="color:#64748b;font-size:13px">${t.user}</strong>` : '';
-  const ownerUser = showUser ? t.user : (currentUser==='hamza'?'حمزة':currentUser==='jana'?'جنى':'محمد');
+  const ownerUser = showUser ? t.user : currentUser;
   const editBtns = `<div style="display:flex;gap:4px;margin-top:6px">
     <button class="edit-tx-btn" onclick="openEditTx('${ownerUser}',${t.id})" title="تعديل">✏️</button>
     <button class="del-tx-btn" onclick="deleteTx('${ownerUser}',${t.id})" title="حذف">🗑️</button>
@@ -1980,7 +1968,7 @@ function renderTxItem(t, showUser) {
       </div>
       <div class="transaction-details">${t.accountType} • ${t.date} ${t.time}</div>
       ${!isShekel && t.amountShekel ? `<div class="transaction-details">= ${parseFloat(t.amountShekel).toFixed(2)} ₪</div>` : ''}
-      ${t.buyRate&&t.sellRate ? `<div class="transaction-details">الشراء: ${t.buyRate} ₪ | البيع: ${t.sellRate} ₪</div>` : ''}
+
       ${t.notes ? `<div class="transaction-notes">📝 ${t.notes}</div>` : ''}
       ${editBtns}
     </div>
@@ -2154,6 +2142,8 @@ function loadAdminPanel() {
   loadUserMgmt();
   updateUserFilters();
   loadAdminNotes();
+  loadResetPerUserBtns();
+  loadAdminExpenses();
   // Monthly stats removed
 }
 
@@ -2166,14 +2156,62 @@ function updateAdminStats() {
   document.getElementById('totalBanksBalance').textContent = totalBanks.toFixed(2);
   document.getElementById('secondaryTotalBalance').textContent = (thaer+totalBanks).toFixed(2);
 
-  // Show each user's initial balance (display only)
-  const hi = appData.users['حمزة']?.initialBalance||0;
-  const ji = appData.users['جنى']?.initialBalance||0;
-  const mi = appData.users['محمد']?.initialBalance||0;
-  document.getElementById('adminHamzaInitial').textContent = hi.toFixed(2);
-  document.getElementById('adminJanaInitial').textContent = ji.toFixed(2);
-  document.getElementById('adminMohammadInitial').textContent = mi.toFixed(2);
-  document.getElementById('adminTotalInitial').textContent = (hi+ji+mi).toFixed(2);
+  // Dynamic initial balances for all users
+  const allUsers = Object.keys(appData.users||{});
+  let totalInit = 0;
+  const listEl = document.getElementById('adminInitialBalancesList');
+  if (listEl) {
+    listEl.innerHTML = allUsers.map(u => {
+      const ud = appData.users[u];
+      const initD = ud?.initialBalance||0;
+      const initS = ud?.initialShekelBalance||0;
+      const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+      totalInit += initD;
+      return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--r-sm);border:1px solid var(--border);margin-bottom:8px;background:var(--card);flex-wrap:wrap">
+        <div style="width:10px;height:36px;border-radius:4px;background:${color};flex-shrink:0"></div>
+        <div style="font-weight:bold;font-size:14px;flex:1;min-width:60px">${u}</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:2px">الأساسي $</div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="font-weight:bold;color:var(--blue);font-size:14px">${initD.toFixed(2)}</span>
+              <button onclick="adminEditInitial('${u}','dollar')" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:var(--text2)">✏️</button>
+            </div>
+          </div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text2);margin-bottom:2px">الأساسي ₪</div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <span style="font-weight:bold;color:var(--purple);font-size:14px">${initS.toFixed(2)}</span>
+              <button onclick="adminEditInitial('${u}','shekel')" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:3px 7px;font-size:11px;cursor:pointer;color:var(--text2)">✏️</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  const totEl = document.getElementById('adminTotalInitial');
+  if (totEl) totEl.textContent = totalInit.toFixed(2);
+}
+
+function adminEditInitial(userName, currency) {
+  const ud = appData.users[userName];
+  if (!ud) return;
+  const isShekel = currency === 'shekel';
+  const cur = isShekel ? (ud.initialShekelBalance||0) : (ud.initialBalance||0);
+  const sym = isShekel ? '₪' : '$';
+  const val = prompt(`الرصيد الأساسي لـ ${userName} بالـ${sym}:\nالحالي: ${cur.toFixed(2)} ${sym}\nأدخل القيمة الجديدة:`, cur);
+  if (val === null) return;
+  const p = parseFloat(val);
+  if (isNaN(p)) { alert('❌ قيمة غير صحيحة'); return; }
+  if (isShekel) {
+    appData.users[userName].initialShekelBalance = p;
+    saveData('users/' + userName + '/initialShekelBalance', p);
+  } else {
+    appData.users[userName].initialBalance = p;
+    saveData('users/' + userName + '/initialBalance', p);
+  }
+  updateAdminStats();
+  showToast('✅ تم تعديل رصيد ' + userName);
 }
 
 function loadBanks() {
@@ -2273,7 +2311,7 @@ function loadNotifications() {
 function loadDailySummary() {
   const today = new Date().toLocaleDateString('ar-EG');
   let totalAddD=0, totalSubD=0, totalAddS=0, totalTx=0;
-  ['حمزة','جنى','محمد'].forEach(user => {
+  Object.keys(appData.users||{}).forEach(user => {
     (appData.users[user]?.transactions||[]).forEach(t => {
       if (t.date !== today) return;
       totalTx++;
@@ -2381,7 +2419,7 @@ function filterTransactions() {
   const from = document.getElementById('adminDateFrom')?.value;
   const to = document.getElementById('adminDateTo')?.value;
   const allUsers = Object.keys(appData.users||{});
-  const users = filter==='all' ? allUsers : [filter];
+  const users = filter==='all' ? allUsers : (allUsers.includes(filter) ? [filter] : allUsers);
   let all = [];
   users.forEach(userName => {
     (appData.users[userName]?.transactions||[]).forEach(t => all.push({...t, user:userName}));
@@ -2417,7 +2455,19 @@ function showSettings() {
   document.getElementById('settingsErrorMsg').style.display = 'none';
 }
 
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(id) {
+  const el = document.getElementById(id); if(!el) return;
+  if (id === 'imgViewModal') { el.style.display='none'; return; }
+  el.classList.remove('active');
+  if (id === 'converterModal') {
+    // Restore correct nav active based on current tab
+    ['bnTx','bnExp','bnConv','bnSettings'].forEach(id2 => {
+      const el=document.getElementById(id2); if(el) el.classList.remove('active');
+    });
+    const expHidden = document.getElementById('expensesSection')?.classList.contains('hidden');
+    document.getElementById(expHidden ? 'bnTx' : 'bnExp')?.classList.add('active');
+  }
+}
 
 function changePassword() {
   const cur = document.getElementById('currentPassword').value;
@@ -2958,7 +3008,9 @@ function deleteTx(userName, txId) {
 function loadUserMgmt() {
   const el = document.getElementById('userMgmtList');
   if (!el) return;
-  const users = Object.keys(appData.users||{});
+  const query = (document.getElementById('userMgmtSearch')?.value||'').trim().toLowerCase();
+  let users = Object.keys(appData.users||{});
+  if (query) users = users.filter(u => u.toLowerCase().includes(query));
   const colors = appData.userColors || {};
   if (!users.length) { el.innerHTML = '<div class="empty-state">لا يوجد مستخدمون</div>'; return; }
   el.innerHTML = users.map(u => {
@@ -3009,6 +3061,8 @@ function addNewUser() {
   loadUserMgmt();
   updateUserFilters();
   loadAdminNotes();
+  loadResetPerUserBtns();
+  loadAdminExpenses();
   renderUserButtons();
   alert('✅ تم إضافة المستخدم ' + name);
 }
@@ -3025,6 +3079,8 @@ function deleteUser(name) {
   loadUserMgmt();
   updateUserFilters();
   loadAdminNotes();
+  loadResetPerUserBtns();
+  loadAdminExpenses();
   renderUserButtons();
   filterTransactions();
   alert('✅ تم حذف المستخدم ' + name);
@@ -4120,6 +4176,232 @@ function closeCurrentNote() {
 }
 
 // Patch mergeData to include adminNotes
+
+function showConverterModal() {
+  document.getElementById('convDollar').value = '';
+  document.getElementById('convShekel').value = '';
+  const rate = parseFloat(appData.shekelRate)||3.65;
+  document.getElementById('convRate').textContent = rate.toFixed(2);
+  document.getElementById('convQuick100').textContent  = (100*rate).toFixed(2) + ' ₪';
+  document.getElementById('convQuick100s').textContent = (100/rate).toFixed(2) + ' $';
+  // Update bottom nav active
+  ['bnTx','bnExp','bnConv','bnSettings'].forEach(id => {
+    const el=document.getElementById(id); if(el) el.classList.remove('active');
+  });
+  document.getElementById('bnConv')?.classList.add('active');
+  document.getElementById('converterModal').classList.add('active');
+}
+
+function openImageModal(src) {
+  const modal = document.getElementById('imgViewModal');
+  const img   = document.getElementById('imgViewImg');
+  img.src = src;
+  modal.style.display = 'flex';
+}
+
+function loadResetPerUserBtns() {
+  const el = document.getElementById('resetPerUserBtns');
+  if (!el) return;
+  const users = Object.keys(appData.users||{});
+  el.innerHTML = users.map(u => {
+    const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+    return `<button onclick="resetUserData('${u}')"
+      style="padding:8px 14px;border:none;border-radius:var(--r-sm);background:${color}22;color:${color};border:1.5px solid ${color};font-weight:bold;font-size:13px;cursor:pointer;font-family:var(--font)">
+      🧹 ${u}
+    </button>`;
+  }).join('');
+}
+
+function resetUserData(userName) {
+  if (!confirm(`حذف كل معاملات "${userName}" وإعادة رصيده للصفر؟`)) return;
+  if (!confirm(`تأكيد نهائي — حذف بيانات ${userName}؟`)) return;
+  appData.users[userName].initialBalance = 0;
+  appData.users[userName].initialShekelBalance = 0;
+  appData.users[userName].transactions = [];
+  // Clear expenses
+  if (appData.expenses) delete appData.expenses[userName];
+  if (appData.budgets)  delete appData.budgets[userName];
+  db.ref(DB_PATH + '/users/' + userName).set(appData.users[userName]);
+  db.ref(DB_PATH + '/expenses/' + userName).remove();
+  db.ref(DB_PATH + '/budgets/' + userName).remove();
+  localStorage.setItem('fin_cache', JSON.stringify(appData));
+  showSaveIndicator();
+  loadAdminPanel();
+  alert('✅ تم حذف بيانات ' + userName);
+}
+
+// ─── Admin Expenses View ─────────────────────
+function loadAdminExpenses() {
+  const monthSel = document.getElementById('adminExpMonth');
+  if (!monthSel) return;
+
+  // Populate months if empty
+  if (!monthSel.options.length) {
+    const now = new Date();
+    for (let i = 0; i < 12; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      const names = ['يناير','فبراير','مارس','أبريل','مايو','يونيو',
+                     'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      monthSel.innerHTML += `<option value="${val}">${names[d.getMonth()]} ${d.getFullYear()}</option>`;
+    }
+  }
+
+  const mk = monthSel.value || (new Date().getFullYear() + '-' + String(new Date().getMonth()+1).padStart(2,'0'));
+  const users = Object.keys(appData.users||{});
+  const summaryEl = document.getElementById('adminExpSummary');
+  const listEl    = document.getElementById('adminExpList');
+
+  // Gather all expenses for this month per user
+  let summaryHtml = '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:10px">';
+  let totalAll = 0;
+  let allRows  = [];
+
+  users.forEach(u => {
+    const userExps = Object.values(appData.expenses?.[u]||{}).filter(e => e.date?.startsWith(mk));
+    const total = userExps.reduce((s,e)=>s+e.amount,0);
+    totalAll += total;
+    const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+    summaryHtml += `<div style="background:var(--card);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--shadow);border-top:3px solid ${color}">
+      <div style="font-size:12px;color:var(--text2);margin-bottom:4px">👤 ${u}</div>
+      <div style="font-size:18px;font-weight:bold;color:${color}">${total.toFixed(2)} ₪</div>
+    </div>`;
+    userExps.forEach(e => allRows.push({...e, _user: u}));
+  });
+  summaryHtml += `<div style="background:var(--card);border-radius:var(--r);padding:12px;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--red)">
+    <div style="font-size:12px;color:var(--text2);margin-bottom:4px">📊 الإجمالي</div>
+    <div style="font-size:18px;font-weight:bold;color:var(--red)">${totalAll.toFixed(2)} ₪</div>
+  </div></div>`;
+  summaryEl.innerHTML = summaryHtml;
+
+  // List
+  allRows.sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.id.localeCompare(a.id));
+  if (!allRows.length) {
+    listEl.innerHTML = '<div class="empty-state">لا توجد مصاريف هذا الشهر</div>';
+    return;
+  }
+  listEl.innerHTML = allRows.map(e => {
+    const cat = (typeof expCatObj === 'function') ? expCatObj(e.cat) : {icon:'📦',label:'أخرى',bg:'#f8fafc',color:'#94a3b8'};
+    const uColor = (appData.userColors&&appData.userColors[e._user])||'#667eea';
+    return `<div class="exp-item">
+      <div class="exp-cat-icon" style="background:${cat.bg}">${cat.icon}</div>
+      <div class="exp-info">
+        <div class="exp-item-name">${escHtml(e.desc||cat.label)}</div>
+        <div class="exp-item-meta">${cat.label} • ${e.date||''}</div>
+      </div>
+      <span style="padding:3px 9px;border-radius:12px;font-size:11px;font-weight:bold;background:${uColor}22;color:${uColor}">${e._user}</span>
+      <div class="exp-item-amount">${e.amount.toFixed(2)} ₪</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── Expense Split Calculator ─────────────────
+let splitParticipantsList = [];
+
+function showExpSplitModal() {
+  const users = Object.keys(appData.users||{});
+  splitParticipantsList = [...users];
+
+  // Populate months
+  const splitMonthSel = document.getElementById('splitMonth');
+  splitMonthSel.innerHTML = '';
+  const adminMonthSel = document.getElementById('adminExpMonth');
+  if (adminMonthSel) {
+    Array.from(adminMonthSel.options).forEach(o => {
+      splitMonthSel.innerHTML += `<option value="${o.value}">${o.text}</option>`;
+    });
+  }
+
+  // Populate categories
+  const catSel = document.getElementById('splitCat');
+  catSel.innerHTML = '<option value="all">كل التصنيفات</option>';
+  if (typeof EXP_CATS !== 'undefined') {
+    EXP_CATS.forEach(c => {
+      catSel.innerHTML += `<option value="${c.id}">${c.icon} ${c.label}</option>`;
+    });
+  }
+
+  // Participants
+  const wrap = document.getElementById('splitParticipants');
+  wrap.innerHTML = users.map(u => {
+    const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+    return `<button type="button" id="splitP_${u}" onclick="toggleSplitParticipant('${u}')"
+      style="padding:8px 14px;border:2px solid ${color};border-radius:20px;font-size:13px;font-weight:bold;cursor:pointer;background:${color};color:white;font-family:var(--font);transition:all .2s">
+      👤 ${u}
+    </button>`;
+  }).join('');
+
+  document.getElementById('expSplitModal').classList.add('active');
+  updateSplitPreview();
+}
+
+function toggleSplitParticipant(u) {
+  const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+  const btn = document.getElementById('splitP_' + u);
+  if (splitParticipantsList.includes(u)) {
+    splitParticipantsList = splitParticipantsList.filter(x => x !== u);
+    btn.style.background = 'var(--card)';
+    btn.style.color = color;
+  } else {
+    splitParticipantsList.push(u);
+    btn.style.background = color;
+    btn.style.color = 'white';
+  }
+  updateSplitPreview();
+}
+
+function updateSplitPreview() {
+  const mk  = document.getElementById('splitMonth')?.value || '';
+  const cat = document.getElementById('splitCat')?.value   || 'all';
+  const preview = document.getElementById('splitPreview');
+  if (!preview) return;
+
+  if (!splitParticipantsList.length || !mk) {
+    preview.innerHTML = '<div class="empty-state">اختر مشاركاً على الأقل</div>';
+    return;
+  }
+
+  // Sum expenses per participant for month+cat
+  let total = 0;
+  const perUser = {};
+  splitParticipantsList.forEach(u => {
+    const exps = Object.values(appData.expenses?.[u]||{})
+      .filter(e => e.date?.startsWith(mk) && (cat==='all' || e.cat===cat));
+    const sum = exps.reduce((s,e)=>s+e.amount, 0);
+    perUser[u] = sum;
+    total += sum;
+  });
+
+  const share = splitParticipantsList.length > 0 ? total / splitParticipantsList.length : 0;
+
+  let html = `<div style="background:var(--bg);border-radius:var(--r);padding:14px;margin-bottom:10px">
+    <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+      <span style="font-weight:bold;color:var(--text)">المجموع الكلي:</span>
+      <span style="font-weight:bold;color:var(--red);font-size:16px">${total.toFixed(2)} ₪</span>
+    </div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+      <span style="font-weight:bold;color:var(--text)">حصة كل شخص (${splitParticipantsList.length}):</span>
+      <span style="font-weight:bold;color:var(--primary);font-size:16px">${share.toFixed(2)} ₪</span>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:10px">`;
+
+  splitParticipantsList.forEach(u => {
+    const paid = perUser[u];
+    const diff = paid - share;
+    const color = (appData.userColors&&appData.userColors[u])||'#667eea';
+    html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border)">
+      <span style="font-weight:bold;color:${color}">👤 ${u}</span>
+      <div style="text-align:left">
+        <span style="font-size:13px;color:var(--text2)">دفع: ${paid.toFixed(2)} ₪</span>
+        <span style="margin-right:10px;font-weight:bold;color:${diff>=0?'var(--green)':'var(--red)'}">
+          ${diff>=0 ? '← يستلم '+diff.toFixed(2)+' ₪' : '→ يدفع '+Math.abs(diff).toFixed(2)+' ₪'}
+        </span>
+      </div>
+    </div>`;
+  });
+  html += '</div></div>';
+  preview.innerHTML = html;
+}
 // =============================================
 // UTILS
 // =============================================
@@ -4414,13 +4696,13 @@ function escHtml(str) {
     <span>مصاريف</span>
     <span class="nav-badge" id="expNavDot"></span>
   </button>
+  <button class="bottom-nav-btn" id="bnConv" onclick="showConverterModal()">
+    <span class="nav-icon">💱</span>
+    <span>تحويل</span>
+  </button>
   <button class="bottom-nav-btn" id="bnSettings" onclick="showSettings()">
     <span class="nav-icon">⚙️</span>
     <span>إعدادات</span>
-  </button>
-  <button class="bottom-nav-btn" id="bnLogout" onclick="logout()">
-    <span class="nav-icon">🚪</span>
-    <span>خروج</span>
   </button>
 </nav>
 
@@ -4495,6 +4777,65 @@ function escHtml(str) {
       </span>
     </div>
     <button class="note-close-btn" id="noteCloseBtn" onclick="closeCurrentNote()">✓ فهمت</button>
+  </div>
+</div>
+
+
+<!-- CONVERTER MODAL -->
+<div id="converterModal" class="modal">
+  <div class="modal-content" style="max-width:360px">
+    <h2 style="text-align:center;margin-bottom:6px">💱 حاسبة التحويل</h2>
+    <p style="text-align:center;color:var(--text2);font-size:12px;margin-bottom:16px">سعر الصرف: <span id="convRate" style="font-weight:bold;color:#b45309">3.65</span> ₪ / $</p>
+    <div class="converter-row" style="margin-bottom:12px">
+      <input class="converter-input" id="convDollar" type="number" placeholder="دولار $" oninput="convertFromDollar()" step="0.01">
+      <button class="swap-btn" onclick="swapConverter()">⇄</button>
+      <input class="converter-input" id="convShekel" type="number" placeholder="شيكل ₪" oninput="convertFromShekel()" step="0.01">
+    </div>
+    <div style="display:flex;justify-content:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+      <div style="background:#f0fdf4;border-radius:var(--r-sm);padding:8px 14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2)">100$ =</div>
+        <div style="font-weight:bold;color:var(--green)" id="convQuick100"></div>
+      </div>
+      <div style="background:#fef9c3;border-radius:var(--r-sm);padding:8px 14px;text-align:center">
+        <div style="font-size:11px;color:var(--text2)">100₪ =</div>
+        <div style="font-weight:bold;color:#b45309" id="convQuick100s"></div>
+      </div>
+    </div>
+    <button class="cancel-btn" style="width:100%" onclick="closeModal('converterModal')">✕ إغلاق</button>
+  </div>
+</div>
+
+
+<!-- IMAGE VIEWER MODAL -->
+<div id="imgViewModal" onclick="closeModal('imgViewModal')"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;align-items:center;justify-content:center;cursor:zoom-out;padding:16px">
+  <img id="imgViewImg" style="max-width:100%;max-height:90dvh;border-radius:12px;object-fit:contain;box-shadow:0 8px 32px rgba(0,0,0,.6)">
+  <button onclick="closeModal('imgViewModal')"
+    style="position:absolute;top:16px;left:16px;background:rgba(255,255,255,.15);border:none;color:white;border-radius:50%;width:38px;height:38px;font-size:20px;cursor:pointer">✕</button>
+</div>
+
+
+<!-- EXPENSE SPLIT MODAL -->
+<div id="expSplitModal" class="modal">
+  <div class="modal-content" style="max-width:480px">
+    <h2 style="text-align:center;margin-bottom:6px">🔀 تقسيم التكلفة</h2>
+    <p style="text-align:center;color:var(--text2);font-size:13px;margin-bottom:16px">اختر التصنيف والمشاركين لحساب حصة كل شخص</p>
+    <div class="form-group">
+      <label>الشهر</label>
+      <select id="splitMonth" style="width:100%;padding:11px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:var(--card);color:var(--text);font-family:var(--font)" onchange="updateSplitPreview()"></select>
+    </div>
+    <div class="form-group">
+      <label>التصنيف</label>
+      <select id="splitCat" style="width:100%;padding:11px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:var(--card);color:var(--text);font-family:var(--font)" onchange="updateSplitPreview()">
+        <option value="all">كل التصنيفات</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>المشاركون</label>
+      <div id="splitParticipants" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"></div>
+    </div>
+    <div id="splitPreview" style="margin-top:14px"></div>
+    <button class="cancel-btn" style="width:100%;margin-top:14px" onclick="closeModal('expSplitModal')">✕ إغلاق</button>
   </div>
 </div>
 
