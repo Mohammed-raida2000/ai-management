@@ -114,7 +114,7 @@ self.addEventListener('fetch', e => {
     banner.id = 'installBanner';
     banner.style.cssText = `
       position:fixed;bottom:0;left:0;right:0;
-      background:linear-gradient(135deg,#667eea,#764ba2);
+      background:linear-gradient(135deg,#c4a55a,#8b6914);
       color:white;padding:14px 20px;
       display:flex;justify-content:space-between;align-items:center;
       z-index:99999;box-shadow:0 -4px 20px rgba(0,0,0,0.3);
@@ -160,7 +160,7 @@ self.addEventListener('fetch', e => {
         b.id = 'iosBanner';
         b.style.cssText = `
           position:fixed;bottom:0;left:0;right:0;
-          background:linear-gradient(135deg,#667eea,#764ba2);
+          background:linear-gradient(135deg,#c4a55a,#8b6914);
           color:white;padding:16px 20px;
           z-index:99999;box-shadow:0 -4px 20px rgba(0,0,0,0.3);
           font-family:'Segoe UI',sans-serif;text-align:center;
@@ -197,7 +197,7 @@ self.addEventListener('fetch', e => {
    VARIABLES & RESET
 ══════════════════════════════════════════════════════ */
 :root {
-  --primary: #667eea; --primary2: #764ba2;
+  --primary: #c4a55a; --primary2: #0d1b3e;
   --green:   #10b981; --red:    #ef4444;
   --amber:   #f59e0b; --blue:   #3b82f6;
   --purple:  #8b5cf6; --pink:   #ec4899;
@@ -225,13 +225,13 @@ html { scroll-behavior:smooth; -webkit-text-size-adjust:100% }
 
 body {
   font-family: var(--font);
-  background: linear-gradient(135deg,var(--primary) 0%,var(--primary2) 100%);
+  background: linear-gradient(170deg,#0a1228 0%,#0d1b3e 50%,#0e1f40 100%);
   min-height:100dvh;
   padding: clamp(10px,3vw,24px);
   color: var(--text);
   transition: background .3s;
 }
-body.dark { background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%) }
+body.dark { background:linear-gradient(170deg,#06090f 0%,#0a1228 100%) }
 .hidden   { display:none !important }
 .container{ max-width:1100px; margin:0 auto }
 button    { min-height:36px; cursor:pointer; font-family:var(--font) }
@@ -387,7 +387,7 @@ select    { background:var(--card); color:var(--text) }
 .add-btn {
   width:100%; padding:clamp(13px,3vw,18px);
   font-size:clamp(14px,3.5vw,17px);
-  background:linear-gradient(135deg,var(--primary),var(--primary2));
+  background:linear-gradient(135deg,#c4a55a,#8b6914);
   color:white; border:none; border-radius:var(--r);
   margin-bottom:14px; font-weight:bold; transition:transform .1s;
 }
@@ -951,7 +951,7 @@ body.dark .bottom-nav {
   background: var(--primary);
   color: white;
   transform: scale(1.08);
-  box-shadow: 0 4px 12px rgba(102,126,234,.4);
+  box-shadow: 0 4px 12px rgba(196,165,90,.4);
 }
 .bottom-nav-btn.active .nav-label { color: var(--primary) }
 .bottom-nav-btn.active.logout-nav .nav-icon {
@@ -1328,14 +1328,15 @@ body.dark .quran-ref { color: #4ade80 }
 ══════════════════════════════════════════════════════ */
 .login-screen {
   min-height:100dvh;
-  background:linear-gradient(170deg,#08091f 0%,#0f1535 45%,#16082a 100%) !important;
-  border-radius:0 !important; max-width:100% !important;
-  margin:0 !important; padding:0 0 32px !important;
-  box-shadow:none !important;
-  display:flex !important; flex-direction:column !important;
-  align-items:center !important;
-  position:relative !important; overflow:hidden !important;
+  background:linear-gradient(170deg,#08091f 0%,#0f1535 45%,#16082a 100%);
+  border-radius:0; max-width:100%;
+  margin:0; padding:0 0 32px;
+  box-shadow:none;
+  display:flex; flex-direction:column;
+  align-items:center;
+  position:relative; overflow:hidden;
 }
+.login-screen.hidden { display:none !important }
 /* stars */
 .login-stars { position:absolute;inset:0;pointer-events:none;z-index:0 }
 .login-star  {
@@ -1385,7 +1386,7 @@ body.dark .quran-ref { color: #4ade80 }
 .ls-moon {
   position:absolute;top:16px;right:20px;z-index:6;
   width:48px;height:48px;border-radius:50%;
-  background:radial-gradient(circle at 35% 38%,#ffd700,#e6930a);
+  background:radial-gradient(circle at 35% 38%,#e8c97a,#c4a55a);
   overflow:hidden;
   animation:lsMoonP 4s ease-in-out infinite;
 }
@@ -1396,13 +1397,13 @@ body.dark .quran-ref { color: #4ade80 }
 .ls-moon-inner {
   position:absolute;top:-9px;right:-9px;
   width:42px;height:42px;border-radius:50%;
-  background:#0f1535;
+  background:#0d1b3e;
 }
 
 /* info bar */
 .ls-info-bar {
   background:rgba(255,255,255,.05);
-  border:1px solid rgba(255,215,0,.18);
+  border:1px solid rgba(232,201,122,.2);
   border-radius:14px;padding:11px 14px;
   width:calc(100% - 32px);max-width:400px;
   z-index:2;margin-bottom:10px;flex-shrink:0;
@@ -1418,7 +1419,7 @@ body.dark .quran-ref { color: #4ade80 }
 .ls-header { text-align:center;z-index:2;padding:0 20px 10px;flex-shrink:0;margin-top:-8px }
 .ls-greeting {
   font-size:clamp(18px,5vw,24px);font-weight:bold;
-  background:linear-gradient(135deg,#ffd700,#ffb800,#ffd700);
+  background:linear-gradient(135deg,#e8c97a,#c4a55a,#e8c97a);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-size:200%;animation:lsShimmer 3s ease-in-out infinite;
 }
@@ -1468,6 +1469,231 @@ body.dark .quran-ref { color: #4ade80 }
 .ls-shuffle-hint{ color:rgba(255,255,255,.2);font-size:10px;margin-top:4px;cursor:pointer;transition:color .2s }
 .ls-shuffle-hint:hover { color:rgba(255,215,0,.5) }
 
+
+/* ══════════════════════════════════════════════════════
+   MINI LANTERNS IN USER HEADER
+══════════════════════════════════════════════════════ */
+.user-fanoos-row {
+  display:flex; justify-content:center; gap:16px;
+  padding: 10px 0 6px;
+  background: linear-gradient(135deg,#0a1228,#0d1b3e,#0a1228);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.user-fanoos-row::before {
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,rgba(255,215,0,.3),rgba(255,215,0,.6),rgba(255,215,0,.3),transparent);
+}
+.uf-lights { position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-around;padding:0 6px }
+.uf-dot { width:5px;height:5px;border-radius:50%;margin-top:0px;animation:ufBlink var(--d,1.5s) ease-in-out infinite var(--dl,0s) }
+@keyframes ufBlink{0%,100%{opacity:.2}50%{opacity:1}}
+.uf-wrap {
+  display:flex;flex-direction:column;align-items:center;
+  animation:ufSwing var(--sw,3s) ease-in-out infinite var(--sd,0s);
+  transform-origin:top center;
+}
+@keyframes ufSwing{0%,100%{transform:rotate(var(--ra,-6deg))}50%{transform:rotate(var(--rb,6deg))}}
+.uf-cord { width:1px; }
+.uf-body {
+  border-radius:4px 4px 10px 10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;
+}
+.uf-top    { border-radius:3px 3px 0 0 }
+.uf-bottom { border-radius:0 0 3px 3px }
+.uf-fringe { display:flex;gap:1px;margin-top:2px }
+.uf-fl     { width:1px;border-radius:1px }
+.uf-greeting {
+  color:rgba(255,215,0,.75); font-size:11px; font-weight:bold;
+  text-align:center; margin-top:4px; letter-spacing:.5px;
+}
+
+
+/* ══════════════════════════════════════════════════════
+   ACCOUNTING MODULES (Invoices, Clients, Inventory, Reports)
+══════════════════════════════════════════════════════ */
+.acc-section { padding-bottom: 20px }
+
+/* Sub-tabs inside accounting */
+.acc-subtabs {
+  display:flex; gap:0; background:var(--card);
+  border-radius:var(--r); margin-bottom:14px;
+  box-shadow:var(--shadow); overflow:hidden; flex-wrap:wrap;
+}
+.acc-subtab {
+  flex:1; min-width:60px; padding:11px 6px;
+  border:none; font-size:clamp(10px,2.5vw,12px);
+  font-weight:bold; cursor:pointer; font-family:var(--font);
+  background:var(--card); color:var(--text2); transition:all .2s;
+  white-space:nowrap;
+}
+.acc-subtab.active { background:var(--primary); color:white }
+
+/* Invoice */
+.inv-item {
+  border:1px solid var(--border); border-radius:var(--r);
+  margin-bottom:10px; background:var(--card);
+  overflow:hidden; transition:box-shadow .2s;
+}
+.inv-item:hover { box-shadow:var(--shadow) }
+.inv-header {
+  display:flex; align-items:center; gap:10px;
+  padding:11px 14px; flex-wrap:wrap; cursor:pointer;
+}
+.inv-number  { font-weight:bold; color:var(--primary); font-size:13px; white-space:nowrap }
+.inv-client  { flex:1; font-size:14px; font-weight:bold; color:var(--text) }
+.inv-date    { font-size:11px; color:var(--text2) }
+.inv-total   { font-size:16px; font-weight:bold; color:var(--green); white-space:nowrap }
+.inv-badge {
+  padding:3px 9px; border-radius:12px; font-size:11px; font-weight:bold;
+}
+.inv-badge.paid   { background:#d1fae5; color:#065f46 }
+.inv-badge.unpaid { background:#fee2e2; color:#991b1b }
+.inv-badge.partial{ background:#fef9c3; color:#92400e }
+.inv-lines { padding:0 14px 12px; display:none }
+.inv-lines.open { display:block }
+.inv-line-table { width:100%; border-collapse:collapse; font-size:12px }
+.inv-line-table th { background:var(--bg); padding:7px 8px; text-align:right; color:var(--text2); font-weight:bold }
+.inv-line-table td { padding:7px 8px; border-top:1px solid var(--border) }
+.inv-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap }
+
+/* Client/Supplier card */
+.contact-card {
+  border:1px solid var(--border); border-radius:var(--r);
+  padding:13px 15px; margin-bottom:9px;
+  background:var(--card); display:flex;
+  align-items:center; gap:12px; flex-wrap:wrap;
+}
+.contact-avatar {
+  width:42px; height:42px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; flex-shrink:0; font-weight:bold;
+}
+.contact-info  { flex:1; min-width:0 }
+.contact-name  { font-size:14px; font-weight:bold; color:var(--text) }
+.contact-sub   { font-size:11px; color:var(--text2); margin-top:2px }
+.contact-balance { font-size:15px; font-weight:bold; white-space:nowrap }
+.contact-balance.debt    { color:var(--red) }
+.contact-balance.credit  { color:var(--green) }
+.contact-balance.neutral { color:var(--text2) }
+
+/* Inventory */
+.inv-product {
+  border:1px solid var(--border); border-radius:var(--r);
+  padding:12px 14px; margin-bottom:9px;
+  background:var(--card); display:flex;
+  align-items:center; gap:12px; flex-wrap:wrap;
+}
+.prod-icon  { font-size:28px; flex-shrink:0 }
+.prod-info  { flex:1; min-width:0 }
+.prod-name  { font-size:14px; font-weight:bold; color:var(--text) }
+.prod-sub   { font-size:11px; color:var(--text2); margin-top:2px }
+.prod-qty   { font-size:20px; font-weight:bold; white-space:nowrap }
+.prod-qty.low    { color:var(--red) }
+.prod-qty.ok     { color:var(--green) }
+.prod-qty.medium { color:var(--amber) }
+.prod-alert { font-size:10px; padding:2px 7px; border-radius:10px; background:#fee2e2; color:var(--red); margin-top:2px; display:inline-block }
+
+/* Reports */
+.report-card {
+  background:var(--card); border-radius:var(--r);
+  padding:16px; margin-bottom:12px; box-shadow:var(--shadow);
+}
+.report-card h3 { font-size:14px; color:var(--text2); margin-bottom:12px; font-weight:bold }
+.report-row {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0; border-bottom:1px solid var(--border); font-size:14px;
+}
+.report-row:last-child { border-bottom:none }
+.report-row .label  { color:var(--text2) }
+.report-row .val    { font-weight:bold; color:var(--text) }
+.report-row .val.green  { color:var(--green) }
+.report-row .val.red    { color:var(--red) }
+.report-row .val.blue   { color:var(--blue) }
+.report-profit {
+  background:linear-gradient(135deg,var(--green),#059669);
+  border-radius:var(--r); padding:16px; text-align:center; color:white;
+}
+.report-loss {
+  background:linear-gradient(135deg,var(--red),#b91c1c);
+  border-radius:var(--r); padding:16px; text-align:center; color:white;
+}
+.report-big-val { font-size:clamp(24px,6vw,32px); font-weight:bold }
+.report-big-lbl { font-size:12px; opacity:.85; margin-top:4px }
+
+/* Search in lists */
+.acc-search {
+  width:100%; padding:10px 14px;
+  border:2px solid var(--border); border-radius:var(--r-sm);
+  font-size:14px; background:var(--card); color:var(--text);
+  font-family:var(--font); margin-bottom:12px;
+  transition:border-color .2s;
+}
+.acc-search:focus { outline:none; border-color:var(--primary) }
+
+
+/* ══════════════════════════════════════════════════════
+   THEME SYSTEM
+══════════════════════════════════════════════════════ */
+/* Theme A: أخضر هادئ (default) */
+body[data-theme="a"] {
+  --primary: #2d9a6b; --primary2: #1a5c3a;
+  --body-bg1: #0f2d1e; --body-bg2: #1a4a2e;
+}
+body[data-theme="a"] .bottom-nav { background: #1a3d2a }
+body[data-theme="a"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#2d9a6b,#1a6b4a) !important; box-shadow: 0 3px 10px rgba(45,154,107,.45) !important }
+body[data-theme="a"] { background: linear-gradient(170deg,#0f2d1e 0%,#1a4a2e 50%,#0f3320 100%) }
+
+/* Theme B: بنفسجي ناعم */
+body[data-theme="b"] {
+  --primary: #7c5cbf; --primary2: #3d2070;
+  --body-bg1: #1e0f3d; --body-bg2: #2d1a5c;
+}
+body[data-theme="b"] .bottom-nav { background: #2a1a4a }
+body[data-theme="b"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#7c5cbf,#5a3a9a) !important; box-shadow: 0 3px 10px rgba(124,92,191,.45) !important }
+body[data-theme="b"] { background: linear-gradient(170deg,#1e0f3d 0%,#2d1a5c 50%,#1a0f3a 100%) }
+
+/* Theme C: ذهبي فاتح */
+body[data-theme="c"] {
+  --primary: #c9a84c; --primary2: #8a6a10;
+  --bg: #fffdf8; --card: #ffffff; --border: #f0e8d4;
+  --text: #2d2010; --text2: #7a6a4a; --text3: #b0a080;
+}
+body[data-theme="c"] .bottom-nav { background: #0d1b3e }
+body[data-theme="c"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#c9a84c,#a07a20) !important; box-shadow: 0 3px 10px rgba(201,168,76,.45) !important }
+body[data-theme="c"] { background: #f5f0e8 }
+body[data-theme="c"] .header { background: #fff; border-bottom: 2px solid #f0e8d4 }
+body[data-theme="c"] .stat-card,.body[data-theme="c"] .form-card,.body[data-theme="c"] .history-card { background: #fff; border: 1px solid #f0e8d4 }
+
+/* Theme selector modal */
+.theme-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 99996; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.theme-modal-overlay.hidden { display: none !important }
+.theme-modal-card {
+  background: var(--card); border-radius: var(--r-lg);
+  padding: 24px 20px; max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.theme-modal-title { font-size: 16px; font-weight: bold; color: var(--text); text-align: center; margin-bottom: 18px }
+.theme-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 18px }
+.theme-opt {
+  border: 2px solid var(--border); border-radius: var(--r);
+  padding: 12px 8px; cursor: pointer; text-align: center;
+  transition: all .2s; background: var(--card);
+}
+.theme-opt:hover { transform: scale(1.03) }
+.theme-opt.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary) }
+.theme-swatch {
+  width: 100%; height: 48px; border-radius: 10px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.theme-opt-name { font-size: 12px; font-weight: bold; color: var(--text) }
+.theme-opt-desc { font-size: 10px; color: var(--text2); margin-top: 3px }
+
 </style>
 </head>
 <body>
@@ -1480,36 +1706,72 @@ body.dark .quran-ref { color: #4ade80 }
   <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,transparent,rgba(255,215,0,.15),rgba(255,215,0,.35),rgba(255,215,0,.15),transparent);z-index:1"></div>
   <div class="ls-lights-dots" id="loginLightDots"></div>
 
-  <!-- Lanterns row -->
-  <div class="login-lights-row" id="loginLanternsRow">
-    <div class="ls-moon"><div class="ls-moon-inner"></div></div>
+  <!-- Eid moon -->
+  <div class="ls-moon" style="position:absolute;top:16px;right:20px;z-index:6"><div class="ls-moon-inner"></div></div>
+  <div style="position:absolute;top:28px;right:76px;z-index:6;color:#e8c97a;font-size:16px;animation:lsShimmer 3s ease-in-out infinite">✦</div>
+
+  <!-- Geometric ornaments -->
+  <svg style="position:absolute;top:0;left:0;width:72px;height:72px;opacity:.2;z-index:1" viewBox="0 0 72 72">
+    <polygon points="36,2 44,26 70,26 50,42 57,66 36,51 15,66 22,42 2,26 28,26" fill="none" stroke="#e8c97a" stroke-width="1"/>
+    <polygon points="36,12 42,26 58,26 46,36 50,50 36,41 22,50 26,36 14,26 30,26" fill="none" stroke="#e8c97a" stroke-width=".5"/>
+  </svg>
+  <svg style="position:absolute;bottom:35%;right:0;width:60px;height:60px;opacity:.18;z-index:1" viewBox="0 0 60 60">
+    <polygon points="30,2 37,22 58,22 42,34 48,54 30,43 12,54 18,34 2,22 23,22" fill="none" stroke="#e8c97a" stroke-width=".8"/>
+  </svg>
+
+  <!-- Mosque silhouette -->
+  <div style="width:100%;flex-shrink:0;height:145px;display:flex;align-items:flex-end;justify-content:center;position:relative;z-index:2;margin-top:8px">
+    <svg viewBox="0 0 360 145" fill="none" style="width:100%;max-width:380px;height:auto">
+      <rect x="0" y="133" width="360" height="12" fill="#e8c97a" opacity=".1"/>
+      <path d="M142 133 L142 85 Q142 40 180 30 Q218 40 218 85 L218 133 Z" fill="#e8c97a" opacity=".15"/>
+      <path d="M76 133 L76 96 Q76 66 98 58 Q120 66 120 96 L120 133 Z" fill="#e8c97a" opacity=".12"/>
+      <path d="M240 133 L240 96 Q240 66 262 58 Q284 66 284 96 L284 133 Z" fill="#e8c97a" opacity=".12"/>
+      <rect x="46" y="46" width="13" height="87" rx="2" fill="#e8c97a" opacity=".16"/>
+      <path d="M46 46 L52 26 L59 46 Z" fill="#e8c97a" opacity=".25"/>
+      <ellipse cx="52" cy="47" rx="9" ry="3.5" fill="#e8c97a" opacity=".16"/>
+      <rect x="301" y="46" width="13" height="87" rx="2" fill="#e8c97a" opacity=".16"/>
+      <path d="M301 46 L307 26 L314 46 Z" fill="#e8c97a" opacity=".25"/>
+      <ellipse cx="307" cy="47" rx="9" ry="3.5" fill="#e8c97a" opacity=".16"/>
+      <rect x="132" y="68" width="7" height="65" rx="1" fill="#e8c97a" opacity=".12"/>
+      <path d="M132 68 L135 55 L139 68 Z" fill="#e8c97a" opacity=".18"/>
+      <rect x="221" y="68" width="7" height="65" rx="1" fill="#e8c97a" opacity=".12"/>
+      <path d="M221 68 L224 55 L228 68 Z" fill="#e8c97a" opacity=".18"/>
+      <path d="M161 133 L161 112 Q168 103 175 112 L175 133 Z" fill="#e8c97a" opacity=".2"/>
+      <path d="M185 133 L185 112 Q192 103 199 112 L199 133 Z" fill="#e8c97a" opacity=".2"/>
+      <circle cx="180" cy="31" r="5.5" fill="#e8c97a" opacity=".35"/>
+      <circle cx="183" cy="29" r="4.5" fill="#0d1b3e"/>
+      <rect x="18" y="126" width="324" height="7" rx="2" fill="#e8c97a" opacity=".08"/>
+    </svg>
   </div>
+
+  <!-- Eid strip -->
+  <div style="width:100%;height:2px;background:repeating-linear-gradient(90deg,#e8c97a 0,#e8c97a 7px,transparent 7px,transparent 11px,#c4a55a 11px,#c4a55a 17px,transparent 17px,transparent 21px);opacity:.45;flex-shrink:0"></div>
 
   <!-- Header -->
   <div class="ls-header">
-    <div class="ls-greeting">رمضان كريم ✨</div>
-    <div class="ls-app-title">💰 نظام إدارة الحسابات</div>
-    <div class="ls-app-sub">اختر المستخدم للدخول</div>
+    <div class="ls-greeting">عيد الفطر المبارك</div>
+    <div class="ls-app-title" style="color:rgba(232,201,122,.6);font-size:13px;margin-top:4px">تقبّل الله منا ومنكم صالح الأعمال</div>
+    <div class="ls-app-sub">💰 نظام إدارة الحسابات</div>
   </div>
 
-  <!-- Info bar -->
+  <!-- Eid info bar -->
   <div class="ls-info-bar">
-    <div class="ls-hijri-line" id="lsHijriLine">جاري التحميل...</div>
+    <div class="ls-hijri-line" id="lsHijriLine">1 شوال 1447 هـ</div>
     <div class="ls-info-grid">
       <div class="ls-info-item">
-        <div class="ls-info-val" id="lsDaysLeft">—</div>
-        <div class="ls-info-lbl">يوم للعيد</div>
+        <div class="ls-info-val">1</div>
+        <div class="ls-info-lbl">شوال 1447</div>
       </div>
       <div class="ls-info-item">
-        <div class="ls-info-val" id="lsRamDay">—</div>
-        <div class="ls-info-lbl">يوم رمضان</div>
+        <div class="ls-info-val">20 مارس</div>
+        <div class="ls-info-lbl">2026 م</div>
       </div>
       <div class="ls-info-item">
-        <div class="ls-info-val" id="lsNightsLeft">—</div>
-        <div class="ls-info-lbl">ليلة باقية</div>
+        <div class="ls-info-val">جمعة</div>
+        <div class="ls-info-lbl">يوم العيد</div>
       </div>
     </div>
-    <div class="ls-ramadan-msg" id="lsRamMsg">رمضان كريم 🌙</div>
+    <div class="ls-ramadan-msg">كل عام وأنتم بألف خير 🌙</div>
   </div>
 
   <!-- Login card -->
@@ -1533,7 +1795,7 @@ body.dark .quran-ref { color: #4ade80 }
         <button class="pw-eye" type="button" onclick="togglePw('passwordInput',this)">👁️</button>
       </div>
       <button class="login-btn" onclick="login()"
-        style="background:linear-gradient(135deg,#667eea,#764ba2);border:none;font-weight:bold">
+        style="background:linear-gradient(135deg,#c4a55a,#8b6914);border:none;font-weight:bold">
         دخول 🔐
       </button>
       <button class="back-btn" onclick="backToUserSelection()"
@@ -1559,6 +1821,7 @@ body.dark .quran-ref { color: #4ade80 }
     <h1>💰 حساباتي المالية</h1>
     <div class="user-info">
       <button class="btn export-btn" onclick="exportToExcel()">📥 Excel</button>
+      <button class="dark-toggle" onclick="showThemeModal()" title="ثيم" style="font-size:18px">🎨</button>
       <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="وضع ليلي">🌙</button>
       <div class="user-badge" id="userBadge"></div>
     </div>
@@ -1567,6 +1830,26 @@ body.dark .quran-ref { color: #4ade80 }
 
   <!-- TRANSACTIONS SECTION -->
   <div id="mainTxSection">
+
+  <!-- Mini Fanoos Row -->
+  <div class="user-fanoos-row" id="userFanoosRow">
+    <div class="uf-lights" id="ufLights"></div>
+    <!-- Eid decoration injected by JS -->
+  </div>
+  <!-- Hijri date bar -->
+  <div id="userHijriBar" style="display:flex;align-items:center;justify-content:space-between;background:rgba(255,215,0,.06);border:1px solid rgba(255,215,0,.15);border-radius:var(--r-sm);padding:7px 14px;margin-bottom:12px;flex-wrap:wrap;gap:6px">
+    <div style="font-size:12px;color:rgba(255,215,0,.8);font-weight:bold" id="userHijriDate">جاري التحميل...</div>
+    <div style="display:flex;gap:12px">
+      <div style="text-align:center">
+        <div style="font-size:15px;font-weight:bold;color:#ffd700" id="userDaysEid">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4)">يوم للعيد</div>
+      </div>
+      <div style="text-align:center">
+        <div style="font-size:15px;font-weight:bold;color:#ffd700" id="userRamDay">—</div>
+        <div style="font-size:10px;color:rgba(255,255,255,.4)">يوم رمضان</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Shekel Rate only -->
   <div class="dollar-rate-card" style="padding:10px 14px">
@@ -1831,21 +2114,21 @@ body.dark .quran-ref { color: #4ade80 }
         <span class="fanoos" style="--sw:2.6s;--sd:.8s">🏮</span>
         <span class="fanoos" style="--sw:3.0s;--sd:.2s">🪔</span>
       </div>
-      <div class="ramadan-title">رمضان كريم ✨</div>
+      <div class="ramadan-title">عيد الفطر المبارك 🌙</div>
       <div class="ramadan-subtitle" id="hijriDate">جاري تحديد التاريخ الهجري...</div>
       <!-- Ramadan countdown info -->
       <div style="display:flex;justify-content:center;gap:14px;margin-top:10px;flex-wrap:wrap;position:relative;z-index:1" id="ramadanCounterRow">
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramDayOfMonth">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم من رمضان</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم العيد 🎉</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramDaysToEid">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم للعيد 🎉</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم من العيد</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramNightsLeft">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">ليلة باقية 🌙</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">تهاني 🎊</div>
         </div>
       </div>
       <!-- Progress bar -->
@@ -1854,9 +2137,9 @@ body.dark .quran-ref { color: #4ade80 }
           <div id="ramProgressBar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#ffd700);border-radius:10px;transition:width .5s;width:0%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.35);margin-top:3px">
-          <span>١ رمضان</span>
+          <span>بداية رمضان</span>
           <span id="ramPct">—</span>
-          <span>عيد الفطر</span>
+          <span>عيد الفطر 🎉</span>
         </div>
       </div>
     </div>
@@ -1906,6 +2189,84 @@ body.dark .quran-ref { color: #4ade80 }
     </div>
 
   </div><!-- end islamicSection -->
+
+  <!-- ══ ACCOUNTING SECTION ══ -->
+  <div id="accountingSection" class="hidden acc-section">
+
+    <!-- Sub tabs -->
+    <div class="acc-subtabs">
+      <button class="acc-subtab active" id="accTabInv"  onclick="accSetTab('invoices')">🧾 فواتير</button>
+      <button class="acc-subtab"        id="accTabCli"  onclick="accSetTab('clients')">👥 عملاء</button>
+      <button class="acc-subtab"        id="accTabSup"  onclick="accSetTab('suppliers')">🏭 موردين</button>
+      <button class="acc-subtab"        id="accTabWH"   onclick="accSetTab('warehouse')">📦 مخزن</button>
+      <button class="acc-subtab"        id="accTabRep"  onclick="accSetTab('reports')">📊 تقارير</button>
+    </div>
+
+    <!-- INVOICES -->
+    <div id="accInvoices">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:16px">🧾 الفواتير</h2>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" style="background:var(--green);color:white;font-size:12px;padding:8px 14px" onclick="showAddInvoiceModal('sale')">➕ فاتورة بيع</button>
+          <button class="btn" style="background:var(--blue);color:white;font-size:12px;padding:8px 14px" onclick="showAddInvoiceModal('purchase')">➕ فاتورة شراء</button>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn" id="invFilterAll"  onclick="setInvFilter('all')"      style="padding:6px 12px;font-size:12px;background:var(--primary);color:white">الكل</button>
+        <button class="btn" id="invFilterSale" onclick="setInvFilter('sale')"     style="padding:6px 12px;font-size:12px;background:var(--card);color:var(--text2);border:1px solid var(--border)">بيع</button>
+        <button class="btn" id="invFilterPur"  onclick="setInvFilter('purchase')" style="padding:6px 12px;font-size:12px;background:var(--card);color:var(--text2);border:1px solid var(--border)">شراء</button>
+        <button class="btn" id="invFilterUnpaid" onclick="setInvFilter('unpaid')" style="padding:6px 12px;font-size:12px;background:var(--card);color:var(--text2);border:1px solid var(--border)">غير مدفوعة</button>
+      </div>
+      <input class="acc-search" id="invSearch" placeholder="🔍 بحث في الفواتير..." oninput="renderInvoices()">
+      <div id="invoicesList"></div>
+    </div>
+
+    <!-- CLIENTS -->
+    <div id="accClients" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:16px">👥 العملاء</h2>
+        <button class="btn" style="background:var(--primary);color:white;font-size:12px;padding:8px 14px" onclick="showAddContactModal('client')">➕ عميل جديد</button>
+      </div>
+      <input class="acc-search" id="clientSearch" placeholder="🔍 بحث..." oninput="renderContacts('client')">
+      <div id="clientsList"></div>
+    </div>
+
+    <!-- SUPPLIERS -->
+    <div id="accSuppliers" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:16px">🏭 الموردون</h2>
+        <button class="btn" style="background:var(--blue);color:white;font-size:12px;padding:8px 14px" onclick="showAddContactModal('supplier')">➕ مورد جديد</button>
+      </div>
+      <input class="acc-search" id="supplierSearch" placeholder="🔍 بحث..." oninput="renderContacts('supplier')">
+      <div id="suppliersList"></div>
+    </div>
+
+    <!-- WAREHOUSE -->
+    <div id="accWarehouse" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
+        <h2 style="margin:0;font-size:16px">📦 المخزن</h2>
+        <button class="btn" style="background:var(--amber);color:white;font-size:12px;padding:8px 14px" onclick="showAddProductModal()">➕ صنف جديد</button>
+      </div>
+      <input class="acc-search" id="prodSearch" placeholder="🔍 بحث..." oninput="renderProducts()">
+      <div id="productsList"></div>
+    </div>
+
+    <!-- REPORTS -->
+    <div id="accReports" class="hidden">
+      <h2 style="margin-bottom:14px;font-size:16px">📊 التقارير المالية</h2>
+      <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+        <select id="repPeriod" onchange="renderReports()" style="flex:1;padding:9px 12px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text);font-family:var(--font)">
+          <option value="month">هذا الشهر</option>
+          <option value="3month">آخر 3 أشهر</option>
+          <option value="year">هذه السنة</option>
+          <option value="all">الكل</option>
+        </select>
+      </div>
+      <div id="reportsContent"></div>
+    </div>
+
+  </div><!-- end accountingSection -->
+
 
 
 </div>
@@ -2260,6 +2621,20 @@ db.ref('.info/connected').on('value', snap => {
 
 let appData = getDefaultData();
 let currentUser = null;
+let _userLoggedIn = false; // Central login state — only login/logout can change this
+
+function _showLogin() {
+  if (_userLoggedIn) return; // Never show if logged in
+  const ls = document.getElementById('loginScreen');
+  if (ls) { ls.classList.remove('hidden'); ls.style.display = ''; }
+  buildLoginScreen();
+}
+function _hideLogin() {
+  _userLoggedIn = true;
+  const ls = document.getElementById('loginScreen');
+  if (ls) { ls.classList.add('hidden'); ls.style.display = 'none'; }
+  if (window._lsShuffleTimer) { clearInterval(window._lsShuffleTimer); window._lsShuffleTimer = null; }
+}
 let selectedType = 'add';
 let fbListener = null;   // real-time listener handle
 
@@ -2324,6 +2699,7 @@ function mergeData(remote) {
   remote.adminNotes = remote.adminNotes || {};
   remote.thaerNotes    = remote.thaerNotes    || '';
   remote.expenseNotes  = remote.expenseNotes  || {};
+  remote.accounting    = remote.accounting    || null;
   return remote;
 }
 
@@ -2401,11 +2777,12 @@ function showLoadingOverlay(show) { /* disabled — cache-first approach */ }
 // =============================================
 window.onload = function() {
   initDarkMode();
+  initTheme();
   buildLoginScreen();
   initFirebase(() => {
     updateDollarRateDisplay();
     renderUserButtons();
-    document.getElementById('loginScreen').classList.remove('hidden');
+    _showLogin();
   });
 };
 
@@ -2467,7 +2844,7 @@ function login() {
   const ukey = currentUser === 'admin' ? 'أدمن' : currentUser;
   const correct = appData.passwords[ukey];
   if (input == correct) {
-    document.getElementById('loginScreen').classList.add('hidden');
+    _hideLogin();
     document.getElementById('errorMsg').style.display = 'none';
     resetAutoLock();
     const ukey2 = ukey;
@@ -2494,6 +2871,8 @@ function login() {
       setTimeout(() => checkAndShowUserNotes(currentUser), 400);
       setTimeout(() => initRemainingWidget(), 200);
       startIslamicReminders();
+      setTimeout(() => { buildUserFanoos(); startUserFanoosTimer(); }, 100);
+      if(window._lsShuffleTimer){clearInterval(window._lsShuffleTimer);window._lsShuffleTimer=null;}
     }
   } else {
     document.getElementById('errorMsg').style.display = 'block';
@@ -2503,14 +2882,16 @@ function login() {
 function logout() {
   clearTimeout(autoLockTimer);
   currentUser = null;
-  document.getElementById('loginScreen').classList.remove('hidden');
+  _userLoggedIn = false;
   document.getElementById('mainApp').classList.add('hidden');
   document.getElementById('adminPanel').classList.add('hidden');
   document.getElementById('bottomNav').classList.add('hidden');
   stopIslamicReminders();
+  if(window._ufTimer) clearInterval(window._ufTimer);
   document.getElementById('userSelection').classList.remove('hidden');
   document.getElementById('passwordScreen').classList.add('hidden');
   hideForm();
+  _showLogin();
 }
 
 // =============================================
@@ -3885,12 +4266,11 @@ function renderUserButtons() {
   }
 
   const colors = appData.userColors || {};
-  const fixedColors = { حمزة:'#3b82f6', جنى:'#ec4899', محمد:'#8b5cf6' };
+  const fixedColors = { حمزة:'#1a5276', جنى:'#7d3c98', محمد:'#1e8449', ماما:'#784212' };
   window._userList = users;
 
   el.innerHTML = users.map((u, idx) => {
     const color = colors[u] || fixedColors[u] || '#667eea';
-    // Darken color slightly for gradient end
     return `<button class="ls-user-btn" onclick="selectUserByIndex(${idx})"
       style="background:linear-gradient(135deg,${color},${color}cc)">
       <span class="ls-user-arrow">←</span>
@@ -3898,6 +4278,7 @@ function renderUserButtons() {
       <span class="ls-user-avatar">👤</span>
     </button>`;
   }).join('');
+  // Don't touch loginScreen visibility here — handled by login/logout only
 }
 
 function selectUserByIndex(idx) {
@@ -4177,7 +4558,7 @@ function proceedAfterAuth() {
   resetAutoLock();
   addAuditLog(ukey, 'تسجيل دخول (PIN)', '');
   saveData('auditLog', appData.auditLog);
-  document.getElementById('loginScreen').classList.add('hidden');
+  _hideLogin();
   document.getElementById('errorMsg').style.display='none';
   if (currentUser === 'admin') {
     document.getElementById('adminPanel').classList.remove('hidden');
@@ -4194,6 +4575,8 @@ function proceedAfterAuth() {
     setTimeout(() => checkAndShowUserNotes(ukey), 400);
     setTimeout(() => initRemainingWidget(), 200);
     startIslamicReminders();
+    setTimeout(() => { buildUserFanoos(); startUserFanoosTimer(); }, 100);
+    if(window._lsShuffleTimer){clearInterval(window._lsShuffleTimer);window._lsShuffleTimer=null;}
   }
 }
 
@@ -4599,6 +4982,7 @@ const _patchedMerge = function(remote) {
   remote.adminNotes = remote.adminNotes || {};
   remote.thaerNotes    = remote.thaerNotes    || '';
   remote.expenseNotes  = remote.expenseNotes  || {};
+  remote.accounting    = remote.accounting    || null;
   return remote;
 };
 // Override
@@ -5519,6 +5903,10 @@ function switchMainTab(tab) {
     document.getElementById('islamicSection').classList.remove('hidden');
     document.getElementById('bnIslamic')?.classList.add('active');
     initIslamicSection();
+  } else if (tab === 'accounting') {
+    document.getElementById('accountingSection').classList.remove('hidden');
+    document.getElementById('bnAcc')?.classList.add('active');
+    initAccounting();
   }
 }
 
@@ -5839,45 +6227,11 @@ function lsMakeBody(style, p, icon, scale) {
     ${fringeHtml}`;
 }
 
-function lsShuffleLanterns() {
-  const row = document.getElementById('loginLanternsRow');
-  if (!row) return;
-  // Remove old lanterns only
-  row.querySelectorAll('.ls-lantern-wrap').forEach(el=>el.remove());
-  // Animate
-  row.style.opacity='0'; row.style.transform='scale(.95)';
-  row.style.transition='all .2s ease';
-  setTimeout(()=>{
-    lsBuildLanterns(row);
-    row.style.opacity='1'; row.style.transform='scale(1)';
-  }, 200);
-}
+function lsShuffleLanterns() { return; /* Eid mode */ }
 
-function lsBuildLanterns(row) {
-  const count = 5;
-  const usedP = [], usedS = [];
-  let lh = '';
-  for(let i=0;i<count;i++){
-    // Pick unused palette
-    let p; do { p = LS_PALETTES[Math.floor(Math.random()*LS_PALETTES.length)]; } while(usedP.includes(p) && usedP.length<LS_PALETTES.length);
-    usedP.push(p);
-    const icon  = LS_ICONS[Math.floor(Math.random()*LS_ICONS.length)];
-    const style = LS_STYLES[i % LS_STYLES.length]; // mix styles in order
-    const cord  = 18 + Math.round(Math.random()*30);
-    const sw    = (2.3 + Math.random()*1.4).toFixed(1);
-    const sd    = (i*0.2 + Math.random()*0.1).toFixed(2);
-    const angle = 6 + Math.round(Math.random()*5);
-    // center lantern is bigger
-    const scale = i===2 ? 1.15 : (i===0||i===4) ? 0.88 : 1.0;
-    const bodyHtml = lsMakeBody(style, p, icon, scale);
-    const cordGrad = `linear-gradient(${p.top}66,${p.top}bb)`;
-    lh += `<div class="ls-lantern-wrap" style="--sw:${sw}s;--sd:${sd}s;--ra:-${angle}deg;--rb:${angle}deg">
-      <div class="ls-cord" style="height:${cord}px;background:${cordGrad}"></div>
-      <div class="ls-fanoos-body">${bodyHtml}</div>
-    </div>`;
-  }
-  row.insertAdjacentHTML('beforeend', lh);
-}
+
+function lsBuildLanterns(row) { return; /* Eid mode */ }
+
 
 function lsBuildInfoBar() {
   try {
@@ -5890,8 +6244,8 @@ function lsBuildInfoBar() {
   }
   // Ramadan 1448: ~Feb 28 - Mar 29, 2026; Eid ~Mar 30
   const now=new Date(), msDay=86400000;
-  const eid=new Date('2026-03-30');
-  const ramStart=new Date('2026-02-28');
+  const eid=new Date('2026-03-20');
+  const ramStart=new Date('2026-02-18');
   const daysToEid=Math.max(0,Math.ceil((eid-now)/msDay));
   const dayOfRam =Math.max(1,Math.min(30,Math.round((now-ramStart)/msDay)+1));
   const nights   =Math.max(0,30-dayOfRam+1);
@@ -5944,6 +6298,666 @@ function buildLoginScreen() {
   if(!window._lsShuffleTimer) {
     window._lsShuffleTimer = setInterval(lsShuffleLanterns, 8000);
   }
+}
+
+// ─── Mini Fanoos Row (inside user app) ───────
+const UF_PALETTES = [
+  { bg:'#b91c1c', glow:'#ef444433', top:'#991b1b', fr:['#f87171','#ef4444'] },
+  { bg:'#d97706', glow:'#f59e0b33', top:'#b45309', fr:['#fbbf24','#f59e0b'] },
+  { bg:'#1d4ed8', glow:'#3b82f633', top:'#1e40af', fr:['#93c5fd','#60a5fa'] },
+  { bg:'#7c3aed', glow:'#8b5cf633', top:'#6d28d9', fr:['#c4b5fd','#a78bfa'] },
+  { bg:'#059669', glow:'#10b98133', top:'#047857', fr:['#6ee7b7','#34d399'] },
+  { bg:'#db2777', glow:'#ec489933', top:'#9d174d', fr:['#f9a8d4','#f472b6'] },
+  { bg:'#0891b2', glow:'#06b6d433', top:'#0e7490', fr:['#a5f3fc','#67e8f9'] },
+];
+const UF_ICONS = ['🏮','🪔','🌙','⭐','✨','🎇'];
+
+function buildUserFanoos() {
+  const row = document.getElementById('userFanoosRow');
+  if (!row) return;
+
+  // Gold lights strip
+  const lts = document.getElementById('ufLights');
+  if (lts && !lts.children.length) {
+    const cls=['#e8c97a','#c4a55a','#d4ac0d','#f0d060','#b8860b','#ffd700'];
+    let dh='';
+    for(let i=0;i<22;i++){
+      const c=cls[i%cls.length];
+      const dl=(Math.random()*2).toFixed(1), d=(1+Math.random()*1.5).toFixed(1);
+      dh+=`<div class="uf-dot" style="background:${c};box-shadow:0 0 4px ${c};--d:${d}s;--dl:${dl}s"></div>`;
+    }
+    lts.innerHTML = dh;
+  }
+
+  // Remove old decoration
+  row.querySelectorAll('.uf-wrap,.uf-mosque').forEach(el=>el.remove());
+
+  // Mosque SVG + Eid greeting
+  const mosqueDiv = document.createElement('div');
+  mosqueDiv.className = 'uf-mosque';
+  mosqueDiv.style.cssText = 'width:100%;display:flex;flex-direction:column;align-items:center;padding:6px 0 2px;position:relative;z-index:1';
+  mosqueDiv.innerHTML = `
+    <svg viewBox="0 0 280 52" fill="none" style="width:90%;max-width:300px;height:auto">
+      <path d="M108 52 L108 32 Q108 14 140 8 Q172 14 172 32 L172 52 Z" fill="#e8c97a" opacity=".2"/>
+      <path d="M58 52 L58 36 Q58 22 74 18 Q90 22 90 36 L90 52 Z" fill="#e8c97a" opacity=".15"/>
+      <path d="M190 52 L190 36 Q190 22 206 18 Q222 22 222 36 L222 52 Z" fill="#e8c97a" opacity=".15"/>
+      <rect x="32" y="18" width="9" height="34" rx="1" fill="#e8c97a" opacity=".18"/>
+      <path d="M32 18 L36 7 L41 18 Z" fill="#e8c97a" opacity=".25"/>
+      <rect x="239" y="18" width="9" height="34" rx="1" fill="#e8c97a" opacity=".18"/>
+      <path d="M239 18 L243 7 L248 18 Z" fill="#e8c97a" opacity=".25"/>
+      <circle cx="140" cy="9" r="4" fill="#e8c97a" opacity=".4"/>
+      <circle cx="142" cy="7.5" r="3.2" fill="#0d1b3e"/>
+      <rect x="10" y="46" width="260" height="6" rx="1" fill="#e8c97a" opacity=".1"/>
+    </svg>
+    <div style="font-size:11px;color:rgba(232,201,122,.65);font-weight:bold;letter-spacing:1px;margin-top:2px">عيد الفطر المبارك ✦</div>`;
+  row.appendChild(mosqueDiv);
+
+  // Hijri date bar
+  try {
+    const hf = new Intl.DateTimeFormat('ar-SA-u-ca-islamic',{year:'numeric',month:'long',day:'numeric'});
+    const el = document.getElementById('userHijriDate');
+    if(el) el.textContent = hf.format(new Date()) + ' هـ';
+  } catch(e){
+    const el = document.getElementById('userHijriDate');
+    if(el) el.textContent = '1 شوال 1447 هـ';
+  }
+  const now=new Date(), msDay=86400000;
+  const eid=new Date('2026-03-20');
+  const ramStart=new Date('2026-02-18');
+  const daysToEid=Math.max(0,Math.ceil((eid-now)/msDay));
+  const dayOfRam=Math.max(1,Math.min(30,Math.round((now-ramStart)/msDay)+1));
+  const dEl=document.getElementById('userDaysEid'); if(dEl) dEl.textContent=daysToEid;
+  const rEl=document.getElementById('userRamDay');  if(rEl) rEl.textContent=dayOfRam;
+}
+
+// Auto-shuffle user fanoos every 10 seconds
+function startUserFanoosTimer() {
+  if (window._ufTimer) clearInterval(window._ufTimer);
+  window._ufTimer = setInterval(()=>{
+    const row=document.getElementById('userFanoosRow');
+    if(!row) return;
+    row.style.opacity='0'; row.style.transition='opacity .2s';
+    setTimeout(()=>{ buildUserFanoos(); row.style.opacity='1'; }, 200);
+  }, 10000);
+}
+
+// =============================================
+// ACCOUNTING MODULE — فواتير / عملاء / مخزن / تقارير
+// =============================================
+
+// ── Data init ────────────────────────────────
+function accGetData() {
+  if (!appData.accounting) appData.accounting = {
+    invoices:  [],   // { id, type:'sale'|'purchase', number, clientId, date, lines:[{desc,qty,price}], paid, notes }
+    contacts:  [],   // { id, type:'client'|'supplier', name, phone, balance }
+    products:  [],   // { id, name, unit, qty, minQty, buyPrice, sellPrice, category }
+    nextInvNum: 1
+  };
+  return appData.accounting;
+}
+
+// ── Merge data ────────────────────────────────
+// (patch mergeData — already handled via the end of mergeData)
+
+let accCurrentTab   = 'invoices';
+let invCurrentFilter = 'all';
+
+function initAccounting() {
+  accGetData();
+  accSetTab('invoices');
+}
+
+function accSetTab(tab) {
+  accCurrentTab = tab;
+  ['invoices','clients','suppliers','warehouse','reports'].forEach(t => {
+    const panel = document.getElementById('acc' + t.charAt(0).toUpperCase() + t.slice(1));
+    const btn   = document.getElementById('accTab' + t.charAt(0).toUpperCase() + t.slice(1).substring(0,2).toUpperCase() + t.slice(3));
+    if (panel) panel.classList.toggle('hidden', t !== tab);
+  });
+  // Fix tab IDs
+  ['Inv','Cli','Sup','WH','Rep'].forEach((s,i) => {
+    const tabs = ['invoices','clients','suppliers','warehouse','reports'];
+    const el = document.getElementById('accTab' + s);
+    if (el) el.classList.toggle('active', tabs[i] === tab);
+  });
+  if (tab === 'invoices')   renderInvoices();
+  if (tab === 'clients')    renderContacts('client');
+  if (tab === 'suppliers')  renderContacts('supplier');
+  if (tab === 'warehouse')  renderProducts();
+  if (tab === 'reports')    renderReports();
+}
+
+// ══════════════════════════════════════════════
+// INVOICES
+// ══════════════════════════════════════════════
+let invFilter = 'all';
+function setInvFilter(f) {
+  invFilter = f;
+  ['All','Sale','Pur','Unpaid'].forEach(s => {
+    const el = document.getElementById('invFilter'+s);
+    if(el){ el.style.background=f===s.toLowerCase()||f==='all'&&s==='All'?'var(--primary)':'var(--card)';
+            el.style.color=f===s.toLowerCase()||f==='all'&&s==='All'?'white':'var(--text2)'; }
+  });
+  renderInvoices();
+}
+
+function renderInvoices() {
+  const d   = accGetData();
+  const el  = document.getElementById('invoicesList'); if(!el) return;
+  const q   = (document.getElementById('invSearch')?.value||'').toLowerCase();
+  let list  = [...d.invoices].sort((a,b)=>b.id-a.id);
+  if (invFilter==='sale')    list = list.filter(i=>i.type==='sale');
+  if (invFilter==='purchase') list = list.filter(i=>i.type==='purchase');
+  if (invFilter==='unpaid')  list = list.filter(i=>!i.paid||i.paid==='unpaid');
+  if (q) list = list.filter(i=>(i.number+'').includes(q)||(i.clientName||'').includes(q)||(i.notes||'').toLowerCase().includes(q));
+  if(!list.length){ el.innerHTML='<div class="empty-state">لا توجد فواتير بعد</div>'; return; }
+  el.innerHTML = list.map(inv => {
+    const total = (inv.lines||[]).reduce((s,l)=>s+(parseFloat(l.qty)||0)*(parseFloat(l.price)||0),0);
+    const typeLabel = inv.type==='sale' ? '🟢 بيع' : '🔵 شراء';
+    const paidLabel = inv.paid==='paid'?'مدفوعة':inv.paid==='partial'?'جزئي':'غير مدفوعة';
+    const paidCls   = inv.paid==='paid'?'paid':inv.paid==='partial'?'partial':'unpaid';
+    return `<div class="inv-item">
+      <div class="inv-header" onclick="toggleInvLines('inv_${inv.id}')">
+        <span class="inv-number">#${inv.number}</span>
+        <div style="flex:1;min-width:0">
+          <div class="inv-client">${escHtml(inv.clientName||'—')}</div>
+          <div class="inv-date">${typeLabel} • ${inv.date||''}</div>
+        </div>
+        <span class="inv-badge ${paidCls}">${paidLabel}</span>
+        <span class="inv-total">${total.toFixed(2)} ₪</span>
+      </div>
+      <div class="inv-lines" id="inv_${inv.id}">
+        <table class="inv-line-table">
+          <thead><tr><th>الصنف/الخدمة</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead>
+          <tbody>
+            ${(inv.lines||[]).map(l=>`<tr>
+              <td>${escHtml(l.desc||'')}</td>
+              <td>${l.qty}</td>
+              <td>${parseFloat(l.price).toFixed(2)} ₪</td>
+              <td>${(parseFloat(l.qty)*parseFloat(l.price)).toFixed(2)} ₪</td>
+            </tr>`).join('')}
+            <tr style="font-weight:bold;background:var(--bg)">
+              <td colspan="3">المجموع الكلي</td>
+              <td>${total.toFixed(2)} ₪</td>
+            </tr>
+          </tbody>
+        </table>
+        ${inv.notes?`<div style="font-size:12px;color:var(--text2);margin-top:8px">📝 ${escHtml(inv.notes)}</div>`:''}
+        <div class="inv-actions">
+          <select onchange="updateInvPaid('${inv.id}',this.value)"
+            style="padding:6px 10px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;background:var(--card);color:var(--text);font-family:var(--font)">
+            <option value="unpaid"  ${inv.paid==='unpaid'||!inv.paid?'selected':''}>غير مدفوعة</option>
+            <option value="partial" ${inv.paid==='partial'?'selected':''}>مدفوعة جزئياً</option>
+            <option value="paid"    ${inv.paid==='paid'?'selected':''}>مدفوعة كاملاً</option>
+          </select>
+          <button onclick="printInvoice('${inv.id}')"
+            style="padding:6px 12px;background:var(--primary);color:white;border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:var(--font)">🖨️ طباعة</button>
+          <button onclick="deleteInvoice('${inv.id}')"
+            style="padding:6px 12px;background:#fee2e2;color:var(--red);border:none;border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:var(--font)">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleInvLines(id) {
+  const el = document.getElementById(id); if(!el) return;
+  el.classList.toggle('open');
+}
+
+function updateInvPaid(id, val) {
+  const d = accGetData();
+  const inv = d.invoices.find(i=>i.id==id); if(!inv) return;
+  inv.paid = val;
+  saveData('accounting/invoices', d.invoices);
+  renderInvoices();
+}
+
+function deleteInvoice(id) {
+  if(!confirm('حذف هذه الفاتورة؟')) return;
+  const d = accGetData();
+  d.invoices = d.invoices.filter(i=>i.id!=id);
+  saveData('accounting/invoices', d.invoices);
+  renderInvoices();
+}
+
+function printInvoice(id) {
+  const d   = accGetData();
+  const inv = d.invoices.find(i=>i.id==id); if(!inv) return;
+  const total = (inv.lines||[]).reduce((s,l)=>s+(parseFloat(l.qty)||0)*(parseFloat(l.price)||0),0);
+  const w = window.open('','_blank');
+  w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+    <title>فاتورة #${inv.number}</title>
+    <style>body{font-family:'Segoe UI',sans-serif;padding:24px;direction:rtl}
+    h1{color:#667eea}table{width:100%;border-collapse:collapse;margin-top:16px}
+    th,td{padding:10px;border:1px solid #e2e8f0;text-align:right}
+    th{background:#f1f5f9;font-weight:bold}.total{font-weight:bold;background:#eff6ff}
+    .header{display:flex;justify-content:space-between;margin-bottom:20px}
+    @media print{button{display:none}}</style></head><body>
+    <div class="header">
+      <div><h1>💰 نظام الحسابات</h1><p>فاتورة ${inv.type==='sale'?'بيع':'شراء'}</p></div>
+      <div style="text-align:left"><strong>رقم الفاتورة: #${inv.number}</strong><br>
+      التاريخ: ${inv.date||''}<br>
+      ${inv.clientName?'العميل: '+inv.clientName:''}
+      </div>
+    </div>
+    <table><thead><tr><th>الصنف/الخدمة</th><th>الكمية</th><th>السعر</th><th>المجموع</th></tr></thead>
+    <tbody>
+    ${(inv.lines||[]).map(l=>`<tr><td>${l.desc}</td><td>${l.qty}</td><td>${parseFloat(l.price).toFixed(2)} ₪</td><td>${(l.qty*l.price).toFixed(2)} ₪</td></tr>`).join('')}
+    <tr class="total"><td colspan="3">المجموع الكلي</td><td>${total.toFixed(2)} ₪</td></tr>
+    </tbody></table>
+    ${inv.notes?`<p style="margin-top:16px;color:#64748b">ملاحظات: ${inv.notes}</p>`:''}
+    <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px">🖨️ طباعة</button>
+    
+<!-- THEME SELECTOR MODAL -->
+<div id="themeModal" class="theme-modal-overlay hidden">
+  <div class="theme-modal-card">
+    <div class="theme-modal-title">🎨 اختر ثيم التطبيق</div>
+    <div class="theme-options">
+      <div class="theme-opt" id="themeOptA" onclick="applyTheme('a')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1a5c3a,#2d9a6b)">🌿</div>
+        <div class="theme-opt-name">أخضر</div>
+        <div class="theme-opt-desc">هادئ وطبيعي</div>
+      </div>
+      <div class="theme-opt" id="themeOptB" onclick="applyTheme('b')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3d2070,#7c5cbf)">💜</div>
+        <div class="theme-opt-name">بنفسجي</div>
+        <div class="theme-opt-desc">ناعم وأنيق</div>
+      </div>
+      <div class="theme-opt" id="themeOptC" onclick="applyTheme('c')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#8a6a10,#c9a84c)">✨</div>
+        <div class="theme-opt-name">ذهبي</div>
+        <div class="theme-opt-desc">فاتح وعيدي</div>
+      </div>
+    </div>
+    <button onclick="closeThemeModal()" style="width:100%;padding:12px;border:none;border-radius:var(--r-sm);background:var(--primary);color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:var(--font)">✓ حفظ</button>
+  </div>
+</div>
+
+</body></html>`);
+  w.document.close();
+}
+
+// ── Add Invoice Modal (dynamic) ───────────────
+let invLines = [];
+let invModalType = 'sale';
+
+function showAddInvoiceModal(type) {
+  invModalType = type;
+  invLines = [{ desc:'', qty:1, price:0 }];
+  const d = accGetData();
+  const contacts = d.contacts.filter(c=>type==='sale'?c.type==='client':c.type==='supplier');
+  const modal = document.createElement('div');
+  modal.id = 'invAddModal';
+  modal.className = 'modal active';
+  modal.innerHTML = `<div class="modal-content" style="max-width:540px">
+    <h2 style="text-align:center;margin-bottom:16px">${type==='sale'?'🟢 فاتورة بيع جديدة':'🔵 فاتورة شراء جديدة'}</h2>
+    <div class="form-group">
+      <label>${type==='sale'?'العميل':'المورد'}</label>
+      <select id="invClientSel" style="width:100%;padding:11px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:var(--card);color:var(--text);font-family:var(--font)">
+        <option value="">-- اختر أو اتركه فارغاً --</option>
+        ${contacts.map(c=>`<option value="${c.id}">${c.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group">
+      <label>التاريخ</label>
+      <input type="date" id="invDateInp" class="password-input" value="${new Date().toISOString().split('T')[0]}">
+    </div>
+    <div class="form-group">
+      <label>البنود</label>
+      <div id="invLinesWrap"></div>
+      <button type="button" onclick="addInvLine()"
+        style="margin-top:8px;padding:7px 14px;background:var(--bg);border:1px dashed var(--border);border-radius:var(--r-sm);font-size:13px;cursor:pointer;color:var(--text2);font-family:var(--font);width:100%">
+        ➕ إضافة بند
+      </button>
+    </div>
+    <div id="invTotalDisplay" style="text-align:left;font-size:18px;font-weight:bold;color:var(--green);margin:8px 0">المجموع: 0.00 ₪</div>
+    <div class="form-group">
+      <label>ملاحظات</label>
+      <input type="text" id="invNotesInp" class="password-input" placeholder="اختياري">
+    </div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveNewInvoice()">✓ حفظ الفاتورة</button>
+      <button class="cancel-btn" onclick="document.getElementById('invAddModal').remove()">✕ إلغاء</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  renderInvLines();
+}
+
+function renderInvLines() {
+  const w = document.getElementById('invLinesWrap'); if(!w) return;
+  w.innerHTML = invLines.map((l,i)=>`
+    <div style="display:grid;grid-template-columns:1fr 70px 90px 32px;gap:6px;margin-bottom:6px">
+      <input type="text" placeholder="الصنف/الخدمة" value="${escHtml(l.desc)}"
+        onchange="invLines[${i}].desc=this.value"
+        style="padding:8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text);font-family:var(--font)">
+      <input type="number" placeholder="الكمية" value="${l.qty}" min="0.01" step="0.01"
+        oninput="invLines[${i}].qty=parseFloat(this.value)||0;updateInvTotal()"
+        style="padding:8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text);text-align:center;font-family:var(--font)">
+      <input type="number" placeholder="السعر ₪" value="${l.price}" min="0" step="0.01"
+        oninput="invLines[${i}].price=parseFloat(this.value)||0;updateInvTotal()"
+        style="padding:8px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;background:var(--card);color:var(--text);text-align:center;font-family:var(--font)">
+      <button onclick="invLines.splice(${i},1);renderInvLines()"
+        style="background:#fee2e2;border:none;border-radius:var(--r-sm);color:var(--red);cursor:pointer;font-size:14px">✕</button>
+    </div>`).join('');
+  updateInvTotal();
+}
+
+function addInvLine() {
+  invLines.push({desc:'',qty:1,price:0});
+  renderInvLines();
+}
+
+function updateInvTotal() {
+  const total = invLines.reduce((s,l)=>s+(l.qty||0)*(l.price||0),0);
+  const el = document.getElementById('invTotalDisplay');
+  if(el) el.textContent = 'المجموع: ' + total.toFixed(2) + ' ₪';
+}
+
+function saveNewInvoice() {
+  const d = accGetData();
+  const clientId = document.getElementById('invClientSel')?.value;
+  const date     = document.getElementById('invDateInp')?.value;
+  const notes    = document.getElementById('invNotesInp')?.value||'';
+  const client   = d.contacts.find(c=>c.id==clientId);
+  if(!invLines.length||!invLines[0].desc){ showToast('❌ أضف بنداً على الأقل'); return; }
+  const total = invLines.reduce((s,l)=>s+(l.qty||0)*(l.price||0),0);
+  const inv = {
+    id: Date.now(), type: invModalType,
+    number: d.nextInvNum++,
+    clientId, clientName: client?.name||'',
+    date, lines: [...invLines], notes, paid:'unpaid', total
+  };
+  // Update contact balance
+  if (client) {
+    if (invModalType==='sale') client.balance = (parseFloat(client.balance)||0) + total;
+    else client.balance = (parseFloat(client.balance)||0) - total;
+  }
+  d.invoices.push(inv);
+  saveData('accounting', d);
+  document.getElementById('invAddModal')?.remove();
+  renderInvoices();
+  showToast('✅ تم حفظ الفاتورة #' + inv.number);
+}
+
+// ══════════════════════════════════════════════
+// CONTACTS (Clients & Suppliers)
+// ══════════════════════════════════════════════
+function renderContacts(type) {
+  const d   = accGetData();
+  const listId = type==='client' ? 'clientsList' : 'suppliersList';
+  const el  = document.getElementById(listId); if(!el) return;
+  const q   = (document.getElementById(type==='client'?'clientSearch':'supplierSearch')?.value||'').toLowerCase();
+  let list  = d.contacts.filter(c=>c.type===type);
+  if(q) list = list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.phone||'').includes(q));
+  if(!list.length){ el.innerHTML=`<div class="empty-state">لا يوجد ${type==='client'?'عملاء':'موردون'} بعد</div>`; return; }
+  const colors=['#3b82f6','#ec4899','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
+  el.innerHTML = list.map(c=>{
+    const color = colors[c.id%colors.length];
+    const bal = parseFloat(c.balance)||0;
+    const balCls = bal>0?'debt':bal<0?'credit':'neutral';
+    const balLabel = bal>0?`مديون ${bal.toFixed(2)} ₪`:bal<0?`دائن ${Math.abs(bal).toFixed(2)} ₪`:'متوازن';
+    const initials = (c.name||'?').charAt(0);
+    return `<div class="contact-card">
+      <div class="contact-avatar" style="background:${color}22;color:${color}">${initials}</div>
+      <div class="contact-info">
+        <div class="contact-name">${escHtml(c.name)}</div>
+        <div class="contact-sub">${c.phone?'📞 '+c.phone:''} ${c.notes?'• '+c.notes:''}</div>
+      </div>
+      <div>
+        <div class="contact-balance ${balCls}">${balLabel}</div>
+        <div style="display:flex;gap:6px;margin-top:6px;justify-content:flex-end">
+          <button onclick="adjustContactBalance('${c.id}')"
+            style="padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);font-size:11px;cursor:pointer;color:var(--text2);font-family:var(--font)">💳 تسوية</button>
+          <button onclick="deleteContact('${c.id}')"
+            style="padding:4px 9px;background:#fee2e2;border:none;border-radius:var(--r-sm);font-size:11px;cursor:pointer;color:var(--red);font-family:var(--font)">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showAddContactModal(type) {
+  const modal = document.createElement('div');
+  modal.id = 'contactAddModal'; modal.className = 'modal active';
+  modal.innerHTML = `<div class="modal-content" style="max-width:400px">
+    <h2 style="text-align:center;margin-bottom:16px">${type==='client'?'👥 عميل جديد':'🏭 مورد جديد'}</h2>
+    <div class="form-group"><label>الاسم *</label>
+      <input type="text" id="contName" class="password-input" placeholder="اسم العميل/المورد"></div>
+    <div class="form-group"><label>رقم الهاتف</label>
+      <input type="text" id="contPhone" class="password-input" placeholder="05xxxxxxxx"></div>
+    <div class="form-group"><label>رصيد افتتاحي (₪)</label>
+      <input type="number" id="contBalance" class="password-input" placeholder="0.00" step="0.01" value="0"></div>
+    <div class="form-group"><label>ملاحظات</label>
+      <input type="text" id="contNotes" class="password-input" placeholder="اختياري"></div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveNewContact('${type}')">✓ حفظ</button>
+      <button class="cancel-btn" onclick="document.getElementById('contactAddModal').remove()">✕ إلغاء</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('contName')?.focus(),100);
+}
+
+function saveNewContact(type) {
+  const name = document.getElementById('contName')?.value.trim();
+  if(!name){ showToast('❌ أدخل الاسم'); return; }
+  const d = accGetData();
+  d.contacts.push({
+    id: Date.now(), type,
+    name,
+    phone:   document.getElementById('contPhone')?.value||'',
+    balance: parseFloat(document.getElementById('contBalance')?.value)||0,
+    notes:   document.getElementById('contNotes')?.value||''
+  });
+  saveData('accounting/contacts', d.contacts);
+  document.getElementById('contactAddModal')?.remove();
+  renderContacts(type);
+  showToast('✅ تم إضافة ' + name);
+}
+
+function adjustContactBalance(id) {
+  const d = accGetData();
+  const c = d.contacts.find(x=>x.id==id); if(!c) return;
+  const val = prompt(`تسوية حساب ${c.name}\nالرصيد الحالي: ${parseFloat(c.balance).toFixed(2)} ₪\nأدخل القيمة (+ دفع إليك / - دفعت له):`, '0');
+  if(val===null) return;
+  const adj = parseFloat(val);
+  if(isNaN(adj)){ showToast('❌ قيمة غير صحيحة'); return; }
+  c.balance = (parseFloat(c.balance)||0) - adj;
+  saveData('accounting/contacts', d.contacts);
+  renderContacts(c.type);
+  showToast('✅ تم تسوية حساب ' + c.name);
+}
+
+function deleteContact(id) {
+  if(!confirm('حذف هذا الحساب؟')) return;
+  const d = accGetData();
+  const type = d.contacts.find(c=>c.id==id)?.type;
+  d.contacts = d.contacts.filter(c=>c.id!=id);
+  saveData('accounting/contacts', d.contacts);
+  renderContacts(type||'client');
+}
+
+// ══════════════════════════════════════════════
+// WAREHOUSE / INVENTORY
+// ══════════════════════════════════════════════
+function renderProducts() {
+  const d  = accGetData();
+  const el = document.getElementById('productsList'); if(!el) return;
+  const q  = (document.getElementById('prodSearch')?.value||'').toLowerCase();
+  let list = [...d.products];
+  if(q) list = list.filter(p=>(p.name||'').toLowerCase().includes(q)||(p.category||'').toLowerCase().includes(q));
+  if(!list.length){ el.innerHTML='<div class="empty-state">لا توجد أصناف في المخزن</div>'; return; }
+  el.innerHTML = list.map(p=>{
+    const qty = parseFloat(p.qty)||0;
+    const minQty = parseFloat(p.minQty)||0;
+    const qtyCls = qty<=0?'low':qty<=minQty?'medium':'ok';
+    const lowAlert = qty<=minQty ? '<span class="prod-alert">⚠️ مخزون منخفض</span>' : '';
+    return `<div class="inv-product">
+      <div class="prod-icon">${p.icon||'📦'}</div>
+      <div class="prod-info">
+        <div class="prod-name">${escHtml(p.name)}</div>
+        <div class="prod-sub">${p.category?p.category+' • ':''}شراء: ${parseFloat(p.buyPrice||0).toFixed(2)} ₪ | بيع: ${parseFloat(p.sellPrice||0).toFixed(2)} ₪ | الوحدة: ${p.unit||'قطعة'}</div>
+        ${lowAlert}
+      </div>
+      <div style="text-align:center">
+        <div class="prod-qty ${qtyCls}">${qty}</div>
+        <div style="font-size:10px;color:var(--text2)">${p.unit||'قطعة'}</div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+          <button onclick="adjustProdQty('${p.id}',1)"
+            style="width:28px;height:28px;background:var(--green);color:white;border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:bold">+</button>
+          <button onclick="adjustProdQty('${p.id}',-1)"
+            style="width:28px;height:28px;background:#fee2e2;color:var(--red);border:none;border-radius:6px;cursor:pointer;font-size:16px;font-weight:bold">−</button>
+          <button onclick="deleteProduct('${p.id}')"
+            style="width:28px;height:28px;background:var(--bg);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:12px">🗑️</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showAddProductModal() {
+  const modal = document.createElement('div');
+  modal.id = 'prodAddModal'; modal.className = 'modal active';
+  modal.innerHTML = `<div class="modal-content" style="max-width:420px">
+    <h2 style="text-align:center;margin-bottom:16px">📦 صنف جديد</h2>
+    <div class="form-group"><label>اسم الصنف *</label>
+      <input type="text" id="prodName" class="password-input" placeholder="مثال: قهوة عربية"></div>
+    <div class="form-group"><label>التصنيف</label>
+      <input type="text" id="prodCat" class="password-input" placeholder="مثال: مشروبات"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label>الكمية الحالية</label>
+        <input type="number" id="prodQty" class="password-input" placeholder="0" value="0" min="0" step="1"></div>
+      <div class="form-group"><label>حد التنبيه (أدنى)</label>
+        <input type="number" id="prodMinQty" class="password-input" placeholder="5" value="5" min="0"></div>
+      <div class="form-group"><label>سعر الشراء (₪)</label>
+        <input type="number" id="prodBuyPrice" class="password-input" placeholder="0.00" step="0.01" value="0"></div>
+      <div class="form-group"><label>سعر البيع (₪)</label>
+        <input type="number" id="prodSellPrice" class="password-input" placeholder="0.00" step="0.01" value="0"></div>
+    </div>
+    <div class="form-group"><label>وحدة القياس</label>
+      <select id="prodUnit" style="width:100%;padding:11px;border:2px solid var(--border);border-radius:var(--r-sm);font-size:14px;background:var(--card);color:var(--text);font-family:var(--font)">
+        <option value="قطعة">قطعة</option><option value="كيلو">كيلو</option>
+        <option value="لتر">لتر</option><option value="متر">متر</option>
+        <option value="صندوق">صندوق</option><option value="كرتون">كرتون</option>
+        <option value="دستة">دستة</option>
+      </select>
+    </div>
+    <div class="button-group" style="margin-top:16px">
+      <button class="submit-btn add" onclick="saveNewProduct()">✓ حفظ</button>
+      <button class="cancel-btn" onclick="document.getElementById('prodAddModal').remove()">✕ إلغاء</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+  setTimeout(()=>document.getElementById('prodName')?.focus(),100);
+}
+
+function saveNewProduct() {
+  const name = document.getElementById('prodName')?.value.trim();
+  if(!name){ showToast('❌ أدخل اسم الصنف'); return; }
+  const d = accGetData();
+  d.products.push({
+    id: Date.now(), name,
+    category:   document.getElementById('prodCat')?.value||'',
+    qty:        parseFloat(document.getElementById('prodQty')?.value)||0,
+    minQty:     parseFloat(document.getElementById('prodMinQty')?.value)||5,
+    buyPrice:   parseFloat(document.getElementById('prodBuyPrice')?.value)||0,
+    sellPrice:  parseFloat(document.getElementById('prodSellPrice')?.value)||0,
+    unit:       document.getElementById('prodUnit')?.value||'قطعة',
+    icon:'📦'
+  });
+  saveData('accounting/products', d.products);
+  document.getElementById('prodAddModal')?.remove();
+  renderProducts();
+  showToast('✅ تم إضافة ' + name);
+}
+
+function adjustProdQty(id, delta) {
+  const d = accGetData();
+  const p = d.products.find(x=>x.id==id); if(!p) return;
+  const adj = parseFloat(prompt(`تعديل كمية "${p.name}"\nالحالي: ${p.qty}\nأدخل الكمية المضافة (+) أو المسحوبة (-):`, delta)) || 0;
+  p.qty = Math.max(0, (parseFloat(p.qty)||0) + adj);
+  saveData('accounting/products', d.products);
+  renderProducts();
+}
+
+function deleteProduct(id) {
+  if(!confirm('حذف هذا الصنف؟')) return;
+  const d = accGetData();
+  d.products = d.products.filter(p=>p.id!=id);
+  saveData('accounting/products', d.products);
+  renderProducts();
+}
+
+// ══════════════════════════════════════════════
+// REPORTS
+// ══════════════════════════════════════════════
+function renderReports() {
+  const d   = accGetData();
+  const el  = document.getElementById('reportsContent'); if(!el) return;
+  const per = document.getElementById('repPeriod')?.value||'month';
+  const now = new Date();
+  const filterDate = inv => {
+    if(!inv.date) return true;
+    const d = new Date(inv.date);
+    if(per==='month') return d.getFullYear()===now.getFullYear()&&d.getMonth()===now.getMonth();
+    if(per==='3month') return (now-d)/86400000<=90;
+    if(per==='year') return d.getFullYear()===now.getFullYear();
+    return true;
+  };
+  const sales = d.invoices.filter(i=>i.type==='sale'&&filterDate(i));
+  const purch = d.invoices.filter(i=>i.type==='purchase'&&filterDate(i));
+  const totalSales = sales.reduce((s,i)=>(i.lines||[]).reduce((ss,l)=>ss+(l.qty||0)*(l.price||0),s),0);
+  const totalPurch = purch.reduce((s,i)=>(i.lines||[]).reduce((ss,l)=>ss+(l.qty||0)*(l.price||0),s),0);
+  const profit     = totalSales - totalPurch;
+  const unpaidSales = sales.filter(i=>i.paid!=='paid').reduce((s,i)=>(i.lines||[]).reduce((ss,l)=>ss+(l.qty||0)*(l.price||0),s),0);
+  const lowStock   = d.products.filter(p=>parseFloat(p.qty)<=parseFloat(p.minQty||0)).length;
+  el.innerHTML = `
+    <div class="${profit>=0?'report-profit':'report-loss'}" style="margin-bottom:14px">
+      <div class="report-big-val">${profit>=0?'+':''}${profit.toFixed(2)} ₪</div>
+      <div class="report-big-lbl">${profit>=0?'صافي الأرباح 📈':'صافي الخسارة 📉'}</div>
+    </div>
+    <div class="report-card">
+      <h3>💰 ملخص المبيعات والمشتريات</h3>
+      <div class="report-row"><span class="label">إجمالي المبيعات</span><span class="val green">+${totalSales.toFixed(2)} ₪</span></div>
+      <div class="report-row"><span class="label">إجمالي المشتريات</span><span class="val red">-${totalPurch.toFixed(2)} ₪</span></div>
+      <div class="report-row"><span class="label">عدد فواتير البيع</span><span class="val blue">${sales.length}</span></div>
+      <div class="report-row"><span class="label">عدد فواتير الشراء</span><span class="val blue">${purch.length}</span></div>
+    </div>
+    <div class="report-card">
+      <h3>📊 الذمم والمخزون</h3>
+      <div class="report-row"><span class="label">مستحقات غير محصّلة</span><span class="val red">${unpaidSales.toFixed(2)} ₪</span></div>
+      <div class="report-row"><span class="label">عدد العملاء</span><span class="val">${d.contacts.filter(c=>c.type==='client').length}</span></div>
+      <div class="report-row"><span class="label">عدد الموردين</span><span class="val">${d.contacts.filter(c=>c.type==='supplier').length}</span></div>
+      <div class="report-row"><span class="label">أصناف منخفضة المخزون</span><span class="val ${lowStock>0?'red':''}">${lowStock} صنف</span></div>
+    </div>`;
+}
+
+// ─── Theme System ─────────────────────────────
+function applyTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  localStorage.setItem('appTheme', t);
+  // Update selected state
+  ['a','b','c'].forEach(id => {
+    const el = document.getElementById('themeOpt'+id.toUpperCase());
+    if(el) el.classList.toggle('selected', id===t);
+  });
+}
+
+function showThemeModal() {
+  const cur = localStorage.getItem('appTheme')||'a';
+  applyTheme(cur);
+  document.getElementById('themeModal').classList.remove('hidden');
+}
+
+function closeThemeModal() {
+  document.getElementById('themeModal').classList.add('hidden');
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('appTheme') || 'a';
+  applyTheme(saved);
 }
 // =============================================
 // UTILS
@@ -6426,6 +7440,32 @@ function escHtml(str) {
     <div class="islamic-popup-text" id="islamicPopupText">سبحان الله وبحمده</div>
     <div class="islamic-popup-ref"  id="islamicPopupRef">—</div>
     <button class="islamic-popup-close" onclick="closeIslamicPopup()">سبحان الله ✨</button>
+  </div>
+</div>
+
+
+<!-- THEME SELECTOR MODAL -->
+<div id="themeModal" class="theme-modal-overlay hidden">
+  <div class="theme-modal-card">
+    <div class="theme-modal-title">🎨 اختر ثيم التطبيق</div>
+    <div class="theme-options">
+      <div class="theme-opt" id="themeOptA" onclick="applyTheme('a')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1a5c3a,#2d9a6b)">🌿</div>
+        <div class="theme-opt-name">أخضر</div>
+        <div class="theme-opt-desc">هادئ وطبيعي</div>
+      </div>
+      <div class="theme-opt" id="themeOptB" onclick="applyTheme('b')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3d2070,#7c5cbf)">💜</div>
+        <div class="theme-opt-name">بنفسجي</div>
+        <div class="theme-opt-desc">ناعم وأنيق</div>
+      </div>
+      <div class="theme-opt" id="themeOptC" onclick="applyTheme('c')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#8a6a10,#c9a84c)">✨</div>
+        <div class="theme-opt-name">ذهبي</div>
+        <div class="theme-opt-desc">فاتح وعيدي</div>
+      </div>
+    </div>
+    <button onclick="closeThemeModal()" style="width:100%;padding:12px;border:none;border-radius:var(--r-sm);background:var(--primary);color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:var(--font)">✓ حفظ</button>
   </div>
 </div>
 
