@@ -1633,6 +1633,67 @@ body.dark .quran-ref { color: #4ade80 }
 }
 .acc-search:focus { outline:none; border-color:var(--primary) }
 
+
+/* ══════════════════════════════════════════════════════
+   THEME SYSTEM
+══════════════════════════════════════════════════════ */
+/* Theme A: أخضر هادئ (default) */
+body[data-theme="a"] {
+  --primary: #2d9a6b; --primary2: #1a5c3a;
+  --body-bg1: #0f2d1e; --body-bg2: #1a4a2e;
+}
+body[data-theme="a"] .bottom-nav { background: #1a3d2a }
+body[data-theme="a"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#2d9a6b,#1a6b4a) !important; box-shadow: 0 3px 10px rgba(45,154,107,.45) !important }
+body[data-theme="a"] { background: linear-gradient(170deg,#0f2d1e 0%,#1a4a2e 50%,#0f3320 100%) }
+
+/* Theme B: بنفسجي ناعم */
+body[data-theme="b"] {
+  --primary: #7c5cbf; --primary2: #3d2070;
+  --body-bg1: #1e0f3d; --body-bg2: #2d1a5c;
+}
+body[data-theme="b"] .bottom-nav { background: #2a1a4a }
+body[data-theme="b"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#7c5cbf,#5a3a9a) !important; box-shadow: 0 3px 10px rgba(124,92,191,.45) !important }
+body[data-theme="b"] { background: linear-gradient(170deg,#1e0f3d 0%,#2d1a5c 50%,#1a0f3a 100%) }
+
+/* Theme C: ذهبي فاتح */
+body[data-theme="c"] {
+  --primary: #c9a84c; --primary2: #8a6a10;
+  --bg: #fffdf8; --card: #ffffff; --border: #f0e8d4;
+  --text: #2d2010; --text2: #7a6a4a; --text3: #b0a080;
+}
+body[data-theme="c"] .bottom-nav { background: #0d1b3e }
+body[data-theme="c"] .bottom-nav-btn.active .nav-icon { background: linear-gradient(135deg,#c9a84c,#a07a20) !important; box-shadow: 0 3px 10px rgba(201,168,76,.45) !important }
+body[data-theme="c"] { background: #f5f0e8 }
+body[data-theme="c"] .header { background: #fff; border-bottom: 2px solid #f0e8d4 }
+body[data-theme="c"] .stat-card,.body[data-theme="c"] .form-card,.body[data-theme="c"] .history-card { background: #fff; border: 1px solid #f0e8d4 }
+
+/* Theme selector modal */
+.theme-modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6);
+  z-index: 99996; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+.theme-modal-overlay.hidden { display: none !important }
+.theme-modal-card {
+  background: var(--card); border-radius: var(--r-lg);
+  padding: 24px 20px; max-width: 420px; width: 100%;
+  box-shadow: var(--shadow-lg);
+}
+.theme-modal-title { font-size: 16px; font-weight: bold; color: var(--text); text-align: center; margin-bottom: 18px }
+.theme-options { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 18px }
+.theme-opt {
+  border: 2px solid var(--border); border-radius: var(--r);
+  padding: 12px 8px; cursor: pointer; text-align: center;
+  transition: all .2s; background: var(--card);
+}
+.theme-opt:hover { transform: scale(1.03) }
+.theme-opt.selected { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary) }
+.theme-swatch {
+  width: 100%; height: 48px; border-radius: 10px; margin-bottom: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.theme-opt-name { font-size: 12px; font-weight: bold; color: var(--text) }
+.theme-opt-desc { font-size: 10px; color: var(--text2); margin-top: 3px }
+
 </style>
 </head>
 <body>
@@ -1760,6 +1821,7 @@ body.dark .quran-ref { color: #4ade80 }
     <h1>💰 حساباتي المالية</h1>
     <div class="user-info">
       <button class="btn export-btn" onclick="exportToExcel()">📥 Excel</button>
+      <button class="dark-toggle" onclick="showThemeModal()" title="ثيم" style="font-size:18px">🎨</button>
       <button class="dark-toggle" onclick="toggleDark()" id="darkBtn" title="وضع ليلي">🌙</button>
       <div class="user-badge" id="userBadge"></div>
     </div>
@@ -2052,21 +2114,21 @@ body.dark .quran-ref { color: #4ade80 }
         <span class="fanoos" style="--sw:2.6s;--sd:.8s">🏮</span>
         <span class="fanoos" style="--sw:3.0s;--sd:.2s">🪔</span>
       </div>
-      <div class="ramadan-title">رمضان كريم ✨</div>
+      <div class="ramadan-title">عيد الفطر المبارك 🌙</div>
       <div class="ramadan-subtitle" id="hijriDate">جاري تحديد التاريخ الهجري...</div>
       <!-- Ramadan countdown info -->
       <div style="display:flex;justify-content:center;gap:14px;margin-top:10px;flex-wrap:wrap;position:relative;z-index:1" id="ramadanCounterRow">
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramDayOfMonth">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم من رمضان</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم العيد 🎉</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramDaysToEid">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم للعيد 🎉</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">يوم من العيد</div>
         </div>
         <div style="text-align:center;background:rgba(255,255,255,.08);border-radius:10px;padding:8px 14px">
           <div style="font-size:clamp(18px,5vw,26px);font-weight:bold;color:#ffd700" id="ramNightsLeft">—</div>
-          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">ليلة باقية 🌙</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.55);margin-top:2px">تهاني 🎊</div>
         </div>
       </div>
       <!-- Progress bar -->
@@ -2075,9 +2137,9 @@ body.dark .quran-ref { color: #4ade80 }
           <div id="ramProgressBar" style="height:100%;background:linear-gradient(90deg,#f59e0b,#ffd700);border-radius:10px;transition:width .5s;width:0%"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:9px;color:rgba(255,255,255,.35);margin-top:3px">
-          <span>١ رمضان</span>
+          <span>بداية رمضان</span>
           <span id="ramPct">—</span>
-          <span>عيد الفطر</span>
+          <span>عيد الفطر 🎉</span>
         </div>
       </div>
     </div>
@@ -2715,6 +2777,7 @@ function showLoadingOverlay(show) { /* disabled — cache-first approach */ }
 // =============================================
 window.onload = function() {
   initDarkMode();
+  initTheme();
   buildLoginScreen();
   initFirebase(() => {
     updateDollarRateDisplay();
@@ -5816,8 +5879,8 @@ const PRAYER_ORDER    = ['Fajr','Sunrise','Dhuhr','Asr','Maghrib','Isha'];
 // ── switchMainTab extension ───────────────────
 const _origSwitchTab = switchMainTab;
 function switchMainTab(tab) {
-  const allTabs   = ['mainTxSection','expensesSection','islamicSection','accountingSection'];
-  const allBtns   = ['bnTx','bnExp','bnIslamic','bnConv','bnSettings','bnLogout','bnAcc'];
+  const allTabs   = ['mainTxSection','expensesSection','islamicSection'];
+  const allBtns   = ['bnTx','bnExp','bnIslamic','bnConv','bnSettings','bnLogout'];
   const isIslamic = tab === 'islamic';
   const isTx      = tab === 'tx';
   const isExp     = tab === 'exp';
@@ -6485,7 +6548,33 @@ function printInvoice(id) {
     </tbody></table>
     ${inv.notes?`<p style="margin-top:16px;color:#64748b">ملاحظات: ${inv.notes}</p>`:''}
     <button onclick="window.print()" style="margin-top:20px;padding:10px 24px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:15px">🖨️ طباعة</button>
-    </body></html>`);
+    
+<!-- THEME SELECTOR MODAL -->
+<div id="themeModal" class="theme-modal-overlay hidden">
+  <div class="theme-modal-card">
+    <div class="theme-modal-title">🎨 اختر ثيم التطبيق</div>
+    <div class="theme-options">
+      <div class="theme-opt" id="themeOptA" onclick="applyTheme('a')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1a5c3a,#2d9a6b)">🌿</div>
+        <div class="theme-opt-name">أخضر</div>
+        <div class="theme-opt-desc">هادئ وطبيعي</div>
+      </div>
+      <div class="theme-opt" id="themeOptB" onclick="applyTheme('b')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3d2070,#7c5cbf)">💜</div>
+        <div class="theme-opt-name">بنفسجي</div>
+        <div class="theme-opt-desc">ناعم وأنيق</div>
+      </div>
+      <div class="theme-opt" id="themeOptC" onclick="applyTheme('c')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#8a6a10,#c9a84c)">✨</div>
+        <div class="theme-opt-name">ذهبي</div>
+        <div class="theme-opt-desc">فاتح وعيدي</div>
+      </div>
+    </div>
+    <button onclick="closeThemeModal()" style="width:100%;padding:12px;border:none;border-radius:var(--r-sm);background:var(--primary);color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:var(--font)">✓ حفظ</button>
+  </div>
+</div>
+
+</body></html>`);
   w.document.close();
 }
 
@@ -6844,6 +6933,32 @@ function renderReports() {
       <div class="report-row"><span class="label">أصناف منخفضة المخزون</span><span class="val ${lowStock>0?'red':''}">${lowStock} صنف</span></div>
     </div>`;
 }
+
+// ─── Theme System ─────────────────────────────
+function applyTheme(t) {
+  document.body.setAttribute('data-theme', t);
+  localStorage.setItem('appTheme', t);
+  // Update selected state
+  ['a','b','c'].forEach(id => {
+    const el = document.getElementById('themeOpt'+id.toUpperCase());
+    if(el) el.classList.toggle('selected', id===t);
+  });
+}
+
+function showThemeModal() {
+  const cur = localStorage.getItem('appTheme')||'a';
+  applyTheme(cur);
+  document.getElementById('themeModal').classList.remove('hidden');
+}
+
+function closeThemeModal() {
+  document.getElementById('themeModal').classList.add('hidden');
+}
+
+function initTheme() {
+  const saved = localStorage.getItem('appTheme') || 'a';
+  applyTheme(saved);
+}
 // =============================================
 // UTILS
 // =============================================
@@ -7142,10 +7257,6 @@ function escHtml(str) {
     <span class="nav-icon">💱</span>
     <span class="nav-label">تحويل</span>
   </button>
-  <button class="bottom-nav-btn" id="bnAcc" onclick="switchMainTab('accounting')">
-    <span class="nav-icon">🧾</span>
-    <span class="nav-label">محاسبة</span>
-  </button>
   <button class="bottom-nav-btn" id="bnIslamic" onclick="switchMainTab('islamic')">
     <span class="nav-icon">🕌</span>
     <span class="nav-label">إسلامي</span>
@@ -7329,6 +7440,32 @@ function escHtml(str) {
     <div class="islamic-popup-text" id="islamicPopupText">سبحان الله وبحمده</div>
     <div class="islamic-popup-ref"  id="islamicPopupRef">—</div>
     <button class="islamic-popup-close" onclick="closeIslamicPopup()">سبحان الله ✨</button>
+  </div>
+</div>
+
+
+<!-- THEME SELECTOR MODAL -->
+<div id="themeModal" class="theme-modal-overlay hidden">
+  <div class="theme-modal-card">
+    <div class="theme-modal-title">🎨 اختر ثيم التطبيق</div>
+    <div class="theme-options">
+      <div class="theme-opt" id="themeOptA" onclick="applyTheme('a')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1a5c3a,#2d9a6b)">🌿</div>
+        <div class="theme-opt-name">أخضر</div>
+        <div class="theme-opt-desc">هادئ وطبيعي</div>
+      </div>
+      <div class="theme-opt" id="themeOptB" onclick="applyTheme('b')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3d2070,#7c5cbf)">💜</div>
+        <div class="theme-opt-name">بنفسجي</div>
+        <div class="theme-opt-desc">ناعم وأنيق</div>
+      </div>
+      <div class="theme-opt" id="themeOptC" onclick="applyTheme('c')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#8a6a10,#c9a84c)">✨</div>
+        <div class="theme-opt-name">ذهبي</div>
+        <div class="theme-opt-desc">فاتح وعيدي</div>
+      </div>
+    </div>
+    <button onclick="closeThemeModal()" style="width:100%;padding:12px;border:none;border-radius:var(--r-sm);background:var(--primary);color:white;font-size:14px;font-weight:bold;cursor:pointer;font-family:var(--font)">✓ حفظ</button>
   </div>
 </div>
 
